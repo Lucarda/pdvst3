@@ -101,7 +101,7 @@ tresult PLUGIN_API HelloWorldController::getState (IBStream* state)
 
 	return kResultTrue;
 }
-
+/*
 //------------------------------------------------------------------------
 IPlugView* PLUGIN_API HelloWorldController::createView (FIDString name)
 {
@@ -114,7 +114,7 @@ IPlugView* PLUGIN_API HelloWorldController::createView (FIDString name)
 	}
 	return nullptr;
 }
-
+*/
 //------------------------------------------------------------------------
 tresult PLUGIN_API HelloWorldController::setParamNormalized (Vst::ParamID tag, Vst::ParamValue value)
 {
