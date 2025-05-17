@@ -4,7 +4,7 @@
 
 #include "helloworldcontroller.h"
 #include "helloworldcids.h"
-#include "vstgui/plugin-bindings/vst3editor.h"
+// #include "vstgui/plugin-bindings/vst3editor.h"
 #include "base/source/fstreamer.h"
 #include "pluginterfaces/base/ibstream.h"
 
