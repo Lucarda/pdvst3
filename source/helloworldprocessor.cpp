@@ -7,7 +7,9 @@
 
 #include "base/source/fstreamer.h"
 #include "pluginterfaces/vst/ivstparameterchanges.h"
+#include "pdvst3_base_defines.h"
 
+extern Steinberg::FUID contUID;
 using namespace Steinberg;
 
 namespace Steinberg {
@@ -17,7 +19,7 @@ namespace Steinberg {
 HelloWorldProcessor::HelloWorldProcessor ()
 {
 	//--- set the wanted controller for our processor
-	setControllerClass (kHelloWorldControllerUID);
+	setControllerClass (contUID);
 }
 
 //------------------------------------------------------------------------

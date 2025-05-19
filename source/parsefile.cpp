@@ -18,34 +18,26 @@
 ** jsarlo@ucsd.edu
 */
 #if _WIN32
-#include <windows.h>
+	#include <windows.h>
+#else
+	#include <dlfcn.h>
+	#include <iostream>
+	#include <fstream>
 #endif
 #include <math.h>
 //#include "pdvst.hpp"
 #include <unistd.h>
-#include <string.h>
-
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
 #include <cstdint>
+#include <stdlib.h>
 
 
-#ifndef _WIN32
-//#define _GNU_SOURCE
-#include <dlfcn.h>
-#include <iostream>
-#include <fstream>
-#endif
-
-
-
-#define MAXFILENAMELEN 1024
-#define MAXSTRLEN 4096
-#define MAXEXTERNS 128
-#define MAXPROGRAMS 128
-#define MAXPARAMS 128
+#include "pluginterfaces/base/funknown.h"
+#include "pluginterfaces/vst/vsttypes.h"
+#include "pdvst3_base_defines.h"
 
 #define CONFIGFILE "config.txt"
 
@@ -75,8 +67,24 @@ int globalCustomGuiHeight= 150;
 //pdvstProgram globalProgram[MAXPROGRAMS];
 bool globalProgramsAreChunks = false;
 
+
+//Steinberg::FUID procUID;
+//Steinberg::FUID contUID;
+
+/*
+long procUID;
+long contUID;
+*/
+
+char procUIDNN[33];
+char contUIDNN[33];
+unsigned int integersP[4];
+unsigned int integersC[4];
+
+
 char *trimWhitespace(char *str);
 void parseSetupFile();
+void doFUIDs();
 
 // later
 char unixname[MAXFILENAMELEN];
@@ -108,6 +116,7 @@ void startup(void)
     dladdr((void *)startup, &dl_info);
     strcpy(unixname, dl_info.dli_fname);
     parseSetupFile();
+    doFUIDs();
 }
 
 #endif
@@ -165,41 +174,33 @@ void parseSetupFile()
                       (LPTSTR)tFileName,
                       (DWORD)MAXFILENAMELEN);
 
-    if (strrchr(tFileName, '\\'))
-    {
-        strcpy(globalPluginName, strrchr(tFileName, '\\') + 1);
-    }
-    else
-    {
-        strcpy(globalPluginName, tFileName);
-    }
-     // setup file path in folder
-    if (strrchr(tFileName, '\\'))
+    // get paths
+    if (1)
     {
         strcpy(vstDataPath, tFileName);
-        *(strrchr(vstDataPath, '\\') + 1) = 0;
+        *(strrchr(vstDataPath, '/') + 1) = 0;
         sprintf(globalSchedulerPath, "%s", vstDataPath);
         // contents folder
         snprintf(buf, strlen(vstDataPath)-1, "%s", vstDataPath);
-        *(strrchr(buf, '\\') + 1) = 0;
+        *(strrchr(buf, '/') + 1) = 0;
         sprintf(globalContentPath, "%s", buf);
         // main folder
         snprintf(buf, strlen(globalContentPath)-1, "%s", globalContentPath);
-        *(strrchr(buf, '\\') + 1) = 0;
+        *(strrchr(buf, '/') + 1) = 0;
         sprintf(globalPluginPath, "%s", buf);     
         // config file
-        sprintf(globalConfigFile, "%s$s", globalPluginPath, CONFIGFILE); 
+        sprintf(globalConfigFile, "%s%s", globalPluginPath, CONFIGFILE);
+        //name of plug
+        //snprintf(buf, strlen(globalPluginPath)-1, "%s", globalPluginPath);
+        sprintf(globalPluginName, "%s", buf);
+        // remove extension from name
+        if (strstr(strlowercase(globalPluginName), ".vst3"))
+            *(strstr(strlowercase(globalPluginName), ".vst3")) = 0;
+        sprintf(buf, "%s", globalPluginName); 
+        strcpy(globalPluginName, strrchr(buf, '/') + 1); 
     }
     #else // find filepaths (Unix)
-    if (strrchr(unixname, '/'))
-    {
-        strcpy(globalPluginName, strrchr(unixname, '/') + 1);
-    }
-    else
-    {
-        strcpy(globalPluginName, unixname);
-    }  
-     // get paths
+    // get paths
     if (1)
     {
         strcpy(vstDataPath, unixname);
@@ -214,7 +215,16 @@ void parseSetupFile()
         *(strrchr(buf, '/') + 1) = 0;
         sprintf(globalPluginPath, "%s", buf);     
         // config file
-        sprintf(globalConfigFile, "%s%s", globalPluginPath, CONFIGFILE);      
+        sprintf(globalConfigFile, "%s%s", globalPluginPath, CONFIGFILE);
+        //name of plug
+        //snprintf(buf, strlen(globalPluginPath)-1, "%s", globalPluginPath);
+        sprintf(globalPluginName, "%s", buf);
+        // remove extension from name
+        if (strstr(globalPluginName, ".vst3"))
+            *(strstr(globalPluginName, ".vst3")) = 0;
+        sprintf(buf, "%s", globalPluginName); 
+        strcpy(globalPluginName, strrchr(buf, '/') + 1);
+      
     }
     #endif // unix
 
@@ -230,6 +240,7 @@ void parseSetupFile()
     // check existence of setup file in vst-subfolder
     
     gotfile == access(vstSetupFileName, F_OK );
+
     
     if( gotfile == 0)
         setupFile = fopen(vstSetupFileName, "r");
@@ -403,8 +414,159 @@ void parseSetupFile()
     fprintf(file_pointer, "globalSchedulerPath: %s\n", globalSchedulerPath);
     fprintf(file_pointer, "globalContentPath: %s\n", globalContentPath);
     fprintf(file_pointer, "globalConfigFile: %s\n", globalConfigFile);
+    fprintf(file_pointer, "globalPluginId: %d\n", globalPluginId);
     fclose(file_pointer);
 #endif
 
 }
+
+// this did't work.
+
+/*
+void convertVST2UID_To_FUID (Steinberg::FUID& newOne, Steinberg::int32 myVST2UID_4Chars, const char* pluginName, bool forControllerUID)
+{
+    char uidString[33];
+ 
+    Steinberg::int32 vstfxid;
+    if (forControllerUID)
+        vstfxid = (('V' << 16) | ('S' << 8) | 'E');
+    else
+        vstfxid = (('V' << 16) | ('S' << 8) | 'T');
+ 
+    char vstfxidStr[7] = {0};
+    sprintf (vstfxidStr, "%06X", vstfxid);
+ 
+    char uidStr[9] = {0};
+    sprintf (uidStr, "%08X", myVST2UID_4Chars);
+ 
+    strcpy (uidString, vstfxidStr);
+    strcat (uidString, uidStr);
+ 
+    char nameidStr[3] = {0};
+    size_t len = strlen (pluginName);
+ 
+    // !!!the pluginName has to be lower case!!!!
+    for (Steinberg::uint16 i = 0; i <= 8; i++)
+    {
+        Steinberg::uint8 c = i < len ? pluginName[i] : 0;
+        sprintf (nameidStr, "%02X", c);
+        strcat (uidString, nameidStr);
+    }
+    newOne.fromString (uidString);
+#if 0
+    // debug func
+    FILE *file_pointer;
+    file_pointer = fopen("uids.txt", "w");
+    fprintf(file_pointer, "uidString: %s\n", uidString);
+    fclose(file_pointer);
+#endif
+}
+
+*/
+
+
+void convertVST2UID_To_FUID (char *newOne, Steinberg::int32 myVST2UID_4Chars, const char* pluginName, bool forControllerUID)
+{
+    char uidString[33];
+ 
+    Steinberg::int32 vstfxid;
+    if (forControllerUID)
+        vstfxid = (('V' << 16) | ('S' << 8) | 'E');
+    else
+        vstfxid = (('V' << 16) | ('S' << 8) | 'T');
+ 
+    char vstfxidStr[7] = {0};
+    sprintf (vstfxidStr, "%06X", vstfxid);
+ 
+    char uidStr[9] = {0};
+    sprintf (uidStr, "%08X", myVST2UID_4Chars);
+ 
+    strcpy (uidString, vstfxidStr);
+    strcat (uidString, uidStr);
+ 
+    char nameidStr[3] = {0};
+    size_t len = strlen (pluginName);
+ 
+    // !!!the pluginName has to be lower case!!!!
+    for (Steinberg::uint16 i = 0; i <= 8; i++)
+    {
+        Steinberg::uint8 c = i < len ? pluginName[i] : 0;
+        sprintf (nameidStr, "%02X", c);
+        strcat (uidString, nameidStr);
+    }
+    //newOne.fromString (uidString);
+    strcpy (newOne, uidString);
+#if 0
+    // debug func
+    FILE *file_pointer;
+    file_pointer = fopen("uids.txt", "w");
+    fprintf(file_pointer, "uidString: %s\n", uidString);
+    fclose(file_pointer);
+#endif
+}
+
+int convert(const char *hex_string, unsigned int *integers) 
+{
+    // Hexadecimal string
+    //const char *hex_string = "5653457064767068656C6C6F776F726C";
+    const int num_ints = 4;
+    //unsigned int integers[num_ints];
+
+    // Loop to convert each 8-digit segment into an integer
+    for (int i = 0; i < num_ints; i++) {
+        // Create a substring of 8 characters
+        char part[9]; // 8 characters + null terminator
+        strncpy(part, hex_string + (i * 8), 8);
+        part[8] = '\0'; // Null-terminate the string
+
+        // Convert from hex string to unsigned int
+        integers[i] = (unsigned int)strtoul(part, NULL, 16);
+    }
+/*
+    // Print the results
+    for (int i = 0; i < num_ints; i++) {
+        printf("Integer %d: %u\n", i + 1, integers[i]);
+    }
+*/
+    return 0;
+}
+
+
+
+void doFUIDs()
+{
+//convertVST2UID_To_FUID (procUID, globalPluginId, globalPluginName, false);
+//convertVST2UID_To_FUID (contUID, globalPluginId, globalPluginName, true);
+
+
+
+convertVST2UID_To_FUID (procUIDNN, globalPluginId, globalPluginName, false);
+convertVST2UID_To_FUID (contUIDNN, globalPluginId, globalPluginName, true);
+
+convert(procUIDNN, integersP);
+convert(contUIDNN, integersC);
+
+
+#if 1
+    // debug 
+    FILE *file_pointer;
+    file_pointer = fopen("uidsonmem.txt", "w");
+	fprintf(file_pointer, "procUIDNN: %s\n", procUIDNN);
+	fprintf(file_pointer, "contUIDNN: %s\n", contUIDNN);
+    fprintf(file_pointer, "processor: %08X %08X %08X %08X\n", integersP[0], integersP[1], integersP[2], integersP[3]);
+	fprintf(file_pointer, "controler: %08X %08X %08X %08X\n", integersC[0], integersC[1], integersC[2], integersC[3]);
+    fclose(file_pointer);
+#endif
+
+}
+
+
+
+
+
+
+
+
+
+
 
