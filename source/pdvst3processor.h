@@ -9,18 +9,18 @@
 namespace Steinberg {
 
 //------------------------------------------------------------------------
-//  HelloWorldProcessor
+//  pdvst3Processor
 //------------------------------------------------------------------------
-class HelloWorldProcessor : public Steinberg::Vst::AudioEffect
+class pdvst3Processor : public Steinberg::Vst::AudioEffect
 {
 public:
-	HelloWorldProcessor ();
-	~HelloWorldProcessor () SMTG_OVERRIDE;
+	pdvst3Processor ();
+	~pdvst3Processor () SMTG_OVERRIDE;
 
     // Create function
 	static Steinberg::FUnknown* createInstance (void* /*context*/) 
 	{ 
-		return (Steinberg::Vst::IAudioProcessor*)new HelloWorldProcessor; 
+		return (Steinberg::Vst::IAudioProcessor*)new pdvst3Processor; 
 	}
 
 	//--- ---------------------------------------------------------------------

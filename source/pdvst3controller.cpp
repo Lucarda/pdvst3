@@ -2,8 +2,8 @@
 // Copyright(c) 2022 Steinberg Media Technologies GmbH.
 //------------------------------------------------------------------------
 
-#include "helloworldcontroller.h"
-#include "helloworldcids.h"
+#include "pdvst3controller.h"
+#include "pdvst3cids.h"
 // #include "vstgui/plugin-bindings/vst3editor.h"
 #include "base/source/fstreamer.h"
 #include "pluginterfaces/base/ibstream.h"
@@ -13,9 +13,9 @@ using namespace Steinberg;
 namespace Steinberg {
 
 //------------------------------------------------------------------------
-// HelloWorldController Implementation
+// pdvst3Controller Implementation
 //------------------------------------------------------------------------
-tresult PLUGIN_API HelloWorldController::initialize (FUnknown* context)
+tresult PLUGIN_API pdvst3Controller::initialize (FUnknown* context)
 {
 	// Here the Plug-in will be instantiated
 
@@ -32,14 +32,14 @@ tresult PLUGIN_API HelloWorldController::initialize (FUnknown* context)
 		//---Create Parameters------------
 		parameters.addParameter (STR16 ("Bypass"), nullptr, 1, 0,
 		                         Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsBypass,
-		                         HelloWorldParams::kBypassId);
+		                         pdvst3Params::kBypassId);
 
 		parameters.addParameter (STR16 ("Parameter 1"), STR16 ("dB"), 0, .5,
-		                         Vst::ParameterInfo::kCanAutomate, HelloWorldParams::kParamVolId, 0,
+		                         Vst::ParameterInfo::kCanAutomate, pdvst3Params::kParamVolId, 0,
 		                         STR16 ("Param1"));
 
 		parameters.addParameter (STR16 ("Parameter 2"), STR16 ("On/Off"), 1, 1.,
-		                         Vst::ParameterInfo::kCanAutomate, HelloWorldParams::kParamOnId, 0,
+		                         Vst::ParameterInfo::kCanAutomate, pdvst3Params::kParamOnId, 0,
 		                         STR16 ("Param2"));
 	}
 
@@ -47,7 +47,7 @@ tresult PLUGIN_API HelloWorldController::initialize (FUnknown* context)
 }
 
 //------------------------------------------------------------------------
-tresult PLUGIN_API HelloWorldController::terminate ()
+tresult PLUGIN_API pdvst3Controller::terminate ()
 {
 	// Here the Plug-in will be de-instantiated, last possibility to remove some memory!
 
@@ -56,7 +56,7 @@ tresult PLUGIN_API HelloWorldController::terminate ()
 }
 
 //------------------------------------------------------------------------
-tresult PLUGIN_API HelloWorldController::setComponentState (IBStream* state)
+tresult PLUGIN_API pdvst3Controller::setComponentState (IBStream* state)
 {
 	// Here you get the state of the component (Processor part)
 	if (!state)
@@ -67,12 +67,12 @@ tresult PLUGIN_API HelloWorldController::setComponentState (IBStream* state)
 	float savedParam1 = 0.f;
 	if (streamer.readFloat (savedParam1) == false)
 		return kResultFalse;
-	setParamNormalized (HelloWorldParams::kParamVolId, savedParam1);
+	setParamNormalized (pdvst3Params::kParamVolId, savedParam1);
 
 	int8 savedParam2 = 0;
 	if (streamer.readInt8 (savedParam2) == false)
 		return kResultFalse;
-	setParamNormalized (HelloWorldParams::kParamOnId, savedParam2);
+	setParamNormalized (pdvst3Params::kParamOnId, savedParam2);
 
 	// read the bypass
 	int32 bypassState;
@@ -86,7 +86,7 @@ tresult PLUGIN_API HelloWorldController::setComponentState (IBStream* state)
 }
 
 //------------------------------------------------------------------------
-tresult PLUGIN_API HelloWorldController::setState (IBStream* state)
+tresult PLUGIN_API pdvst3Controller::setState (IBStream* state)
 {
 	// Here you get the state of the controller
 
@@ -94,7 +94,7 @@ tresult PLUGIN_API HelloWorldController::setState (IBStream* state)
 }
 
 //------------------------------------------------------------------------
-tresult PLUGIN_API HelloWorldController::getState (IBStream* state)
+tresult PLUGIN_API pdvst3Controller::getState (IBStream* state)
 {
 	// Here you are asked to deliver the state of the controller (if needed)
 	// Note: the real state of your plug-in is saved in the processor
@@ -103,7 +103,7 @@ tresult PLUGIN_API HelloWorldController::getState (IBStream* state)
 }
 /*
 //------------------------------------------------------------------------
-IPlugView* PLUGIN_API HelloWorldController::createView (FIDString name)
+IPlugView* PLUGIN_API pdvst3Controller::createView (FIDString name)
 {
 	// Here the Host wants to open your editor (if you have one)
 	if (FIDStringsEqual (name, Vst::ViewType::kEditor))
@@ -116,7 +116,7 @@ IPlugView* PLUGIN_API HelloWorldController::createView (FIDString name)
 }
 */
 //------------------------------------------------------------------------
-tresult PLUGIN_API HelloWorldController::setParamNormalized (Vst::ParamID tag, Vst::ParamValue value)
+tresult PLUGIN_API pdvst3Controller::setParamNormalized (Vst::ParamID tag, Vst::ParamValue value)
 {
 	// called by host to update your parameters
 	tresult result = EditControllerEx1::setParamNormalized (tag, value);
@@ -124,7 +124,7 @@ tresult PLUGIN_API HelloWorldController::setParamNormalized (Vst::ParamID tag, V
 }
 
 //------------------------------------------------------------------------
-tresult PLUGIN_API HelloWorldController::getParamStringByValue (Vst::ParamID tag, Vst::ParamValue valueNormalized, Vst::String128 string)
+tresult PLUGIN_API pdvst3Controller::getParamStringByValue (Vst::ParamID tag, Vst::ParamValue valueNormalized, Vst::String128 string)
 {
 	// called by host to get a string for given normalized value of a specific parameter
 	// (without having to set the value!)
@@ -132,7 +132,7 @@ tresult PLUGIN_API HelloWorldController::getParamStringByValue (Vst::ParamID tag
 }
 
 //------------------------------------------------------------------------
-tresult PLUGIN_API HelloWorldController::getParamValueByString (Vst::ParamID tag, Vst::TChar* string, Vst::ParamValue& valueNormalized)
+tresult PLUGIN_API pdvst3Controller::getParamValueByString (Vst::ParamID tag, Vst::TChar* string, Vst::ParamValue& valueNormalized)
 {
 	// called by host to get a normalized value from a string representation of a specific parameter
 	// (without having to set the value!)
