@@ -1,0 +1,7 @@
+# folders
+
+base/
+build/
+cmake/
+pluginterfaces/
+public.sdk/

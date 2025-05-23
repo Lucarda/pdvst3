@@ -14,6 +14,9 @@ endif()
 option(SMTG_ENABLE_VST3_PLUGIN_EXAMPLES "Enable VST 3 Plug-in Examples" OFF)
 option(SMTG_ENABLE_VST3_HOSTING_EXAMPLES "Enable VST 3 Hosting Examples" OFF)
 option(SMTG_ENABLE_VSTGUI_SUPPORT "Enable VSTGUI Support" OFF)
+option(SMTG_CREATE_MODULE_INFO "Create the moduleinfo.json file" OFF)
+
+
 
 #-------------------------------------------------------------------------------
 # Includes
@@ -76,9 +79,12 @@ add_subdirectory(public.sdk/samples/vst-utilities)
 
 ######################
 
+# remove files from build. we replace them in our sources.
 
-
-
+file(READ "public.sdk/CMakeLists.txt" FILE_CONTENTS)
+string(REPLACE "source/main/pluginfactory.cpp" "" FILE_CONTENTS ${FILE_CONTENTS})
+string(REPLACE "source/main/pluginfactory.h" "" FILE_CONTENTS ${FILE_CONTENTS})
+file(WRITE "public.sdk/CMakeLists.txt" ${FILE_CONTENTS})
 
 
 
@@ -88,12 +94,6 @@ project(pdvst3
     DESCRIPTION "pdvst3 VST 3 Plug-in"
 )
 
-#add_subdirectory(public.sdk)
-#add_subdirectory(cmake)
-#add_subdirectory(pluginterfaces)
-#add_subdirectory(base)
-
-smtg_enable_vst3_sdk()
 
 smtg_add_vst3plugin(pdvst3
     source/version.h
@@ -105,6 +105,8 @@ smtg_add_vst3plugin(pdvst3
     source/pdvst3entry.cpp
     resource/pdvst3editor.uidesc
     source/parsefile.cpp
+    source/pdvst3pluginfactory.cpp
+	source/pdvst3pluginfactory.h
 )
 
 target_link_libraries(pdvst3
@@ -112,15 +114,7 @@ target_link_libraries(pdvst3
         sdk
 )
 
-smtg_target_add_plugin_resources(pdvst3
-    RESOURCES
 
-)
-
-smtg_target_add_plugin_snapshots (pdvst3
-    RESOURCES
-
-)
 
 smtg_target_configure_version_file(pdvst3)
 
