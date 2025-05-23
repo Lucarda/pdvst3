@@ -1,0 +1,12 @@
+[submodule "base"]
+	path = base
+	url = https://github.com/steinbergmedia/vst3_base
+[submodule "pluginterfaces"]
+	path = pluginterfaces
+	url = https://github.com/steinbergmedia/vst3_pluginterfaces
+[submodule "public.sdk"]
+	path = public.sdk
+	url = https://github.com/steinbergmedia/vst3_public_sdk
+[submodule "cmake"]
+	path = cmake
+	url = https://github.com/steinbergmedia/vst3_cmake
