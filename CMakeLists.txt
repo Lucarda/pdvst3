@@ -104,7 +104,7 @@ smtg_add_vst3plugin(pdvst3
     source/pdvst3controller.cpp
     source/pdvst3entry.cpp
     resource/pdvst3editor.uidesc
-    source/parsefile.cpp
+    source/pdvst3parsefile.cpp
     source/pdvst3pluginfactory.cpp
 	source/pdvst3pluginfactory.h
 )

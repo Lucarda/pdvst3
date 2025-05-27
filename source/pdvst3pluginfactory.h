@@ -136,58 +136,35 @@ END_FACTORY
 
 @{*/
 
-#define BEGIN_FACTORY_CLASS(FactoryClass,vendor,url,email,flags) using namespace Steinberg; \
-	SMTG_EXPORT_SYMBOL IPluginFactory* PLUGIN_API GetPluginFactory () { \
-	if (!gPluginFactory) \
-	{	static PFactoryInfo factoryInfo (vendor,url,email,flags); \
-	gPluginFactory = new FactoryClass (factoryInfo); \
-
-#define BEGIN_FACTORY(vendor,url,email,flags) using namespace Steinberg; \
+using namespace Steinberg; \
 	SMTG_EXPORT_SYMBOL IPluginFactory* PLUGIN_API GetPluginFactory () { \
 	if (!gPluginFactory) \
 	{	static PFactoryInfo factoryInfo (vendor,url,email,flags); \
 		gPluginFactory = new CPluginFactory (factoryInfo); \
 
-#define DEF_CLASS(cid,cardinality,category,name,createMethod) \
-	{ TUID lcid = cid; static PClassInfo componentClass (lcid,cardinality,category,name); \
-	gPluginFactory->registerClass (&componentClass,createMethod); }
 
-#define DEF_CLASS1(cid,cardinality,category,name,createMethod) \
-	{ static PClassInfo componentClass (cid,cardinality,category,name); \
-	gPluginFactory->registerClass (&componentClass,createMethod); }
-
-#define DEF_CLASS2(cid,cardinality,category,name,classFlags,subCategories,version,sdkVersion,createMethod) \
-	{ TUID lcid = cid; static PClassInfo2 componentClass (lcid,cardinality,category,name,classFlags,subCategories,nullptr,version,sdkVersion);\
-	gPluginFactory->registerClass (&componentClass,createMethod); }
-
-#define DEF_CLASS_W(cid,cardinality,category,name,classFlags,subCategories,version,sdkVersion,createMethod) \
-	{ TUID lcid = cid; static PClassInfoW componentClass (lcid,cardinality,category,name,classFlags,subCategories,nullptr,version,sdkVersion);\
-	gPluginFactory->registerClass (&componentClass,createMethod); }
-
-#define DEF_CLASS_W2(cid,cardinality,category,name,classFlags,subCategories,vendor,version,sdkVersion,createMethod) \
-	{ TUID lcid = cid; static PClassInfoW componentClass (lcid,cardinality,category,name,classFlags,subCategories,vendor,version,sdkVersion);\
-	gPluginFactory->registerClass (&componentClass,createMethod); }
-
-#define END_FACTORY	} else gPluginFactory->addRef (); \
-	return gPluginFactory; }
-
-#define DEF_VST3_CLASS(pluginName, pluginVst3Categories, classFlags, pluginVersion, processorCID, \
-                       processorCreateFunc, controllerCID, controllerCreateFunc)                  \
-	{                                                                                             \
-		{                                                                                         \
-			const Steinberg::TUID lcid = processorCID;                                            \
+	{                                                                                             
+		{                                                                                                                                   
 			static Steinberg::PClassInfo2 processorClass (                                        \
-			    lcid, Steinberg::PClassInfo::kManyInstances, kVstAudioEffectClass, pluginName,    \
-			    classFlags, pluginVst3Categories, 0, pluginVersion, kVstVersionString);           \
-			gPluginFactory->registerClass (&processorClass, processorCreateFunc);                 \
-		}                                                                                         \
-		{                                                                                         \
-			const Steinberg::TUID lcid = controllerCID;                                           \
+			    procUID, Steinberg::PClassInfo::kManyInstances, kVstAudioEffectClass, pluginName,    \
+			    classFlags, pluginVst3Categories, 0, pluginVersion, kVstVersionString);           
+			gPluginFactory->registerClass (&processorClass, processorCreateFunc);                 
+		}                                                                                        
+		{                                                                                                                                  
 			static Steinberg::PClassInfo2 controllerClass (                                       \
-			    lcid, Steinberg::PClassInfo::kManyInstances, kVstComponentControllerClass,        \
-			    pluginName, 0, "", 0, pluginVersion, kVstVersionString);                          \
-			gPluginFactory->registerClass (&controllerClass, controllerCreateFunc);               \
-		}                                                                                         \
+			    contUID, Steinberg::PClassInfo::kManyInstances, kVstComponentControllerClass,        \
+			    pluginName, 0, "", 0, pluginVersion, kVstVersionString);                         
+			gPluginFactory->registerClass (&controllerClass, controllerCreateFunc);              
+		}                                                                                        
 	}
+
+
+
+	} else gPluginFactory->addRef (); 
+	return gPluginFactory; 
+}
+
+
+
 
 /** @} */
