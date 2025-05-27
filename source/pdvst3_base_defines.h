@@ -25,13 +25,7 @@
 
 extern char globalPluginName[MAXSTRLEN];
 extern char globalPluginVersion[MAXSTRLEN];
-//extern Steinberg::FUID procUID;
-//extern Steinberg::FUID contUID;
 extern unsigned int integersP[4];
 extern unsigned int integersC[4];
-
-//extern long procUID;
-//extern long contUID;
-
 extern Steinberg::FUID procUID;
 extern Steinberg::FUID contUID;
