@@ -1,3 +1,11 @@
+###################
+
+PLUGNAME = pdvst3
+VERSION = 0.0.0
+AUTHOR = Me
+URL = http://example.org
+MAIL = info@example.com
+
 # Number of audio input and output channels
 CHANNELS = 2
 
@@ -48,9 +56,4 @@ PROGRAM = -6dB
 
 PARAMETER0 = 0.94
 
-###################
 
-VERSION = "0.0.0"
-AUTHOR = "Me"
-URL = "http://example.org"
-MAIL = "info@example.com"

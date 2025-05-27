@@ -22,10 +22,3 @@
 #define MAXSTRINGSIZE 4096
 #define MAXMIDIQUEUESIZE 1024
 #define MAXMIDIOUTQUEUESIZE 1024
-
-extern char globalPluginName[MAXSTRLEN];
-extern char globalPluginVersion[MAXSTRLEN];
-extern unsigned int integersP[4];
-extern unsigned int integersC[4];
-extern Steinberg::FUID procUID;
-extern Steinberg::FUID contUID;

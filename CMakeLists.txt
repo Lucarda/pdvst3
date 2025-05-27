@@ -1,8 +1,6 @@
 
 ####################
 
-
-
 cmake_minimum_required (VERSION 3.25.0)
 
 # Specify the minimum version of the target platform
@@ -16,8 +14,6 @@ option(SMTG_ENABLE_VST3_HOSTING_EXAMPLES "Enable VST 3 Hosting Examples" OFF)
 option(SMTG_ENABLE_VSTGUI_SUPPORT "Enable VSTGUI Support" OFF)
 option(SMTG_CREATE_MODULE_INFO "Create the moduleinfo.json file" OFF)
 
-
-
 #-------------------------------------------------------------------------------
 # Includes
 #-------------------------------------------------------------------------------
@@ -30,13 +26,11 @@ include(SMTG_VST3_SDK)
 # SDK Project
 #-------------------------------------------------------------------------------
 
-
 project(vstsdk
     VERSION 3.7.13
     DESCRIPTION "Steinberg VST 3 Software Development Kit"
     HOMEPAGE_URL "https://www.steinberg.net"
 )
-
 
 smtg_setup_platform_toolset()
 smtg_setup_symbol_visibility()
@@ -86,14 +80,10 @@ string(REPLACE "source/main/pluginfactory.cpp" "" FILE_CONTENTS ${FILE_CONTENTS}
 string(REPLACE "source/main/pluginfactory.h" "" FILE_CONTENTS ${FILE_CONTENTS})
 file(WRITE "public.sdk/CMakeLists.txt" ${FILE_CONTENTS})
 
-
-
-
 project(pdvst3
     VERSION 1.0.0.0
     DESCRIPTION "pdvst3 VST 3 Plug-in"
 )
-
 
 smtg_add_vst3plugin(pdvst3
 
@@ -103,7 +93,7 @@ smtg_add_vst3plugin(pdvst3
     source/pdvst3controller.cpp
     source/pdvst3parsefile.cpp
     source/pdvst3pluginfactory.cpp
-	source/pdvst3pluginfactory.h
+    source/pdvst3pluginfactory.h
 )
 
 target_link_libraries(pdvst3
@@ -111,12 +101,13 @@ target_link_libraries(pdvst3
         sdk
 )
 
+if(1)
 add_custom_command(
     TARGET pdvst3
-    PRE_LINK         # This will run before the build
-    COMMAND ${CMAKE_COMMAND} -E copy source/config.txt ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+    PRE_LINK
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/source/config.txt ${CMAKE_CURRENT_BINARY_DIR}/VST3/${CMAKE_BUILD_TYPE}/pdvst3.vst3
 )
-
+endif()
 
 smtg_target_configure_version_file(pdvst3)
 
@@ -130,7 +121,7 @@ if(SMTG_MAC)
         "--pluginfolder;$(BUILT_PRODUCTS_DIR)"
     )
 elseif(SMTG_WIN)
-    target_sources(pdvst3 PRIVATE 
+    target_sources(pdvst3 PRIVATE
         resource/win32resource.rc
     )
     if(MSVC)

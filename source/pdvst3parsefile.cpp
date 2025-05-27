@@ -18,11 +18,11 @@
 ** jsarlo@ucsd.edu
 */
 #if _WIN32
-	#include <windows.h>
+    #include <windows.h>
 #else
-	#include <dlfcn.h>
-	#include <iostream>
-	#include <fstream>
+    #include <dlfcn.h>
+    #include <iostream>
+    #include <fstream>
 #endif
 #include <math.h>
 //#include "pdvst.hpp"
@@ -73,7 +73,7 @@ bool globalProgramsAreChunks = false;
 
 #if SMTG_OS_WINDOWS
 extern Steinberg::tchar gPath;
-#elif SMTG_OS_MACOS 
+#elif SMTG_OS_MACOS
 extern char gPath;
 #elif SMTG_OS_LINUX
 char linuxname[MAXFILENAMELEN];
@@ -87,7 +87,7 @@ void parseSetupFile();
 void doFUIDs();
 
 
-#if SMTG_OS_LINUX 
+#if SMTG_OS_LINUX
 __attribute__((constructor))
 void startup(void)
 {
@@ -143,7 +143,7 @@ void parseSetupFile()
     char vstSetupFileName[MAXSTRLEN];
     char buf[MAXSTRLEN];
     int i, equalPos, progNum = -1, gotfile = -1;
-    
+
 
     #if _WIN32     // find filepaths (Windows)
 
@@ -160,7 +160,7 @@ void parseSetupFile()
         // main folder
         snprintf(buf, strlen(globalContentPath)-1, "%s", globalContentPath);
         *(strrchr(buf, '/') + 1) = 0;
-        sprintf(globalPluginPath, "%s", buf);     
+        sprintf(globalPluginPath, "%s", buf);
         // config file
         sprintf(globalConfigFile, "%s%s", globalPluginPath, CONFIGFILE);
         //name of plug
@@ -168,8 +168,8 @@ void parseSetupFile()
         // remove extension from name
         if (strstr(strlowercase(globalPluginName), ".vst3"))
             *(strstr(strlowercase(globalPluginName), ".vst3")) = 0;
-        sprintf(buf, "%s", globalPluginName); 
-        strcpy(globalPluginName, strrchr(buf, '/') + 1); 
+        sprintf(buf, "%s", globalPluginName);
+        strcpy(globalPluginName, strrchr(buf, '/') + 1);
     }
     #else // find filepaths (Unix)
     // get paths
@@ -185,7 +185,7 @@ void parseSetupFile()
         // main folder
         snprintf(buf, strlen(globalContentPath)-1, "%s", globalContentPath);
         *(strrchr(buf, '/') + 1) = 0;
-        sprintf(globalPluginPath, "%s", buf);     
+        sprintf(globalPluginPath, "%s", buf);
         // config file
         sprintf(globalConfigFile, "%s%s", globalPluginPath, CONFIGFILE);
         //name of plug
@@ -193,13 +193,15 @@ void parseSetupFile()
         // remove extension from name
         if (strstr(globalPluginName, ".vst3"))
             *(strstr(globalPluginName, ".vst3")) = 0;
-        sprintf(buf, "%s", globalPluginName); 
+        sprintf(buf, "%s", globalPluginName);
         strcpy(globalPluginName, strrchr(buf, '/') + 1);
-        
-        sprintf(globalPluginVersion, "0.0.1", buf);
-      
+
+
+
     }
     #endif // unix
+
+    sprintf(globalPluginVersion, "0.0.1", buf);
 
     // initialize program info
     //strcpy(globalProgram[0].name, "Default");
@@ -210,13 +212,8 @@ void parseSetupFile()
         strcpy(globalVstParamName[i], "<unnamed>");
     globalNPrograms = 1;
 
-    // check existence of setup file in vst-subfolder
-    
-    gotfile == access(vstSetupFileName, F_OK );
-
-    
-    if( gotfile == 0)
-        setupFile = fopen(vstSetupFileName, "r");
+//
+    setupFile = fopen(globalConfigFile, "r");
 
     if (setupFile) {
         while (fgets(line, sizeof(line), setupFile))
@@ -369,28 +366,34 @@ void parseSetupFile()
                     {
                         globalProgramsAreChunks = false;
                     }
+                }
                 // plug version
                 if (strcmp(param, "version") == 0)
                 {
                     strcpy(globalPluginVersion, value);
-                } 
+                }
                 // author
                 if (strcmp(param, "author") == 0)
                 {
                     strcpy(globalAuthor, value);
-                } 
+                }
                 // url
                 if (strcmp(param, "url") == 0)
                 {
                     strcpy(globalUrl, value);
-                } 
+                }
                 // mail
                 if (strcmp(param, "mail") == 0)
                 {
                     strcpy(globalMail, value);
-                }              
-            }          
-        }      
+                }
+                // plugname
+                if (strcmp(param, "plugname") == 0)
+                {
+                    strcpy(globalPluginName, value);
+                }
+            }
+        }
     }
     if (setupFile) fclose(setupFile);
 
@@ -400,13 +403,14 @@ void parseSetupFile()
     file_pointer = fopen("vstMainDebug.txt", "w");
     fprintf(file_pointer, "globalPluginName: %s\n", globalPluginName);
     fprintf(file_pointer, "vstDataPath: %s\n", vstDataPath);
-    fprintf(file_pointer, "vstSetupFileName: %s\n", vstSetupFileName);
     fprintf(file_pointer, "globalPluginPath: %s\n", globalPluginPath);
     fprintf(file_pointer, "globalPureDataPath: %s\n", globalPureDataPath);
     fprintf(file_pointer, "globalSchedulerPath: %s\n", globalSchedulerPath);
     fprintf(file_pointer, "globalContentPath: %s\n", globalContentPath);
     fprintf(file_pointer, "globalConfigFile: %s\n", globalConfigFile);
     fprintf(file_pointer, "globalPluginId: %d\n", globalPluginId);
+    fprintf(file_pointer, "globalAuthor: %s\n", globalAuthor);
+    fprintf(file_pointer, "gotfile: %d\n", gotfile);
     fclose(file_pointer);
 #endif
 }
@@ -414,25 +418,25 @@ void parseSetupFile()
 void convertVST2UID_To_FUID (Steinberg::FUID& newOne, Steinberg::int32 myVST2UID_4Chars, const char* pluginName, bool forControllerUID)
 {
     char uidString[33];
- 
+
     Steinberg::int32 vstfxid;
     if (forControllerUID)
         vstfxid = (('V' << 16) | ('S' << 8) | 'E');
     else
         vstfxid = (('V' << 16) | ('S' << 8) | 'T');
- 
+
     char vstfxidStr[7] = {0};
     sprintf (vstfxidStr, "%06X", vstfxid);
- 
+
     char uidStr[9] = {0};
     sprintf (uidStr, "%08X", myVST2UID_4Chars);
- 
+
     strcpy (uidString, vstfxidStr);
     strcat (uidString, uidStr);
- 
+
     char nameidStr[3] = {0};
     size_t len = strlen (pluginName);
- 
+
     // !!!the pluginName has to be lower case!!!!
     for (Steinberg::uint16 i = 0; i <= 8; i++)
     {
@@ -450,21 +454,9 @@ void convertVST2UID_To_FUID (Steinberg::FUID& newOne, Steinberg::int32 myVST2UID
 #endif
 }
 
-
-
 void doFUIDs()
 {
 convertVST2UID_To_FUID (procUID, globalPluginId, globalPluginName, false);
 convertVST2UID_To_FUID (contUID, globalPluginId, globalPluginName, true);
 }
-
-
-
-
-
-
-
-
-
-
 
