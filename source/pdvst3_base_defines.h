@@ -24,6 +24,7 @@
 #define MAXMIDIOUTQUEUESIZE 1024
 
 extern char globalPluginName[MAXSTRLEN];
+extern char globalPluginVersion[MAXSTRLEN];
 //extern Steinberg::FUID procUID;
 //extern Steinberg::FUID contUID;
 extern unsigned int integersP[4];
@@ -32,5 +33,5 @@ extern unsigned int integersC[4];
 //extern long procUID;
 //extern long contUID;
 
-//static Steinberg::FUID procUID (0x32C50013, 0xFF5F5CB4, 0x871C312D, 0xB4F42368);
-//static Steinberg::FUID contUID (0xAE34DD83, 0x308259DF, 0xA0D88E2F, 0xB1C1CB8B);
+extern Steinberg::FUID procUID;
+extern Steinberg::FUID contUID;

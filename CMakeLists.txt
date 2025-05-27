@@ -96,14 +96,14 @@ project(pdvst3
 
 
 smtg_add_vst3plugin(pdvst3
-    source/version.h
-    source/pdvst3cids.h
+    #source/version.h
+    #source/pdvst3cids.h
     source/pdvst3processor.h
     source/pdvst3processor.cpp
     source/pdvst3controller.h
     source/pdvst3controller.cpp
-    source/pdvst3entry.cpp
-    resource/pdvst3editor.uidesc
+    #source/pdvst3entry.cpp
+    #resource/pdvst3editor.uidesc
     source/pdvst3parsefile.cpp
     source/pdvst3pluginfactory.cpp
 	source/pdvst3pluginfactory.h

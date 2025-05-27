@@ -37,6 +37,11 @@
 #pragma once
 
 #include "pluginterfaces/base/ipluginbase.h"
+#include "pluginterfaces/vst/ivstaudioprocessor.h"
+#include "pluginterfaces/vst/ivsteditcontroller.h"
+#include "pdvst3_base_defines.h"
+#include "pdvst3processor.h"
+#include "pdvst3controller.h"
 
 namespace Steinberg {
 
@@ -136,25 +141,31 @@ END_FACTORY
 
 @{*/
 
+extern void parseSetupFile();
+extern void doFUIDs();
+
 using namespace Steinberg; \
-	SMTG_EXPORT_SYMBOL IPluginFactory* PLUGIN_API GetPluginFactory () { \
+	SMTG_EXPORT_SYMBOL IPluginFactory* PLUGIN_API GetPluginFactory () {
 	if (!gPluginFactory) \
-	{	static PFactoryInfo factoryInfo (vendor,url,email,flags); \
-		gPluginFactory = new CPluginFactory (factoryInfo); \
+	{	
+		parseSetupFile();
+		doFUIDs();
+		static PFactoryInfo factoryInfo ("pdvst3vendor","pdvst3url","pdvst3mail",0); 
+		gPluginFactory = new CPluginFactory (factoryInfo); 
 
 
 	{                                                                                             
 		{                                                                                                                                   
-			static Steinberg::PClassInfo2 processorClass (                                        \
-			    procUID, Steinberg::PClassInfo::kManyInstances, kVstAudioEffectClass, pluginName,    \
-			    classFlags, pluginVst3Categories, 0, pluginVersion, kVstVersionString);           
-			gPluginFactory->registerClass (&processorClass, processorCreateFunc);                 
+			static Steinberg::PClassInfo2 processorClass (                                        
+			    procUID, Steinberg::PClassInfo::kManyInstances, kVstAudioEffectClass, globalPluginName,    \
+			    Vst::kDistributable, "Fx", 0, globalPluginVersion, kVstVersionString);           
+			gPluginFactory->registerClass (&processorClass, pdvst3Processor::createInstance);                 
 		}                                                                                        
 		{                                                                                                                                  
-			static Steinberg::PClassInfo2 controllerClass (                                       \
+			static Steinberg::PClassInfo2 controllerClass (                                       
 			    contUID, Steinberg::PClassInfo::kManyInstances, kVstComponentControllerClass,        \
-			    pluginName, 0, "", 0, pluginVersion, kVstVersionString);                         
-			gPluginFactory->registerClass (&controllerClass, controllerCreateFunc);              
+			    globalPluginName, 0, "", 0, globalPluginVersion, kVstVersionString);                         
+			gPluginFactory->registerClass (&controllerClass, pdvst3Controller::createInstance);              
 		}                                                                                        
 	}
 

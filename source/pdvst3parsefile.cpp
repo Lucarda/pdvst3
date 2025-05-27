@@ -55,6 +55,7 @@ char globalExternalLib[MAXEXTERNS][MAXSTRLEN];
 char globalVstParamName[MAXPARAMS][MAXSTRLEN];
 char globalPluginPath[MAXFILENAMELEN];
 char globalPluginName[MAXSTRLEN];
+char globalPluginVersion[MAXSTRLEN];
 char globalPdFile[MAXFILENAMELEN];
 char globalPureDataPath[MAXFILENAMELEN];
 char globalHostPdvstPath[MAXFILENAMELEN];
@@ -67,9 +68,21 @@ int globalCustomGuiHeight= 150;
 //pdvstProgram globalProgram[MAXPROGRAMS];
 bool globalProgramsAreChunks = false;
 
+#if SMTG_OS_WINDOWS
+extern Steinberg::tchar gPath;
+#elif SMTG_OS_MACOS 
+extern char gPath;
+#elif SMTG_OS_LINUX
+char linuxname[MAXFILENAMELEN];
+#endif
 
-//Steinberg::FUID procUID;
-//Steinberg::FUID contUID;
+
+//Steinberg::FUID procUID (0x32C50013, 0xFF5F5CB4, 0x871C312D, 0xB4F42368);
+//Steinberg::FUID contUID (0xAE34DD83, 0x308259DF, 0xA0D88E2F, 0xB1C1CB8B);
+
+
+Steinberg::FUID procUID;
+Steinberg::FUID contUID;
 
 /*
 long procUID;
@@ -87,40 +100,20 @@ void parseSetupFile();
 void doFUIDs();
 
 // later
-char unixname[MAXFILENAMELEN];
+//char unixname[MAXFILENAMELEN];
 
 
-extern "C" {
-#if _WIN32
-void* hInstance;
-BOOL WINAPI DllMain(HINSTANCE hInst, DWORD dwReason, LPVOID lpvReserved)
-{
-    hInstance = hInst;
-    switch( dwReason )
-    {
-        case DLL_PROCESS_ATTACH:
-        // Initialize once for each new process.
-        // Return FALSE to fail DLL load.
-        parseSetupFile();
-        break;
-    }
-    return 1;
-}
 
-#else
-
+#ifdef __linux__ 
 __attribute__((constructor))
 void startup(void)
 {
     Dl_info dl_info;
     dladdr((void *)startup, &dl_info);
-    strcpy(unixname, dl_info.dli_fname);
-    parseSetupFile();
-    doFUIDs();
+    strcpy(linuxname, dl_info.dli_fname);
 }
-
 #endif
-} // extern "C"
+
 
 
 char *trimWhitespace(char *str)
@@ -170,9 +163,6 @@ void parseSetupFile()
     
 
     #if _WIN32     // find filepaths (Windows)
-    GetModuleFileName((HMODULE)hInstance,
-                      (LPTSTR)tFileName,
-                      (DWORD)MAXFILENAMELEN);
 
     // get paths
     if (1)
@@ -203,7 +193,7 @@ void parseSetupFile()
     // get paths
     if (1)
     {
-        strcpy(vstDataPath, unixname);
+        strcpy(vstDataPath, linuxname);
         *(strrchr(vstDataPath, '/') + 1) = 0;
         sprintf(globalSchedulerPath, "%s", vstDataPath);
         // contents folder
@@ -224,6 +214,8 @@ void parseSetupFile()
             *(strstr(globalPluginName, ".vst3")) = 0;
         sprintf(buf, "%s", globalPluginName); 
         strcpy(globalPluginName, strrchr(buf, '/') + 1);
+        
+        sprintf(globalPluginVersion, "0.0.1", buf);
       
     }
     #endif // unix
@@ -422,7 +414,7 @@ void parseSetupFile()
 
 // this did't work.
 
-/*
+
 void convertVST2UID_To_FUID (Steinberg::FUID& newOne, Steinberg::int32 myVST2UID_4Chars, const char* pluginName, bool forControllerUID)
 {
     char uidString[33];
@@ -462,9 +454,9 @@ void convertVST2UID_To_FUID (Steinberg::FUID& newOne, Steinberg::int32 myVST2UID
 #endif
 }
 
-*/
 
 
+/*
 void convertVST2UID_To_FUID (char *newOne, Steinberg::int32 myVST2UID_4Chars, const char* pluginName, bool forControllerUID)
 {
     char uidString[33];
@@ -522,30 +514,30 @@ int convert(const char *hex_string, unsigned int *integers)
         // Convert from hex string to unsigned int
         integers[i] = (unsigned int)strtoul(part, NULL, 16);
     }
-/*
+
     // Print the results
     for (int i = 0; i < num_ints; i++) {
         printf("Integer %d: %u\n", i + 1, integers[i]);
     }
-*/
+
     return 0;
 }
 
-
+*/
 
 void doFUIDs()
 {
-//convertVST2UID_To_FUID (procUID, globalPluginId, globalPluginName, false);
-//convertVST2UID_To_FUID (contUID, globalPluginId, globalPluginName, true);
+convertVST2UID_To_FUID (procUID, globalPluginId, globalPluginName, false);
+convertVST2UID_To_FUID (contUID, globalPluginId, globalPluginName, true);
 
-
+/*
 
 convertVST2UID_To_FUID (procUIDNN, globalPluginId, globalPluginName, false);
 convertVST2UID_To_FUID (contUIDNN, globalPluginId, globalPluginName, true);
 
 convert(procUIDNN, integersP);
 convert(contUIDNN, integersC);
-
+*/
 
 #if 1
     // debug 
