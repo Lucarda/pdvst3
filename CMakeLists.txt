@@ -111,6 +111,11 @@ target_link_libraries(pdvst3
         sdk
 )
 
+add_custom_command(
+    TARGET pdvst3
+    PRE_LINK         # This will run before the build
+    COMMAND ${CMAKE_COMMAND} -E copy source/config.txt ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+)
 
 
 smtg_target_configure_version_file(pdvst3)
