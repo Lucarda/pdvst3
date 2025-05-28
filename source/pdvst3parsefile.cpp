@@ -19,27 +19,41 @@
 */
 #if _WIN32
     #include <windows.h>
+	#include <io.h>
 #else
     #include <dlfcn.h>
-    #include <iostream>
     #include <fstream>
+	#include <unistd.h>
 #endif
 #include <math.h>
 //#include "pdvst.hpp"
-#include <unistd.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
 #include <cstdint>
 #include <stdlib.h>
-
+#include <iostream>
 
 #include "pluginterfaces/base/funknown.h"
 #include "pluginterfaces/vst/vsttypes.h"
 #include "pdvst3_base_defines.h"
 
 #define CONFIGFILE "config.txt"
+
+
+// for gpath
+
+//#include "pluginterfaces/base/fplatform.h"
+#include "public.sdk/source/vst/utility/stringconvert.h"
+//#include "public.sdk/source/common/commonstringconvert.h"
+//#include <codecvt>
+//#include <istream>
+//#include <locale>
+
+
+
 
 
 //static AudioEffect *effect = 0;
@@ -71,13 +85,15 @@ int globalCustomGuiHeight= 150;
 //pdvstProgram globalProgram[MAXPROGRAMS];
 bool globalProgramsAreChunks = false;
 
+
 #if SMTG_OS_WINDOWS
-extern Steinberg::tchar gPath;
+extern Steinberg::tchar gPath[2048];
 #elif SMTG_OS_MACOS
-extern char gPath;
+extern char gPath[2048];
 #elif SMTG_OS_LINUX
 char linuxname[MAXFILENAMELEN];
 #endif
+
 
 Steinberg::FUID procUID;
 Steinberg::FUID contUID;
@@ -150,16 +166,21 @@ void parseSetupFile()
     // get paths
     if (1)
     {
-        strcpy(vstDataPath, tFileName);
-        *(strrchr(vstDataPath, '/') + 1) = 0;
+		char bufA[2048];
+		int len = wcslen((wchar_t *)gPath);
+		wcstombs(bufA, (wchar_t *)gPath, len);
+
+
+		strcpy(vstDataPath, bufA);
+        *(strrchr(vstDataPath, '\\') + 1) = 0;
         sprintf(globalSchedulerPath, "%s", vstDataPath);
         // contents folder
         snprintf(buf, strlen(vstDataPath)-1, "%s", vstDataPath);
-        *(strrchr(buf, '/') + 1) = 0;
+        *(strrchr(buf, '\\') + 1) = 0;
         sprintf(globalContentPath, "%s", buf);
         // main folder
         snprintf(buf, strlen(globalContentPath)-1, "%s", globalContentPath);
-        *(strrchr(buf, '/') + 1) = 0;
+        *(strrchr(buf, '\\') + 1) = 0;
         sprintf(globalPluginPath, "%s", buf);
         // config file
         sprintf(globalConfigFile, "%s%s", globalPluginPath, CONFIGFILE);
@@ -169,7 +190,7 @@ void parseSetupFile()
         if (strstr(strlowercase(globalPluginName), ".vst3"))
             *(strstr(strlowercase(globalPluginName), ".vst3")) = 0;
         sprintf(buf, "%s", globalPluginName);
-        strcpy(globalPluginName, strrchr(buf, '/') + 1);
+        strcpy(globalPluginName, strrchr(buf, '\\') + 1);
     }
     #else // find filepaths (Unix)
     // get paths
@@ -397,7 +418,7 @@ void parseSetupFile()
     }
     if (setupFile) fclose(setupFile);
 
-#if 1
+#if 0
     // vstmain debug file
     FILE *file_pointer;
     file_pointer = fopen("vstMainDebug.txt", "w");
@@ -410,7 +431,6 @@ void parseSetupFile()
     fprintf(file_pointer, "globalConfigFile: %s\n", globalConfigFile);
     fprintf(file_pointer, "globalPluginId: %d\n", globalPluginId);
     fprintf(file_pointer, "globalAuthor: %s\n", globalAuthor);
-    fprintf(file_pointer, "gotfile: %d\n", gotfile);
     fclose(file_pointer);
 #endif
 }
