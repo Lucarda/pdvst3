@@ -3,6 +3,9 @@
 
 cmake_minimum_required (VERSION 3.25.0)
 
+
+#############################
+
 # Specify the minimum version of the target platform
 if(NOT DEFINED ENV{MACOSX_DEPLOYMENT_TARGET})
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "macOS deployment target")
@@ -85,6 +88,8 @@ project(pdvst3
     DESCRIPTION "pdvst3 VST 3 Plug-in"
 )
 
+
+
 smtg_add_vst3plugin(pdvst3
 
     source/pdvst3processor.h
@@ -101,11 +106,29 @@ target_link_libraries(pdvst3
         sdk
 )
 
+add_dependencies(pdvst3 pdvst3scheduler)
+
 if(1)
 add_custom_command(
     TARGET pdvst3
     PRE_LINK
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/source/config.txt ${CMAKE_CURRENT_BINARY_DIR}/VST3/${CMAKE_BUILD_TYPE}/pdvst3.vst3
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/source/config.txt
+		${CMAKE_CURRENT_BINARY_DIR}/VST3/${CMAKE_BUILD_TYPE}/pdvst3.vst3
+)
+endif()
+
+if(1)
+add_custom_command(
+    TARGET pdvst3
+    POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E rename
+		${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/libpdvst3scheduler.so
+		${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/pdvst3scheduler.pd_linux
+    COMMAND ${CMAKE_COMMAND} -E copy 
+		${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/pdvst3scheduler.pd_linux
+		${CMAKE_CURRENT_BINARY_DIR}/VST3/${CMAKE_BUILD_TYPE}/pdvst3.vst3/Contents
+
+		
 )
 endif()
 
@@ -133,4 +156,21 @@ elseif(SMTG_WIN)
         )
     endif()
 endif(SMTG_MAC)
+
+
+########## SCHEDULER ##########
+
+add_subdirectory(source/scheduler)
+
+######### print variables #########
+
+if(0)
+get_cmake_property(_variableNames VARIABLES)
+list (SORT _variableNames)
+foreach (_variableName ${_variableNames})
+    message(STATUS "${_variableName}=${${_variableName}}")
+endforeach()
+endif()
+
+
 
