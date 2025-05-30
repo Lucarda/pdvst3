@@ -825,6 +825,10 @@ int scheduler()
     return 1;
 }
 
+
+#if _MSC_VER
+__declspec(dllexport)
+#endif
 int pd_extern_sched(char *flags)
 {
     int i, argc;

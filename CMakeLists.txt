@@ -117,18 +117,24 @@ add_custom_command(
 )
 endif()
 
-if(1)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 add_custom_command(
     TARGET pdvst3
-    POST_BUILD
+    PRE_LINK
 	COMMAND ${CMAKE_COMMAND} -E rename
 		${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/libpdvst3scheduler.so
 		${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/pdvst3scheduler.pd_linux
     COMMAND ${CMAKE_COMMAND} -E copy 
 		${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/pdvst3scheduler.pd_linux
 		${CMAKE_CURRENT_BINARY_DIR}/VST3/${CMAKE_BUILD_TYPE}/pdvst3.vst3/Contents
-
-		
+)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+add_custom_command(
+    TARGET pdvst3
+	PRE_LINK
+    COMMAND ${CMAKE_COMMAND} -E copy 
+		${CMAKE_CURRENT_BINARY_DIR}/bin/pdvst3scheduler.dll
+		${CMAKE_CURRENT_BINARY_DIR}/VST3/${CMAKE_BUILD_TYPE}/pdvst3.vst3/Contents
 )
 endif()
 
@@ -172,5 +178,6 @@ foreach (_variableName ${_variableNames})
 endforeach()
 endif()
 
-
-
+if(0)
+	smtg_target_dump_plugin_package_variables(pdvst3) 
+endif()
