@@ -1,10 +1,6 @@
 
-####################
-
 cmake_minimum_required (VERSION 3.25.0)
 
-
-#############################
 
 # Specify the minimum version of the target platform
 if(NOT DEFINED ENV{MACOSX_DEPLOYMENT_TARGET})
@@ -74,7 +70,8 @@ add_subdirectory(public.sdk/samples/vst-utilities)
 
 
 
-######################
+#------pdvst3------------------------------------------
+
 
 # remove files from build. we replace them in our sources.
 
@@ -88,10 +85,7 @@ project(pdvst3
     DESCRIPTION "pdvst3 VST 3 Plug-in"
 )
 
-
-
 smtg_add_vst3plugin(pdvst3
-
     source/pdvst3processor.h
     source/pdvst3processor.cpp
     source/pdvst3controller.h
@@ -108,33 +102,37 @@ target_link_libraries(pdvst3
 
 add_dependencies(pdvst3 pdvst3scheduler)
 
-if(1)
+#set folders variables
+set(FOLDER_MAIN ${CMAKE_CURRENT_BINARY_DIR}/VST3/${CMAKE_BUILD_TYPE}/pdvst3.vst3)
+set(FOLDER_RESOURCES ${CMAKE_CURRENT_BINARY_DIR}/VST3/${CMAKE_BUILD_TYPE}/pdvst3.vst3/Contents/Resources)
+
+
+# copy files before linking
 add_custom_command(
     TARGET pdvst3
     PRE_LINK
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/source/config.txt
-		${CMAKE_CURRENT_BINARY_DIR}/VST3/${CMAKE_BUILD_TYPE}/pdvst3.vst3
+    ${FOLDER_MAIN}
 )
-endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 add_custom_command(
     TARGET pdvst3
     PRE_LINK
-	COMMAND ${CMAKE_COMMAND} -E rename
-		${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/libpdvst3scheduler.so
-		${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/pdvst3scheduler.pd_linux
-    COMMAND ${CMAKE_COMMAND} -E copy 
-		${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/pdvst3scheduler.pd_linux
-		${CMAKE_CURRENT_BINARY_DIR}/VST3/${CMAKE_BUILD_TYPE}/pdvst3.vst3/Contents
+    COMMAND ${CMAKE_COMMAND} -E rename
+        ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/libpdvst3scheduler.so
+        ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/pdvst3scheduler.pd_linux
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/pdvst3scheduler.pd_linux
+        ${FOLDER_RESOURCES}
 )
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 add_custom_command(
     TARGET pdvst3
-	PRE_LINK
-    COMMAND ${CMAKE_COMMAND} -E copy 
-		${CMAKE_CURRENT_BINARY_DIR}/bin/pdvst3scheduler.dll
-		${CMAKE_CURRENT_BINARY_DIR}/VST3/${CMAKE_BUILD_TYPE}/pdvst3.vst3/Contents
+    PRE_LINK
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_BINARY_DIR}/bin/pdvst3scheduler.dll
+        ${FOLDER_RESOURCES}
 )
 endif()
 
@@ -163,13 +161,10 @@ elseif(SMTG_WIN)
     endif()
 endif(SMTG_MAC)
 
-
-########## SCHEDULER ##########
-
+# scheduler
 add_subdirectory(source/scheduler)
 
-######### print variables #########
-
+# print variables
 if(0)
 get_cmake_property(_variableNames VARIABLES)
 list (SORT _variableNames)
@@ -179,5 +174,6 @@ endforeach()
 endif()
 
 if(0)
-	smtg_target_dump_plugin_package_variables(pdvst3) 
+    smtg_target_dump_plugin_package_variables(pdvst3)
 endif()
+

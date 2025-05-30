@@ -2,32 +2,27 @@ cmake_minimum_required (VERSION 3.25.0)
 
 project(pdvst3scheduler C)
 
-#set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-
-
 # Specify the DLL source files
 add_library(pdvst3scheduler SHARED
-	vstschedlib.c
-	cross-helper.c
+    vstschedlib.c
+    cross-helper.c
 )
 
-target_include_directories(pdvst3scheduler PUBLIC 
-	pd-sources 
-	../
+target_include_directories(pdvst3scheduler PUBLIC
+    pd-sources
+    ../
 )
-
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-	set(CMAKE_C_FLAGS "-DPD_WATCHDOG=1")
-	target_link_libraries(pdvst3scheduler PUBLIC
-		-lpthread 
-		-lc 
-		-lrt
+    set(CMAKE_C_FLAGS "-DPD_WATCHDOG=1")
+    target_link_libraries(pdvst3scheduler PUBLIC
+        -lpthread
+        -lc
+        -lrt
 )
 
 elseif(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-	target_link_libraries(pdvst3scheduler PRIVATE 
-	${CMAKE_CURRENT_SOURCE_DIR}/pd-sources/pd.lib
+    target_link_libraries(pdvst3scheduler PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/pd-sources/pd.lib
 )
-
 endif()
