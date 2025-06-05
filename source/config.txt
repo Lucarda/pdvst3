@@ -14,7 +14,7 @@ MAIL = info@example.com
 # Installation directory of puredata (optional)
 # If non specified, will search in  <plugin_dir>/../.pd
 PDPATH_LINUX = ~/Downloads/pure-data/
-PDPATH_MAC = 
+PDPATH_MAC = /Applications/Pd-0.53-1.app
 PDPATH_WIN = C:\Program Files\Pd
 
 # Number of audio input and output channels

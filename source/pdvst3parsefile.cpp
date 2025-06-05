@@ -192,15 +192,29 @@ void parseSetupFile()
         sprintf(buf, "%s", globalPluginName);
         strcpy(globalPluginName, strrchr(buf, '\\') + 1);
     }
-    #else // find filepaths (Unix)
-    // get paths
+    #elif __APPLE__
+    // find filepaths (macOS)
+	if (1)
+    {	
+		strcpy(vstDataPath, gPath);
+		sprintf(globalSchedulerPath, "%s/Contents/Resources/", vstDataPath);
+		sprintf(globalContentPath, "%s/Contents/", vstDataPath);
+		sprintf(globalPluginPath, "%s", vstDataPath);
+		sprintf(globalConfigFile, "%s/%s", vstDataPath, CONFIGFILE);
+		//name of plug
+        sprintf(globalPluginName, "%s", vstDataPath);
+        // remove extension from name
+        if (strstr(globalPluginName, ".vst3"))
+            *(strstr(globalPluginName, ".vst3")) = 0;
+        sprintf(buf, "%s", globalPluginName);
+        strcpy(globalPluginName, strrchr(buf, '/') + 1);
+		
+    }
+    #else
+    // find filepaths (linux)
     if (1)
     {
-        #ifdef __APPLE__
-        strcpy(vstDataPath, gPath); // fix this later
-        #else
         strcpy(vstDataPath, linuxname);
-        #endif
         *(strrchr(vstDataPath, '/') + 1) = 0;
         // contents folder
         snprintf(buf, strlen(vstDataPath)-1, "%s", vstDataPath);
@@ -452,6 +466,9 @@ void parseSetupFile()
     fprintf(file_pointer, "globalConfigFile: %s\n", globalConfigFile);
     fprintf(file_pointer, "globalPluginId: %d\n", globalPluginId);
     fprintf(file_pointer, "globalAuthor: %s\n", globalAuthor);
+    #ifdef __APPLE__
+        fprintf(file_pointer, "mac gPath: %s\n", gPath);
+    #endif
     fclose(file_pointer);
 #endif
 }

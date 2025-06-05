@@ -14,5 +14,9 @@ win:
 
 mac:
 
+cmake -DCMAKE_BUILD_TYPE:STRING=release -DSMTG_CREATE_MODULE_INFO=off -DSMTG_DISABLE_CODE_SIGNING=on ../
+
+cmake --build . --config Release
+
 
 

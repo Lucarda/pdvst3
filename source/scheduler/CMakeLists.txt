@@ -25,4 +25,14 @@ elseif(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
     target_link_libraries(pdvst3scheduler PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/pd-sources/pd.lib
 )
+
+elseif(CMAKE_C_COMPILER_ID STREQUAL "AppleClang")
+	set(CMAKE_C_FLAGS "-DPD_WATCHDOG=1")
+    target_link_libraries(pdvst3scheduler PRIVATE
+        "-Wl,-undefined,suppress"
+        -flat_namespace
+        -lpthread
+        -lc  
+)
+
 endif()
