@@ -1,24 +1,27 @@
 ###################
 
+# Unique four character plugin ID
+ID = xvxv
+# Name of plugin must be lowercase and match with vst3 bundle name.
 PLUGNAME = pdvst3
+
+# Optional info
 VERSION = 0.0.0
 AUTHOR = Me
 URL = http://example.org
 MAIL = info@example.com
 
+# Installation directory of puredata (optional)
+# If non specified, will search in  <plugin_dir>/../.pd
+PDPATH_LINUX = ~/Downloads/pure-data/
+PDPATH_MAC = 
+PDPATH_WIN = C:\Program Files\Pd
+
 # Number of audio input and output channels
 CHANNELS = 2
 
-# installation directory of puredata (optional)
-# If non specified, will search in <host_exec_dir>\pdvst\pd\ 
-# then in <vst_dir>\.pd\
-#PDPATH = C:\Program Files\Pd
-
 # Main Pd patch of the plugin
 MAIN = Pd_Gain.pd
-
-# Unique four character VST plugin ID
-ID = pdga
 
 # Whether this is a VSTi
 SYNTH = FALSE

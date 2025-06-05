@@ -19,11 +19,11 @@
 */
 #if _WIN32
     #include <windows.h>
-	#include <io.h>
+    #include <io.h>
 #else
     #include <dlfcn.h>
     #include <fstream>
-	#include <unistd.h>
+    #include <unistd.h>
 #endif
 #include <math.h>
 //#include "pdvst.hpp"
@@ -162,16 +162,14 @@ void parseSetupFile()
 
 
     #if _WIN32     // find filepaths (Windows)
-
     // get paths
     if (1)
     {
-		char bufA[2048];
-		int len = wcslen((wchar_t *)gPath);
-		wcstombs(bufA, (wchar_t *)gPath, len);
+        char bufA[2048];
+        int len = wcslen((wchar_t *)gPath);
+        wcstombs(bufA, (wchar_t *)gPath, len);
 
-
-		strcpy(vstDataPath, bufA);
+        strcpy(vstDataPath, bufA);
         *(strrchr(vstDataPath, '\\') + 1) = 0;
         sprintf(globalSchedulerPath, "%s", vstDataPath);
         // contents folder
@@ -182,6 +180,8 @@ void parseSetupFile()
         snprintf(buf, strlen(globalContentPath)-1, "%s", globalContentPath);
         *(strrchr(buf, '\\') + 1) = 0;
         sprintf(globalPluginPath, "%s", buf);
+        // scheduler path
+        sprintf(globalSchedulerPath, "%sContents\\Resources\\", globalPluginPath);
         // config file
         sprintf(globalConfigFile, "%s%s", globalPluginPath, CONFIGFILE);
         //name of plug
@@ -196,9 +196,12 @@ void parseSetupFile()
     // get paths
     if (1)
     {
+        #ifdef __APPLE__
+        strcpy(vstDataPath, gPath); // fix this later
+        #else
         strcpy(vstDataPath, linuxname);
+        #endif
         *(strrchr(vstDataPath, '/') + 1) = 0;
-        sprintf(globalSchedulerPath, "%s", vstDataPath);
         // contents folder
         snprintf(buf, strlen(vstDataPath)-1, "%s", vstDataPath);
         *(strrchr(buf, '/') + 1) = 0;
@@ -207,6 +210,8 @@ void parseSetupFile()
         snprintf(buf, strlen(globalContentPath)-1, "%s", globalContentPath);
         *(strrchr(buf, '/') + 1) = 0;
         sprintf(globalPluginPath, "%s", buf);
+        // scheduler path
+        sprintf(globalSchedulerPath, "%sContents/Resources/", globalPluginPath);
         // config file
         sprintf(globalConfigFile, "%s%s", globalPluginPath, CONFIGFILE);
         //name of plug
@@ -256,12 +261,28 @@ void parseSetupFile()
                     // strcpy(globalPdFile, strlowercase(value));
                     strcpy(globalPdFile, value);
                 }
-                if (strcmp(param, "pdpath") == 0)
+                #ifdef __APPLE__
+                if (strcmp(param, "pdpath_mac") == 0)
                  {
                     // strcpy(globalPureDataPath, strlowercase(value));
                       strcpy(globalPureDataPath, value);
 
                 }
+                #elif _WIN32
+                if (strcmp(param, "pdpath_win") == 0)
+                 {
+                    // strcpy(globalPureDataPath, strlowercase(value));
+                      strcpy(globalPureDataPath, value);
+
+                }
+                #else
+                if (strcmp(param, "pdpath_linux") == 0)
+                 {
+                    // strcpy(globalPureDataPath, strlowercase(value));
+                      strcpy(globalPureDataPath, value);
+
+                }
+                #endif
                 // vst plugin ID
                 if (strcmp(param, "id") == 0)
                 {
@@ -418,7 +439,7 @@ void parseSetupFile()
     }
     if (setupFile) fclose(setupFile);
 
-#if 0
+#if 1
     // vstmain debug file
     FILE *file_pointer;
     file_pointer = fopen("vstMainDebug.txt", "w");
