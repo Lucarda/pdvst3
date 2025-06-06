@@ -138,7 +138,6 @@ char *trimWhitespace(char *str)
     return (str);
 }
 
-
 char *strlowercase(char *str)
 {
     for (int i = 0; str[i]; i++)
@@ -146,6 +145,35 @@ char *strlowercase(char *str)
         str[i] = tolower(str[i]);
     }
     return str;
+}
+#if _WIN32
+    #define PARENT_PD "..\\Pd-win"
+    #define RESOURCES_PD "Contents\\Resources\\Pd-Win"
+    #define PD_BIN_START "\\bin\\pd.exe"
+#elif __APPLE__
+    #define PARENT_PD "../Pd.app"
+    #define RESOURCES_PD "Contents/Resources/Pd.app"
+    #define PD_BIN_START "/Contents/Resources/bin/pd"
+#else
+    #define PARENT_PD "../pd"
+    #define RESOURCES_PD "Contents/Resources/pd"
+    #define PD_BIN_START "/bin/pd"
+#endif
+
+void set_pd_path(char *buf)
+{
+    if (strcmp(buf, "@plug_parent") == 0)
+    {
+        sprintf(globalPureDataPath, "%s%s%s", globalPluginPath, PARENT_PD, PD_BIN_START);
+    }
+    else if (strcmp(buf, "@resources") == 0)
+    {
+        sprintf(globalPureDataPath, "%s%s%s", globalPluginPath, RESOURCES_PD, PD_BIN_START);
+    }
+    else
+    {
+        sprintf(globalPureDataPath, "%s%s", buf, PD_BIN_START);
+    }
 }
 
 void parseSetupFile()
@@ -161,8 +189,7 @@ void parseSetupFile()
     int i, equalPos, progNum = -1, gotfile = -1;
 
 
-    #if _WIN32     // find filepaths (Windows)
-    // get paths
+    #if _WIN32  // find filepaths (Windows)
     if (1)
     {
         char bufA[2048];
@@ -194,21 +221,20 @@ void parseSetupFile()
     }
     #elif __APPLE__
     // find filepaths (macOS)
-	if (1)
-    {	
-		strcpy(vstDataPath, gPath);
-		sprintf(globalSchedulerPath, "%s/Contents/Resources/", vstDataPath);
-		sprintf(globalContentPath, "%s/Contents/", vstDataPath);
-		sprintf(globalPluginPath, "%s", vstDataPath);
-		sprintf(globalConfigFile, "%s/%s", vstDataPath, CONFIGFILE);
-		//name of plug
+    if (1)
+    {
+        strcpy(vstDataPath, gPath);
+        sprintf(globalSchedulerPath, "%s/Contents/Resources/", vstDataPath);
+        sprintf(globalContentPath, "%s/Contents/", vstDataPath);
+        sprintf(globalPluginPath, "%s", vstDataPath);
+        sprintf(globalConfigFile, "%s/%s", vstDataPath, CONFIGFILE);
+        //name of plug
         sprintf(globalPluginName, "%s", vstDataPath);
         // remove extension from name
         if (strstr(globalPluginName, ".vst3"))
             *(strstr(globalPluginName, ".vst3")) = 0;
         sprintf(buf, "%s", globalPluginName);
         strcpy(globalPluginName, strrchr(buf, '/') + 1);
-		
     }
     #else
     // find filepaths (linux)
@@ -235,9 +261,6 @@ void parseSetupFile()
             *(strstr(globalPluginName, ".vst3")) = 0;
         sprintf(buf, "%s", globalPluginName);
         strcpy(globalPluginName, strrchr(buf, '/') + 1);
-
-
-
     }
     #endif // unix
 
@@ -272,29 +295,22 @@ void parseSetupFile()
                 // main PD patch
                 if (strcmp(param, "main") == 0)
                 {
-                    // strcpy(globalPdFile, strlowercase(value));
                     strcpy(globalPdFile, value);
                 }
                 #ifdef __APPLE__
                 if (strcmp(param, "pdpath_mac") == 0)
-                 {
-                    // strcpy(globalPureDataPath, strlowercase(value));
-                      strcpy(globalPureDataPath, value);
-
+                {
+                    set_pd_path(value);
                 }
                 #elif _WIN32
                 if (strcmp(param, "pdpath_win") == 0)
-                 {
-                    // strcpy(globalPureDataPath, strlowercase(value));
-                      strcpy(globalPureDataPath, value);
-
+                {
+                    set_pd_path(value);
                 }
                 #else
                 if (strcmp(param, "pdpath_linux") == 0)
-                 {
-                    // strcpy(globalPureDataPath, strlowercase(value));
-                      strcpy(globalPureDataPath, value);
-
+                {
+                    set_pd_path(value);
                 }
                 #endif
                 // vst plugin ID
@@ -453,7 +469,7 @@ void parseSetupFile()
     }
     if (setupFile) fclose(setupFile);
 
-#if 0
+#if 1
     // vstmain debug file
     FILE *file_pointer;
     file_pointer = fopen("vstMainDebug.txt", "w");

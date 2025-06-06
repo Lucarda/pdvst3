@@ -1,9 +1,11 @@
 ###################
 
-# Unique four character plugin ID
-ID = xvxv
 # Name of plugin must be lowercase and match with vst3 bundle name.
 PLUGNAME = pdvst3
+
+# Unique four character plugin ID
+ID = xvxv
+
 
 # Optional info
 VERSION = 0.0.0
@@ -11,9 +13,23 @@ AUTHOR = Me
 URL = http://example.org
 MAIL = info@example.com
 
-# Installation directory of puredata (optional)
-# If non specified, will search in  <plugin_dir>/../.pd
-PDPATH_LINUX = ~/Downloads/pure-data/
+# Where to find Pd:
+# you can supply the path of your Pd installation or specify what Pd to use.
+# Note: the following lines are appended to path:
+# 	Windows: "\bin\pd.exe"
+# 	macOS: "/Contents/Resources/bin/pd"
+# 	Linux: "/bin/pd"
+# special wildcards: 
+#	@plug_parent : find Pd in the parent dir of the plugin
+#	@resources   : find Pd inside the plugin's folder "Contents/Resources"
+# when using the wildcards the main Pd folder must be renamed per OS like:
+#	Windows: Pd-win
+#	macOS: Pd.app
+#	Linux: pd
+#
+# Note: omit the final slash in path
+
+PDPATH_LINUX = ~/Downloads/pd
 PDPATH_MAC = /Applications/Pd-0.53-1.app
 PDPATH_WIN = C:\Program Files\Pd
 
