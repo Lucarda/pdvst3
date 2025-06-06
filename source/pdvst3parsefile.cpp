@@ -453,7 +453,7 @@ void parseSetupFile()
     }
     if (setupFile) fclose(setupFile);
 
-#if 1
+#if 0
     // vstmain debug file
     FILE *file_pointer;
     file_pointer = fopen("vstMainDebug.txt", "w");

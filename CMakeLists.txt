@@ -126,6 +126,17 @@ add_custom_command(
         ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/pdvst3scheduler.pd_linux
         ${FOLDER_RESOURCES}
 )
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+add_custom_command(
+    TARGET pdvst3
+    PRE_LINK
+    COMMAND ${CMAKE_COMMAND} -E rename
+        ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/libpdvst3scheduler.dylib
+        ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/pdvst3scheduler.pd_darwin
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/pdvst3scheduler.pd_darwin
+        ${FOLDER_RESOURCES}
+)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 add_custom_command(
     TARGET pdvst3
