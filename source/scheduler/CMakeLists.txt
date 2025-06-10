@@ -13,7 +13,7 @@ target_include_directories(pdvst3scheduler PUBLIC
     ../
 )
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
     set(CMAKE_C_FLAGS "-DPD_WATCHDOG=1")
     target_link_libraries(pdvst3scheduler PUBLIC
         -lpthread

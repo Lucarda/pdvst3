@@ -30,7 +30,7 @@ MAIL = info@example.com
 #	Linux: pd
 # Note: omit the final slash in path
 
-PDPATH_LINUX = ~/Downloads/pd
+PDPATH_LINUX = /home/lucarda/Downloads/pure-data
 PDPATH_MAC = /Applications/Pd-0.53-1.app
 PDPATH_WIN = C:\Program Files\Pd
 
@@ -38,7 +38,7 @@ PDPATH_WIN = C:\Program Files\Pd
 CHANNELS = 2
 
 # Main Pd patch of the plugin
-MAIN = Pd_Gain.pd
+MAIN = Pd_example.pd
 
 # Whether this is a VSTi
 SYNTH = FALSE

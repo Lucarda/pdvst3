@@ -7,6 +7,18 @@
 #include "public.sdk/source/vst/vstaudioeffect.h"
 #include "pdvst3_base_defines.h"
 
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdarg.h>
+#include <cstdint>
+#if _WIN32
+
+#else
+    #include <semaphore.h>
+    #include <unistd.h>
+#endif
+
 extern "C"
 {
     #include "pdvstTransfer.h"
@@ -20,7 +32,31 @@ typedef struct _pdvstProgram
 } pdvstProgram;
 
 
+
+
+
+
 namespace Steinberg {
+
+
+class pdVstBuffer
+{
+
+    friend class pdvst3Processor;
+
+public:
+    pdVstBuffer(int nChans);
+    ~pdVstBuffer();
+    void resize(int newSize);
+
+protected:
+    int nChannels;
+    int inFrameCount;
+    int outFrameCount;
+    int size;
+    float **in;
+    float **out;
+};
 
 //------------------------------------------------------------------------
 //  pdvst3Processor
@@ -61,12 +97,80 @@ public:
 	/** For persistence */
 	Steinberg::tresult PLUGIN_API setState (Steinberg::IBStream* state) SMTG_OVERRIDE;
 	Steinberg::tresult PLUGIN_API getState (Steinberg::IBStream* state) SMTG_OVERRIDE;
+	
+	////////////
+	virtual void suspend();
+    virtual void resume();
+	virtual void pdvst();
+    virtual void pdvstquit();
+
 
 //------------------------------------------------------------------------
 protected:
+	// example later delete this
 	Vst::ParamValue mParam1 = 0;
 	int16 mParam2 = 0;
 	bool mBypass = false;
+	
+	// pdvst
+	static int referenceCount;
+    void debugLog(char *fmt, ...);
+    FILE *debugFile;
+    int pdInFrameCount;
+    int pdOutFrameCount;
+    pdVstBuffer *audioBuffer;
+    char pluginPath[MAXFILENAMELEN];
+    char vstPluginPath[MAXFILENAMELEN];
+    char pluginName[MAXSTRLEN];
+    long pluginId;
+    char pdFile[MAXFILENAMELEN];
+    char errorMessage[MAXFILENAMELEN];
+    char externalLib[MAXEXTERNS][MAXSTRLEN];
+    float vstParam[MAXPARAMS];
+    char **vstParamName;
+    int nParameters;
+    pdvstProgram *program;
+    //pdvstProgramAreChunks *Chunk;
+    int nPrograms;
+    int nChannels;
+    int nExternalLibs;
+    bool customGui;
+    int customGuiHeight;
+    int customGuiWidth;
+
+    bool isASynth;
+    bool dspActive;
+#if _WIN32    
+	HANDLE	pdvstTransferMutex,
+            pdvstTransferFileMap,
+            vstProcEvent,
+            pdProcEvent;
+#else
+    char    *pdvstTransferFileMap;
+    sem_t   *pdvstTransferMutex,
+            *vstProcEvent,
+            *pdProcEvent; 
+    int     fd;  
+#endif              
+    pdvstTransferData *pdvstData;
+    char pdvstTransferMutexName[1024];
+    char pdvstTransferFileMapName[1024];
+    char vstProcEventName[1024];
+    char pdProcEventName[1024];
+    char guiName[1024];
+    bool guiNameUpdated;  // used to signal to editor that the parameter guiName has changed
+    void startPd();
+    void parseSetupFile();
+
+    void updatePdvstParameters();
+    void setSyncToVst(int value);
+    //  {JYG
+    uint32_t timeFromStartup; // to measure time before vst::setProgram call
+
+    int syncDefeatNumber;
+    // JYG  }
+    int GsampleRate;
+
 };
 
 //------------------------------------------------------------------------

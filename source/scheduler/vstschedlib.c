@@ -825,9 +825,10 @@ int scheduler()
     return 1;
 }
 
-
 #if _MSC_VER
 __declspec(dllexport)
+#else
+__attribute__ ((visibility ("default")))
 #endif
 int pd_extern_sched(char *flags)
 {
