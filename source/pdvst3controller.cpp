@@ -7,6 +7,11 @@
 // #include "vstgui/plugin-bindings/vst3editor.h"
 #include "base/source/fstreamer.h"
 #include "pluginterfaces/base/ibstream.h"
+#include "pdvst3_base_defines.h"
+#include "public.sdk/source/vst/utility/stringconvert.h"
+
+extern int globalNParams;
+extern char globalVstParamName[MAXPARAMETERS][MAXSTRLEN];
 
 using namespace Steinberg;
 
@@ -17,126 +22,124 @@ namespace Steinberg {
 //------------------------------------------------------------------------
 tresult PLUGIN_API pdvst3Controller::initialize (FUnknown* context)
 {
-	// Here the Plug-in will be instantiated
+    // Here the Plug-in will be instantiated
 
-	//---do not forget to call parent ------
-	tresult result = EditControllerEx1::initialize (context);
-	if (result != kResultOk)
-	{
-		return result;
-	}
+    //---do not forget to call parent ------
+    tresult result = EditControllerEx1::initialize (context);
+    if (result != kResultOk)
+    {
+        return result;
+    }
 
-	// Here you could register some parameters
-	if (result == kResultTrue)
-	{
-		//---Create Parameters------------
-		parameters.addParameter (STR16 ("Bypass"), nullptr, 1, 0,
-		                         Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsBypass,
-		                         pdvst3Params::kBypassId);
+    // Here you could register some parameters
+    if (result == kResultTrue)
+    {
+        //---Create Parameters------------
+        Steinberg::Vst::TChar buf[MAXSTRLEN];
+        for(int i = 0; i < globalNParams ; i++)
+        {
+            Steinberg::Vst::StringConvert::convert ((char*)globalVstParamName[i], buf);
+            parameters.addParameter (buf, nullptr, 0, 0.,
+                                 Vst::ParameterInfo::kCanAutomate, pdvst3Params::kParamId+i, 0,
+                                 nullptr);
+        }
 
-		parameters.addParameter (STR16 ("Parameter 1"), STR16 ("dB"), 0, .5,
-		                         Vst::ParameterInfo::kCanAutomate, pdvst3Params::kParamVolId, 0,
-		                         STR16 ("Param1"));
+    }
 
-		parameters.addParameter (STR16 ("Parameter 2"), STR16 ("On/Off"), 1, 1.,
-		                         Vst::ParameterInfo::kCanAutomate, pdvst3Params::kParamOnId, 0,
-		                         STR16 ("Param2"));
-	}
-
-	return result;
+    return result;
 }
 
 //------------------------------------------------------------------------
 tresult PLUGIN_API pdvst3Controller::terminate ()
 {
-	// Here the Plug-in will be de-instantiated, last possibility to remove some memory!
+    // Here the Plug-in will be de-instantiated, last possibility to remove some memory!
 
-	//---do not forget to call parent ------
-	return EditControllerEx1::terminate ();
+    //---do not forget to call parent ------
+    return EditControllerEx1::terminate ();
 }
 
 //------------------------------------------------------------------------
 tresult PLUGIN_API pdvst3Controller::setComponentState (IBStream* state)
 {
-	// Here you get the state of the component (Processor part)
-	if (!state)
-		return kResultFalse;
+    // Here you get the state of the component (Processor part)
+    if (!state)
+        return kResultFalse;
 
-	IBStreamer streamer (state, kLittleEndian);
+    IBStreamer streamer (state, kLittleEndian);
+/*
+    float savedParam1 = 0.f;
+    if (streamer.readFloat (savedParam1) == false)
+        return kResultFalse;
+    setParamNormalized (pdvst3Params::kParamVolId, savedParam1);
 
-	float savedParam1 = 0.f;
-	if (streamer.readFloat (savedParam1) == false)
-		return kResultFalse;
-	setParamNormalized (pdvst3Params::kParamVolId, savedParam1);
+    int8 savedParam2 = 0;
+    if (streamer.readInt8 (savedParam2) == false)
+        return kResultFalse;
+    setParamNormalized (pdvst3Params::kParamOnId, savedParam2);
 
-	int8 savedParam2 = 0;
-	if (streamer.readInt8 (savedParam2) == false)
-		return kResultFalse;
-	setParamNormalized (pdvst3Params::kParamOnId, savedParam2);
+    // read the bypass
+    int32 bypassState;
+    if (streamer.readInt32 (bypassState) == false)
+        return kResultFalse;
+    setParamNormalized (kBypassId, bypassState ? 1 : 0);
 
-	// read the bypass
-	int32 bypassState;
-	if (streamer.readInt32 (bypassState) == false)
-		return kResultFalse;
-	setParamNormalized (kBypassId, bypassState ? 1 : 0);
-
-	return kResultOk;
-
-	return kResultOk;
+    return kResultOk;
+*/
+    return kResultOk;
 }
 
 //------------------------------------------------------------------------
 tresult PLUGIN_API pdvst3Controller::setState (IBStream* state)
 {
-	// Here you get the state of the controller
+    // Here you get the state of the controller
 
-	return kResultTrue;
+    return kResultTrue;
 }
 
 //------------------------------------------------------------------------
 tresult PLUGIN_API pdvst3Controller::getState (IBStream* state)
 {
-	// Here you are asked to deliver the state of the controller (if needed)
-	// Note: the real state of your plug-in is saved in the processor
+    // Here you are asked to deliver the state of the controller (if needed)
+    // Note: the real state of your plug-in is saved in the processor
 
-	return kResultTrue;
+    return kResultTrue;
 }
 /*
 //------------------------------------------------------------------------
 IPlugView* PLUGIN_API pdvst3Controller::createView (FIDString name)
 {
-	// Here the Host wants to open your editor (if you have one)
-	if (FIDStringsEqual (name, Vst::ViewType::kEditor))
-	{
-		// create your editor here and return a IPlugView ptr of it
-		auto* view = new VSTGUI::VST3Editor (this, "view", "helloworldeditor.uidesc");
-		return view;
-	}
-	return nullptr;
+    // Here the Host wants to open your editor (if you have one)
+    if (FIDStringsEqual (name, Vst::ViewType::kEditor))
+    {
+        // create your editor here and return a IPlugView ptr of it
+        auto* view = new VSTGUI::VST3Editor (this, "view", "helloworldeditor.uidesc");
+        return view;
+    }
+    return nullptr;
 }
 */
 //------------------------------------------------------------------------
 tresult PLUGIN_API pdvst3Controller::setParamNormalized (Vst::ParamID tag, Vst::ParamValue value)
 {
-	// called by host to update your parameters
-	tresult result = EditControllerEx1::setParamNormalized (tag, value);
-	return result;
+    // called by host to update your parameters
+    tresult result = EditControllerEx1::setParamNormalized (tag, value);
+    return result;
 }
 
 //------------------------------------------------------------------------
 tresult PLUGIN_API pdvst3Controller::getParamStringByValue (Vst::ParamID tag, Vst::ParamValue valueNormalized, Vst::String128 string)
 {
-	// called by host to get a string for given normalized value of a specific parameter
-	// (without having to set the value!)
-	return EditControllerEx1::getParamStringByValue (tag, valueNormalized, string);
+    // called by host to get a string for given normalized value of a specific parameter
+    // (without having to set the value!)
+    return EditControllerEx1::getParamStringByValue (tag, valueNormalized, string);
 }
 
 //------------------------------------------------------------------------
 tresult PLUGIN_API pdvst3Controller::getParamValueByString (Vst::ParamID tag, Vst::TChar* string, Vst::ParamValue& valueNormalized)
 {
-	// called by host to get a normalized value from a string representation of a specific parameter
-	// (without having to set the value!)
-	return EditControllerEx1::getParamValueByString (tag, string, valueNormalized);
+    // called by host to get a normalized value from a string representation of a specific parameter
+    // (without having to set the value!)
+    return EditControllerEx1::getParamValueByString (tag, string, valueNormalized);
 }
 
 //------------------------------------------------------------------------

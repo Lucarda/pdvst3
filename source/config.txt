@@ -22,11 +22,12 @@ MAIL = info@example.com
 # special wildcards: 
 #	@plug_parent : find Pd in the parent dir of the plugin
 #	@resources   : find Pd inside the plugin's folder "Contents/Resources"
+#   example: 
+#		PDPATH_LINUX = @resources
 # when using the wildcards the main Pd folder must be renamed per OS like:
 #	Windows: Pd-win
 #	macOS: Pd.app
 #	Linux: pd
-#
 # Note: omit the final slash in path
 
 PDPATH_LINUX = ~/Downloads/pd
@@ -58,6 +59,7 @@ PARAMETERS = 1
 # Name of first VST parameter
 # used when CUSTOMGUI is false or VST host doesn't support custom editors
 NAMEPARAMETER0 = Level
+
 
 # Define a program (up to 128)
 PROGRAM = Full Blast

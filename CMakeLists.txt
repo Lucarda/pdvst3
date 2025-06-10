@@ -93,6 +93,7 @@ smtg_add_vst3plugin(pdvst3
     source/pdvst3parsefile.cpp
     source/pdvst3pluginfactory.cpp
     source/pdvst3pluginfactory.h
+    source/pdvst3cids.h
 )
 
 target_link_libraries(pdvst3

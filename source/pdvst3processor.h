@@ -5,6 +5,20 @@
 #pragma once
 
 #include "public.sdk/source/vst/vstaudioeffect.h"
+#include "pdvst3_base_defines.h"
+
+extern "C"
+{
+    #include "pdvstTransfer.h"
+}
+
+/* program data */
+typedef struct _pdvstProgram
+{
+    char name[MAXSTRLEN];
+    float paramValue[MAXPARAMETERS];
+} pdvstProgram;
+
 
 namespace Steinberg {
 

@@ -6,6 +6,7 @@
 
 #include "public.sdk/source/vst/vsteditcontroller.h"
 
+
 namespace Steinberg {
 
 //------------------------------------------------------------------------

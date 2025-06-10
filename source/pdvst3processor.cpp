@@ -83,6 +83,7 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
                 int32 numPoints = paramQueue->getPointCount ();
                 switch (paramQueue->getParameterId ())
                 {
+                    /*
                     case pdvst3Params::kParamVolId:
                         if (paramQueue->getPoint (numPoints - 1, sampleOffset, value) ==
                             kResultTrue)
@@ -98,6 +99,7 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
                             kResultTrue)
                             mBypass = (value > 0.5f);
                         break;
+                        */
                 }
             }
         }

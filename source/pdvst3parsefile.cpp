@@ -26,7 +26,7 @@
     #include <unistd.h>
 #endif
 #include <math.h>
-//#include "pdvst.hpp"
+#include "pdvst3processor.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -82,7 +82,7 @@ char globalConfigFile[MAXFILENAMELEN];
 bool globalCustomGui = false;
 int globalCustomGuiWidth= 320;
 int globalCustomGuiHeight= 150;
-//pdvstProgram globalProgram[MAXPROGRAMS];
+pdvstProgram globalProgram[MAXPROGRAMS];
 bool globalProgramsAreChunks = false;
 
 
@@ -267,8 +267,8 @@ void parseSetupFile()
     sprintf(globalPluginVersion, "0.0.1", buf);
 
     // initialize program info
-    //strcpy(globalProgram[0].name, "Default");
-    //memset(globalProgram[0].paramValue, 0, MAXPARAMS * sizeof(float));
+    strcpy(globalProgram[0].name, "Default");
+    memset(globalProgram[0].paramValue, 0, MAXPARAMS * sizeof(float));
     // initialize parameter info
     globalNParams = 0;
     for (i = 0; i < MAXPARAMS; i++)
@@ -413,8 +413,8 @@ void parseSetupFile()
                     globalNPrograms < MAXPROGRAMS)
                 {
                     progNum++;
-                    //strcpy(globalProgram[progNum].name, value);
-                    //globalNPrograms = progNum + 1;
+                    strcpy(globalProgram[progNum].name, value);
+                    globalNPrograms = progNum + 1;
                 }
                 // program parameters
                 if (strstr(param, "parameter") == \
@@ -423,9 +423,9 @@ void parseSetupFile()
                 {
                     int paramNum = atoi(param + strlen("parameter"));
 
-                    //if (paramNum < MAXPARAMS && paramNum >= 0)
-                        //globalProgram[progNum].paramValue[paramNum] = \
-                                                       //      (float)atof(value);
+                    if (paramNum < MAXPARAMS && paramNum >= 0)
+                        globalProgram[progNum].paramValue[paramNum] = \
+                                                             (float)atof(value);
                 }
                 // programsarechunks (save custom data in .fxp or .fxb file)
                 if (strcmp(param, "programsarechunks") == 0)
