@@ -79,6 +79,10 @@ public:
 	/** Called at first after constructor */
 	Steinberg::tresult PLUGIN_API initialize (Steinberg::FUnknown* context) SMTG_OVERRIDE;
 	
+	Steinberg::tresult PLUGIN_API setBusArrangements (Vst::SpeakerArrangement* inputs, int32 numIns,
+                                                      Vst::SpeakerArrangement* outputs,
+                                                      int32 numOuts) SMTG_OVERRIDE;
+	
 	/** Called at the end before destructor */
 	Steinberg::tresult PLUGIN_API terminate () SMTG_OVERRIDE;
 	

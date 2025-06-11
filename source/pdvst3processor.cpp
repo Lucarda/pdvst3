@@ -364,6 +364,7 @@ void pdvst3Processor::pdvst()
 
 void pdvst3Processor::pdvstquit()
 {
+
     int i;
     referenceCount--;
     xxWaitForSingleObject(pdvstTransferMutex, -1);
@@ -392,6 +393,52 @@ void pdvst3Processor::pdvstquit()
         fclose(debugFile);
     }
 }
+
+void pdvst3Processor::updatePdvstParameters()
+{
+    int i;
+
+    xxWaitForSingleObject(pdvstTransferMutex, 10);
+    {
+        for (i = 0; i < pdvstData->nParameters; i++)
+        {
+            if (pdvstData->vstParameters[i].direction == PD_SEND && \
+                pdvstData->vstParameters[i].updated)
+            {
+                if (pdvstData->vstParameters[i].type == FLOAT_TYPE)
+                {
+                    /*setParameterAutomated(i,
+                                          pdvstData->vstParameters[i].value.floatData);*/
+                }
+                pdvstData->vstParameters[i].updated = 0;
+            }
+        }
+
+        if (pdvstData->guiName.direction == PD_SEND && \
+            pdvstData->guiName.updated)
+        {
+            if (pdvstData->guiName.type == STRING_TYPE)
+            {
+                strcpy(guiName, pdvstData->guiName.value.stringData);
+
+                pdvstData->guiName.updated=0;
+                // signal to vesteditor that guiname is updated
+                guiNameUpdated=true;
+            }
+        }
+        // to data chunk
+        if (pdvstData->datachunk.direction == PD_SEND && \
+            pdvstData->datachunk.updated)
+        {
+            if (pdvstData->datachunk.type == STRING_TYPE)
+            {
+                pdvstData->datachunk.updated=0;
+            }
+        }
+        xxReleaseMutex(pdvstTransferMutex);
+    }
+}
+
 
 //------------------------------------------------------------------------
 // pdvst3Processor
@@ -437,10 +484,24 @@ tresult PLUGIN_API pdvst3Processor::initialize (FUnknown* context)
 tresult PLUGIN_API pdvst3Processor::terminate ()
 {
 	// Here the Plug-in will be de-instantiated, last possibility to remove some memory!
-	
+
 	//---do not forget to call parent ------
 
 	return AudioEffect::terminate ();
+}
+
+//------------------------------------------------------------------------
+tresult PLUGIN_API pdvst3Processor::setBusArrangements (Vst::SpeakerArrangement* inputs, int32 numIns,
+                                                      Vst::SpeakerArrangement* outputs,
+                                                      int32 numOuts)
+{
+	// Only support stereo input and output
+    if (numIns != 1 || inputs[0] != Steinberg::Vst::SpeakerArr::kStereo)
+        return kResultFalse;
+    if (numOuts != 1 || outputs[0] != Steinberg::Vst::SpeakerArr::kStereo)
+        return kResultFalse;
+
+    return AudioEffect::setBusArrangements(inputs, numIns, outputs, numOuts);	
 }
 
 //------------------------------------------------------------------------
@@ -503,6 +564,125 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
         // Process Algorithm
         // Ex: algo.process (data.inputs[0].channelBuffers32, data.outputs[0].channelBuffers32,
         // data.numSamples);
+        
+        // Get input/output buffers (assume stereo)
+		Steinberg::Vst::Sample32** input = data.inputs[0].channelBuffers32;
+		Steinberg::Vst::Sample32** output = data.outputs[0].channelBuffers32;
+		
+		const int32 numChannels = data.numInputs;
+		const int32 numSamples = data.numSamples;
+		
+		printf("numchannels: %d\n",numChannels);
+        
+        
+        
+        //---------
+        
+        int i, j, k, l;
+		int framesOut = 0;
+
+		if (!dspActive)
+		{
+			resume();
+		}
+		else
+		{
+			setSyncToVst(1);
+		}
+
+		for (i = 0; i < numSamples; i++)
+		{
+			//for (j = 0; j < audioBuffer->nChannels; j++)
+			for (j = 0; j < numChannels; j++)
+			{
+				audioBuffer->in[j][audioBuffer->inFrameCount] = input[j][i];
+			}
+			(audioBuffer->inFrameCount)++;
+			// if enough samples to process then do it
+			if (audioBuffer->inFrameCount >= PDBLKSIZE)
+			{
+				audioBuffer->inFrameCount = 0;
+				updatePdvstParameters();
+
+				#if _WIN32
+				int gotPdProcEvent = (xxWaitForSingleObject(pdProcEvent, 10) == 1); //WAIT_OBJECT_0
+				#else
+				sem_wait(pdProcEvent);
+				int gotPdProcEvent = 1;
+				#endif
+
+				if (gotPdProcEvent)
+					{
+						xxResetEvent(pdProcEvent);
+						syncDefeatNumber=0;
+					}
+				else if (syncDefeatNumber==50)
+				{
+					//afficher messageErreur
+					//CreateThread(NULL, 0, &NotifySyncError, NULL, 0, NULL);
+					//startPd();
+					syncDefeatNumber++;
+				}
+				else
+					syncDefeatNumber++;
+
+				for (k = 0; k < PDBLKSIZE; k++)
+				{
+					for (l = 0; l < numChannels; l++)
+					{
+						while (audioBuffer->outFrameCount >= audioBuffer->size)
+						{
+							audioBuffer->resize(audioBuffer->size * 2);
+						}
+						// get pd processed samples
+						if (gotPdProcEvent)
+						{
+							audioBuffer->out[l][audioBuffer->outFrameCount] = pdvstData->samples[l][k];
+							// put new samples in for processing
+							pdvstData->samples[l][k] = audioBuffer->in[l][k];
+						}
+					}
+					(audioBuffer->outFrameCount)++;
+				}
+				pdvstData->sampleRate = (int)GsampleRate;
+				// signal vst process event
+				xxSetEvent(vstProcEvent);
+			}
+		}
+
+		// output pd processed samples
+		for (i = 0; i < numSamples; i++)
+		{
+			//for (j = 0; j < audioBuffer->nChannels; j++)
+			for (j = 0; j < numChannels; j++)
+			{
+				if (audioBuffer->outFrameCount > 0)
+				{
+					output[j][i] = audioBuffer->out[j][i];
+				}
+				else
+				{
+					output[j][i] = 0;
+				}
+			}
+			if (audioBuffer->outFrameCount > 0)
+			{
+				audioBuffer->outFrameCount--;
+				framesOut++;
+			}
+		}
+		// shift any remaining buffered out samples
+		if (audioBuffer->outFrameCount > 0)
+		{
+			for (i = 0; i < numChannels; i++)
+			//for (i = 0; i < audioBuffer->nChannels; i++)
+			{
+				memmove(&(audioBuffer->out[i][0]),
+						&(audioBuffer->out[i][framesOut]),
+						(audioBuffer->outFrameCount) * sizeof(float));
+			}
+		}
+
     }
     return kResultOk;
 

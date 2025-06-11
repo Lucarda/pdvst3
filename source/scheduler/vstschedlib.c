@@ -861,7 +861,7 @@ int pd_extern_sched(char *flags)
                                                    0,
                                                    sizeof(pdvstTransferData));
     #else //unix
-    pdvstTransferMutex = sem_open(pdvstTransferMutexName, O_CREAT, 0666, 1);
+    pdvstTransferMutex = sem_open(pdvstTransferMutexName, O_CREAT, 0666, 0);
     vstProcEvent  = sem_open(vstProcEventName, O_CREAT, 0666, 1);
     pdProcEvent = sem_open(pdProcEventName, O_CREAT, 0666, 0);
     fd = shm_open(pdvstTransferFileMapName, O_CREAT | O_RDWR, 0666);
@@ -872,7 +872,7 @@ int pd_extern_sched(char *flags)
     pdvstData = (pdvstTransferData *)pdvstTransferFileMap;
     #endif
     xxWaitForSingleObject(pdvstTransferMutex, -1);
-    post("Hello, pdvst2");
+    post("pdvst3sheduler");
     sys_setchsr(pdvstData->nChannels,
                 pdvstData->nChannels,
                 pdvstData->sampleRate);

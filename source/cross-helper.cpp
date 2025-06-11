@@ -42,7 +42,7 @@ int xxWaitForSingleObject(sem_t *mutex, int ms)
             return 0;
         }
         usleep(wait_time);
-        elapsed_time += (wait_time / 1000);
+        elapsed_time += (wait_time / 1000.);
     }
 }
 #endif
