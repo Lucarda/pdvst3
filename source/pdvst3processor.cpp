@@ -68,8 +68,8 @@ extern Steinberg::FUID contUID;
 using namespace Steinberg;
 
 namespace Steinberg {
-	
-	
+
+
 void pdvst3Processor::debugLog(char *fmt, ...)
 {
     va_list ap;
@@ -140,7 +140,7 @@ void pdvst3Processor::startPd()
     // fixme
     //pdvstData->sampleRate = (int)getSampleRate();
     pdvstData->sampleRate = 48000;
-    pdvstData->nParameters = nParameters;
+    pdvstData->nParameters = globalNParams;
     pdvstData->guiState.updated = 0;
     pdvstData->guiState.type = FLOAT_TYPE;
     pdvstData->guiState.direction = PD_RECEIVE;
@@ -169,7 +169,7 @@ void pdvst3Processor::startPd()
         sprintf(errorMessage,"pd program not found. Check your settings in \n%s%s.pdv \n setup file. (search for the line PDPATH)",
                               globalPluginPath,globalPluginName);
             break;
-		}
+        }
     }
 
     sprintf(commandLineArgs,
@@ -370,7 +370,7 @@ void pdvst3Processor::pdvstquit()
     xxWaitForSingleObject(pdvstTransferMutex, -1);
     pdvstData->active = 0;
     xxReleaseMutex(pdvstTransferMutex);
-    
+
     #ifdef _WIN32
         CloseHandle(pdvstTransferMutex);
         UnmapViewOfFile(pdvstTransferFileMap);
@@ -394,50 +394,71 @@ void pdvst3Processor::pdvstquit()
     }
 }
 
-void pdvst3Processor::updatePdvstParameters()
+void pdvst3Processor::params_to_pd(Vst::ProcessData& data)
 {
-    int i;
-
+    //--- Read inputs parameter changes-----------
     xxWaitForSingleObject(pdvstTransferMutex, 10);
     {
-        for (i = 0; i < pdvstData->nParameters; i++)
+        if (data.inputParameterChanges)
         {
-            if (pdvstData->vstParameters[i].direction == PD_SEND && \
-                pdvstData->vstParameters[i].updated)
+            int32 numParamsChanged = data.inputParameterChanges->getParameterCount ();
+            for (int32 index = 0; index < numParamsChanged; index++)
             {
-                if (pdvstData->vstParameters[i].type == FLOAT_TYPE)
+                Vst::IParamValueQueue* paramQueue =
+                    data.inputParameterChanges->getParameterData (index);
+                if (paramQueue)
                 {
-                    /*setParameterAutomated(i,
-                                          pdvstData->vstParameters[i].value.floatData);*/
+                    Vst::ParamValue value;
+                    int32 sampleOffset;
+                    int32 numPoints = paramQueue->getPointCount ();
+                    int32 i = paramQueue->getParameterId ();
+                    if (paramQueue->getPoint (numPoints - 1, sampleOffset, value) ==
+                                kResultTrue)
+                    {
+                        pdvstData->vstParameters[i - kParamId].type = FLOAT_TYPE;
+                        pdvstData->vstParameters[i - kParamId].value.floatData = (float)value;
+                        pdvstData->vstParameters[i - kParamId].direction = PD_RECEIVE;
+                        pdvstData->vstParameters[i - kParamId].updated = 1;
+                    }
                 }
-                pdvstData->vstParameters[i].updated = 0;
             }
         }
-
-        if (pdvstData->guiName.direction == PD_SEND && \
-            pdvstData->guiName.updated)
-        {
-            if (pdvstData->guiName.type == STRING_TYPE)
-            {
-                strcpy(guiName, pdvstData->guiName.value.stringData);
-
-                pdvstData->guiName.updated=0;
-                // signal to vesteditor that guiname is updated
-                guiNameUpdated=true;
-            }
-        }
-        // to data chunk
-        if (pdvstData->datachunk.direction == PD_SEND && \
-            pdvstData->datachunk.updated)
-        {
-            if (pdvstData->datachunk.type == STRING_TYPE)
-            {
-                pdvstData->datachunk.updated=0;
-            }
-        }
-        xxReleaseMutex(pdvstTransferMutex);
     }
+    xxReleaseMutex(pdvstTransferMutex);
 }
+
+void pdvst3Processor::params_from_pd(Vst::ProcessData& data)
+{
+	xxWaitForSingleObject(pdvstTransferMutex, 10);
+	if (data.outputParameterChanges)
+	{
+		//Vst::IParameterChanges* outParamChanges = data.outputParameterChanges;
+		int32 index = 0;
+		{
+			for (int i = 0; i < pdvstData->nParameters; i++)
+			{
+				if (pdvstData->vstParameters[i].direction == PD_SEND && \
+					pdvstData->vstParameters[i].updated)
+				{
+					if (pdvstData->vstParameters[i].type == FLOAT_TYPE)
+					{
+						Vst::IParamValueQueue* paramQueue2 = \
+							data.outputParameterChanges->addParameterData (kParamId + i, index);
+						if (paramQueue2)
+						{
+							int32 index2 = 0;
+							paramQueue2->addPoint (0, \
+								(Vst::ParamValue)pdvstData->vstParameters[i].value.floatData, index2);
+						}
+					}
+					pdvstData->vstParameters[i].updated = 0;
+				}
+			}
+		}
+	}
+	xxReleaseMutex(pdvstTransferMutex);
+}
+
 
 
 //------------------------------------------------------------------------
@@ -445,49 +466,49 @@ void pdvst3Processor::updatePdvstParameters()
 //------------------------------------------------------------------------
 pdvst3Processor::pdvst3Processor ()
 {
-	//--- set the wanted controller for our processor
-	setControllerClass (contUID);
-	//----start Pd
-	pdvst();
+    //--- set the wanted controller for our processor
+    setControllerClass (contUID);
+    //----start Pd
+    pdvst();
 }
 
 //------------------------------------------------------------------------
 pdvst3Processor::~pdvst3Processor ()
 {
-	pdvstquit();
+    pdvstquit();
 }
 
 //------------------------------------------------------------------------
 tresult PLUGIN_API pdvst3Processor::initialize (FUnknown* context)
 {
-	// Here the Plug-in will be instantiated
-	
-	//---always initialize the parent-------
-	tresult result = AudioEffect::initialize (context);
-	// if everything Ok, continue
-	if (result != kResultOk)
-	{
-		return result;
-	}
+    // Here the Plug-in will be instantiated
 
-	//--- create Audio IO ------
-	addAudioInput (STR16 ("Stereo In"), Steinberg::Vst::SpeakerArr::kStereo);
-	addAudioOutput (STR16 ("Stereo Out"), Steinberg::Vst::SpeakerArr::kStereo);
+    //---always initialize the parent-------
+    tresult result = AudioEffect::initialize (context);
+    // if everything Ok, continue
+    if (result != kResultOk)
+    {
+        return result;
+    }
 
-	/* If you don't need an event bus, you can remove the next line */
-	addEventInput (STR16 ("Event In"), 1);
+    //--- create Audio IO ------
+    addAudioInput (STR16 ("Stereo In"), Steinberg::Vst::SpeakerArr::kStereo);
+    addAudioOutput (STR16 ("Stereo Out"), Steinberg::Vst::SpeakerArr::kStereo);
 
-	return kResultOk;
+    /* If you don't need an event bus, you can remove the next line */
+    addEventInput (STR16 ("Event In"), 1);
+
+    return kResultOk;
 }
 
 //------------------------------------------------------------------------
 tresult PLUGIN_API pdvst3Processor::terminate ()
 {
-	// Here the Plug-in will be de-instantiated, last possibility to remove some memory!
+    // Here the Plug-in will be de-instantiated, last possibility to remove some memory!
 
-	//---do not forget to call parent ------
+    //---do not forget to call parent ------
 
-	return AudioEffect::terminate ();
+    return AudioEffect::terminate ();
 }
 
 //------------------------------------------------------------------------
@@ -495,61 +516,28 @@ tresult PLUGIN_API pdvst3Processor::setBusArrangements (Vst::SpeakerArrangement*
                                                       Vst::SpeakerArrangement* outputs,
                                                       int32 numOuts)
 {
-	// Only support stereo input and output
+    // Only support stereo input and output
     if (numIns != 1 || inputs[0] != Steinberg::Vst::SpeakerArr::kStereo)
         return kResultFalse;
     if (numOuts != 1 || outputs[0] != Steinberg::Vst::SpeakerArr::kStereo)
         return kResultFalse;
 
-    return AudioEffect::setBusArrangements(inputs, numIns, outputs, numOuts);	
+    return AudioEffect::setBusArrangements(inputs, numIns, outputs, numOuts);
 }
 
 //------------------------------------------------------------------------
 tresult PLUGIN_API pdvst3Processor::setActive (TBool state)
 {
-	//--- called when the Plug-in is enable/disable (On/Off) -----
-	return AudioEffect::setActive (state);
+    //--- called when the Plug-in is enable/disable (On/Off) -----
+    return AudioEffect::setActive (state);
 }
 
 //------------------------------------------------------------------------
 tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
 {
-    //--- Read inputs parameter changes-----------
-    if (data.inputParameterChanges)
-    {
-        int32 numParamsChanged = data.inputParameterChanges->getParameterCount ();
-        for (int32 index = 0; index < numParamsChanged; index++)
-        {
-            Vst::IParamValueQueue* paramQueue =
-                data.inputParameterChanges->getParameterData (index);
-            if (paramQueue)
-            {
-                Vst::ParamValue value;
-                int32 sampleOffset;
-                int32 numPoints = paramQueue->getPointCount ();
-                switch (paramQueue->getParameterId ())
-                {
-                    /*
-                    case pdvst3Params::kParamVolId:
-                        if (paramQueue->getPoint (numPoints - 1, sampleOffset, value) ==
-                            kResultTrue)
-                            mParam1 = value;
-                        break;
-                    case pdvst3Params::kParamOnId:
-                        if (paramQueue->getPoint (numPoints - 1, sampleOffset, value) ==
-                            kResultTrue)
-                            mParam2 = value > 0 ? 1 : 0;
-                        break;
-                    case pdvst3Params::kBypassId:
-                        if (paramQueue->getPoint (numPoints - 1, sampleOffset, value) ==
-                            kResultTrue)
-                            mBypass = (value > 0.5f);
-                        break;
-                        */
-                }
-            }
-        }
-    }
+
+    //--- parameter changes-----------
+    params_to_pd(data);
 
     //--- Process Audio---------------------
     //--- ----------------------------------
@@ -564,126 +552,129 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
         // Process Algorithm
         // Ex: algo.process (data.inputs[0].channelBuffers32, data.outputs[0].channelBuffers32,
         // data.numSamples);
-        
+
         // Get input/output buffers (assume stereo)
-		Steinberg::Vst::Sample32** input = data.inputs[0].channelBuffers32;
-		Steinberg::Vst::Sample32** output = data.outputs[0].channelBuffers32;
-		
-		const int32 numChannels = data.numInputs;
-		const int32 numSamples = data.numSamples;
-		
-		printf("numchannels: %d\n",numChannels);
-        
-        
-        
+        Steinberg::Vst::Sample32** input = data.inputs[0].channelBuffers32;
+        Steinberg::Vst::Sample32** output = data.outputs[0].channelBuffers32;
+
+        const int32 numChannels = data.numInputs+1;
+        const int32 numSamples = data.numSamples;
+
+        //printf("numchannels: %d\n",numChannels);
+
+
+
         //---------
-        
+
         int i, j, k, l;
-		int framesOut = 0;
+        int framesOut = 0;
 
-		if (!dspActive)
-		{
-			resume();
-		}
-		else
-		{
-			setSyncToVst(1);
-		}
+        if (!dspActive)
+        {
+            resume();
+        }
+        else
+        {
+            setSyncToVst(1);
+        }
 
-		for (i = 0; i < numSamples; i++)
-		{
-			//for (j = 0; j < audioBuffer->nChannels; j++)
-			for (j = 0; j < numChannels; j++)
-			{
-				audioBuffer->in[j][audioBuffer->inFrameCount] = input[j][i];
-			}
-			(audioBuffer->inFrameCount)++;
-			// if enough samples to process then do it
-			if (audioBuffer->inFrameCount >= PDBLKSIZE)
-			{
-				audioBuffer->inFrameCount = 0;
-				updatePdvstParameters();
+        for (i = 0; i < numSamples; i++)
+        {
+            //for (j = 0; j < audioBuffer->nChannels; j++)
+            for (j = 0; j < numChannels; j++)
+            {
+                audioBuffer->in[j][audioBuffer->inFrameCount] = input[j][i];
+            }
+            (audioBuffer->inFrameCount)++;
+            // if enough samples to process then do it
+            if (audioBuffer->inFrameCount >= PDBLKSIZE)
+            {
+                audioBuffer->inFrameCount = 0;
+                //updatePdvstParameters();
+                params_from_pd(data);
 
-				#if _WIN32
-				int gotPdProcEvent = (xxWaitForSingleObject(pdProcEvent, 10) == 1); //WAIT_OBJECT_0
-				#else
-				sem_wait(pdProcEvent);
-				int gotPdProcEvent = 1;
-				#endif
+                #if _WIN32
+                    int gotPdProcEvent = (xxWaitForSingleObject(pdProcEvent, 10) == 1); //WAIT_OBJECT_0
+                #else
+                    sem_wait(pdProcEvent);
+                    int gotPdProcEvent = 1;
+                #endif
 
-				if (gotPdProcEvent)
-					{
-						xxResetEvent(pdProcEvent);
-						syncDefeatNumber=0;
-					}
-				else if (syncDefeatNumber==50)
-				{
-					//afficher messageErreur
-					//CreateThread(NULL, 0, &NotifySyncError, NULL, 0, NULL);
-					//startPd();
-					syncDefeatNumber++;
-				}
-				else
-					syncDefeatNumber++;
+                if (gotPdProcEvent)
+                    {
+                        xxResetEvent(pdProcEvent);
+                        syncDefeatNumber=0;
+                    }
+                else if (syncDefeatNumber==50)
+                {
+                    //afficher messageErreur
+                    //CreateThread(NULL, 0, &NotifySyncError, NULL, 0, NULL);
+                    //startPd();
+                    syncDefeatNumber++;
+                }
+                else
+                    syncDefeatNumber++;
 
-				for (k = 0; k < PDBLKSIZE; k++)
-				{
-					for (l = 0; l < numChannels; l++)
-					{
-						while (audioBuffer->outFrameCount >= audioBuffer->size)
-						{
-							audioBuffer->resize(audioBuffer->size * 2);
-						}
-						// get pd processed samples
-						if (gotPdProcEvent)
-						{
-							audioBuffer->out[l][audioBuffer->outFrameCount] = pdvstData->samples[l][k];
-							// put new samples in for processing
-							pdvstData->samples[l][k] = audioBuffer->in[l][k];
-						}
-					}
-					(audioBuffer->outFrameCount)++;
-				}
-				pdvstData->sampleRate = (int)GsampleRate;
-				// signal vst process event
-				xxSetEvent(vstProcEvent);
-			}
-		}
+                for (k = 0; k < PDBLKSIZE; k++)
+                {
+                    for (l = 0; l < numChannels; l++)
+                    {
+                        while (audioBuffer->outFrameCount >= audioBuffer->size)
+                        {
+                            audioBuffer->resize(audioBuffer->size * 2);
+                        }
+                        // get pd processed samples
+                        if (gotPdProcEvent)
+                        {
+                            audioBuffer->out[l][audioBuffer->outFrameCount] = pdvstData->samples[l][k];
+                            // put new samples in for processing
+                            pdvstData->samples[l][k] = audioBuffer->in[l][k];
+                        }
+                    }
+                    (audioBuffer->outFrameCount)++;
+                }
+                pdvstData->sampleRate = (int)GsampleRate;
+                // signal vst process event
+                xxSetEvent(vstProcEvent);
+            }
+        }
 
-		// output pd processed samples
-		for (i = 0; i < numSamples; i++)
-		{
-			//for (j = 0; j < audioBuffer->nChannels; j++)
-			for (j = 0; j < numChannels; j++)
-			{
-				if (audioBuffer->outFrameCount > 0)
-				{
-					output[j][i] = audioBuffer->out[j][i];
-				}
-				else
-				{
-					output[j][i] = 0;
-				}
-			}
-			if (audioBuffer->outFrameCount > 0)
-			{
-				audioBuffer->outFrameCount--;
-				framesOut++;
-			}
-		}
-		// shift any remaining buffered out samples
-		if (audioBuffer->outFrameCount > 0)
-		{
-			for (i = 0; i < numChannels; i++)
-			//for (i = 0; i < audioBuffer->nChannels; i++)
-			{
-				memmove(&(audioBuffer->out[i][0]),
-						&(audioBuffer->out[i][framesOut]),
-						(audioBuffer->outFrameCount) * sizeof(float));
-			}
-		}
+        // output pd processed samples
+        for (i = 0; i < numSamples; i++)
+        {
+            //for (j = 0; j < audioBuffer->nChannels; j++)
+            for (j = 0; j < numChannels; j++)
+            {
+                if (audioBuffer->outFrameCount > 0)
+                {
+                    output[j][i] = audioBuffer->out[j][i];
+                }
+                else
+                {
+                    output[j][i] = 0;
+                }
+            }
+            if (audioBuffer->outFrameCount > 0)
+            {
+                audioBuffer->outFrameCount--;
+                framesOut++;
+            }
+        }
+        // shift any remaining buffered out samples
+        if (audioBuffer->outFrameCount > 0)
+        {
+            for (i = 0; i < numChannels; i++)
+            //for (i = 0; i < audioBuffer->nChannels; i++)
+            {
+                memmove(&(audioBuffer->out[i][0]),
+                        &(audioBuffer->out[i][framesOut]),
+                        (audioBuffer->outFrameCount) * sizeof(float));
+            }
+        }
 
     }
+    //--- parameter changes-----------
+	params_from_pd(data);
     return kResultOk;
 
 }
@@ -691,74 +682,74 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
 //------------------------------------------------------------------------
 tresult PLUGIN_API pdvst3Processor::setupProcessing (Vst::ProcessSetup& newSetup)
 {
-	//---get samplerate
+    //---get samplerate
     if (GsampleRate != (int)newSetup.sampleRate)
         {
             GsampleRate = (int)newSetup.sampleRate; // Store the sample rate
         }
-	
-	//--- called before any processing ----
-	return AudioEffect::setupProcessing (newSetup);
+
+    //--- called before any processing ----
+    return AudioEffect::setupProcessing (newSetup);
 }
 
 //------------------------------------------------------------------------
 tresult PLUGIN_API pdvst3Processor::canProcessSampleSize (int32 symbolicSampleSize)
 {
-	// by default kSample32 is supported
-	if (symbolicSampleSize == Vst::kSample32)
-		return kResultTrue;
+    // by default kSample32 is supported
+    if (symbolicSampleSize == Vst::kSample32)
+        return kResultTrue;
 
-	// disable the following comment if your processing support kSample64
-	/* if (symbolicSampleSize == Vst::kSample64)
-		return kResultTrue; */
+    // disable the following comment if your processing support kSample64
+    /* if (symbolicSampleSize == Vst::kSample64)
+        return kResultTrue; */
 
-	return kResultFalse;
+    return kResultFalse;
 }
 
 //------------------------------------------------------------------------
 tresult PLUGIN_API pdvst3Processor::setState (IBStream* state)
 {
-	if (!state)
-		return kResultFalse;
+    if (!state)
+        return kResultFalse;
 
-	// called when we load a preset or project, the model has to be reloaded
+    // called when we load a preset or project, the model has to be reloaded
 
-	IBStreamer streamer (state, kLittleEndian);
+    IBStreamer streamer (state, kLittleEndian);
 
-	float savedParam1 = 0.f;
-	if (streamer.readFloat (savedParam1) == false)
-		return kResultFalse;
+    float savedParam1 = 0.f;
+    if (streamer.readFloat (savedParam1) == false)
+        return kResultFalse;
 
-	int32 savedParam2 = 0;
-	if (streamer.readInt32 (savedParam2) == false)
-		return kResultFalse;
+    int32 savedParam2 = 0;
+    if (streamer.readInt32 (savedParam2) == false)
+        return kResultFalse;
 
-	int32 savedBypass = 0;
-	if (streamer.readInt32 (savedBypass) == false)
-		return kResultFalse;
+    int32 savedBypass = 0;
+    if (streamer.readInt32 (savedBypass) == false)
+        return kResultFalse;
 
-	mParam1 = savedParam1;
-	mParam2 = savedParam2 > 0 ? 1 : 0;
-	mBypass = savedBypass > 0;
+    mParam1 = savedParam1;
+    mParam2 = savedParam2 > 0 ? 1 : 0;
+    mBypass = savedBypass > 0;
 
-	return kResultOk;
+    return kResultOk;
 }
 
 //------------------------------------------------------------------------
 tresult PLUGIN_API pdvst3Processor::getState (IBStream* state)
 {
-	// here we need to save the model (preset or project)
+    // here we need to save the model (preset or project)
 
-	float toSaveParam1 = mParam1;
-	int32 toSaveParam2 = mParam2;
-	int32 toSaveBypass = mBypass ? 1 : 0;
+    float toSaveParam1 = mParam1;
+    int32 toSaveParam2 = mParam2;
+    int32 toSaveBypass = mBypass ? 1 : 0;
 
-	IBStreamer streamer (state, kLittleEndian);
-	streamer.writeFloat (toSaveParam1);
-	streamer.writeInt32 (toSaveParam2);
-	streamer.writeInt32 (toSaveBypass);
+    IBStreamer streamer (state, kLittleEndian);
+    streamer.writeFloat (toSaveParam1);
+    streamer.writeInt32 (toSaveParam2);
+    streamer.writeInt32 (toSaveBypass);
 
-	return kResultOk;
+    return kResultOk;
 }
 
 

@@ -166,8 +166,11 @@ protected:
     void startPd();
     void parseSetupFile();
 
-    void updatePdvstParameters();
+    void params_from_pd(Vst::ProcessData& data);
+    void params_to_pd(Vst::ProcessData& data);
     void setSyncToVst(int value);
+    
+    
     //  {JYG
     uint32_t timeFromStartup; // to measure time before vst::setProgram call
 

@@ -54,11 +54,13 @@ DEBUG = TRUE
 #LIB = 
 
 # Number of VST parameters (up to 128)
-PARAMETERS = 1
+PARAMETERS = 3
 
 # Name of first VST parameter
 # used when CUSTOMGUI is false or VST host doesn't support custom editors
 NAMEPARAMETER0 = Level
+NAMEPARAMETER1 = foo
+NAMEPARAMETER2 = bar
 
 
 # Define a program (up to 128)

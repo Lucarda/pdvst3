@@ -1,4 +1,4 @@
-#N canvas 579 261 655 416 12;
+#N canvas 290 171 944 506 12;
 #X obj 78 87 adc~, f 6;
 #X obj 73 241 loadbang;
 #X msg 73 271 \; pd dsp 1 \;;
@@ -21,6 +21,14 @@
 #X msg 373 364 stop;
 #X obj 272 376 writesf~;
 #X msg 183 163 1;
+#X obj 497 84 vsl 50 128 0 1 0 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000 0 1;
+#X msg 497 45 set \$1;
+#X obj 684 85 vsl 50 128 0 1 0 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000 0 1;
+#X msg 684 46 set \$1;
+#X obj 462 11 r rvstparameter1;
+#X obj 649 12 r rvstparameter2;
+#X obj 707 229 s svstparameter2;
+#X obj 520 228 s svstparameter1;
 #X connect 0 0 7 0;
 #X connect 0 0 20 0;
 #X connect 0 1 6 0;
@@ -44,3 +52,9 @@
 #X connect 18 0 20 0;
 #X connect 19 0 20 0;
 #X connect 21 0 14 0;
+#X connect 22 0 29 0;
+#X connect 23 0 22 0;
+#X connect 24 0 28 0;
+#X connect 25 0 24 0;
+#X connect 26 0 23 0;
+#X connect 27 0 25 0;
