@@ -13,10 +13,12 @@
 #if _WIN32
     #include <process.h>
     #include <windows.h>
+	#include <io.h>
 #else
     #include <semaphore.h>
     #include <fcntl.h>
     #include <sys/mman.h>
+	#include <unistd.h>
 #endif
 #include <string.h>
 #include <stdlib.h>
@@ -25,7 +27,6 @@
 #include <ctype.h>
 #include <sys/stat.h>
 #include <fstream>
-#include <unistd.h>
 #ifdef _MSC_VER
 #define stat _stat
 #endif
@@ -92,7 +93,7 @@ void pdvst3Processor::startPd()
 
     #if _WIN32 //Windows
 
-    STARTUPINFO si;
+    STARTUPINFOA si;
     PROCESS_INFORMATION pi;
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
@@ -101,10 +102,10 @@ void pdvst3Processor::startPd()
     sprintf(pdvstTransferFileMapName, "filemap%d%x", GetCurrentProcessId(), this);
     sprintf(vstProcEventName, "vstprocevent%d%x", GetCurrentProcessId(), this);
     sprintf(pdProcEventName, "pdprocevent%d%x", GetCurrentProcessId(), this);
-    pdvstTransferMutex = CreateMutex(NULL, 0, pdvstTransferMutexName);
-    vstProcEvent = CreateEvent(NULL, TRUE, TRUE, vstProcEventName);
-    pdProcEvent = CreateEvent(NULL, TRUE, FALSE, pdProcEventName);
-    pdvstTransferFileMap = CreateFileMapping(INVALID_HANDLE_VALUE,
+    pdvstTransferMutex = CreateMutexA(NULL, 0, pdvstTransferMutexName);
+    vstProcEvent = CreateEventA(NULL, TRUE, TRUE, vstProcEventName);
+    pdProcEvent = CreateEventA(NULL, TRUE, FALSE, pdProcEventName);
+    pdvstTransferFileMap = CreateFileMappingA(INVALID_HANDLE_VALUE,
                                              NULL,
                                              PAGE_READWRITE,
                                              0,
@@ -160,9 +161,10 @@ void pdvst3Processor::startPd()
 
     while(1)
     {
-
         sprintf(commandLineArgs, "%s", globalPureDataPath);
-        if( access( commandLineArgs, F_OK ) != -1 )
+		FILE *foo;
+		foo = fopen(globalPureDataPath, "r");
+        if( foo != NULL )
             break;
         else
         {
@@ -226,7 +228,7 @@ void pdvst3Processor::startPd()
     suspend();
 
     #if _WIN32
-    CreateProcess(NULL,
+    CreateProcessA(NULL,
                   commandLineArgs,
                   NULL,
                   NULL,

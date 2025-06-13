@@ -13,7 +13,8 @@
 #include <stdarg.h>
 #include <cstdint>
 #if _WIN32
-
+    #include <process.h>
+    #include <windows.h>
 #else
     #include <semaphore.h>
     #include <unistd.h>
