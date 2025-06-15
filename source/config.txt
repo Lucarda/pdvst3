@@ -31,7 +31,7 @@ MAIL = info@example.com
 # Note: omit the final slash in path
 
 PDPATH_LINUX = /home/lucarda/Downloads/pure-data
-PDPATH_MAC = /Applications/Pd-0.53-1.app
+PDPATH_MAC = /Applications/Pd-0.55-2.app
 PDPATH_WIN = C:\Program Files\Pd
 
 # Number of audio input and output channels

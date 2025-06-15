@@ -226,7 +226,7 @@ void parseSetupFile()
         strcpy(vstDataPath, gPath);
         sprintf(globalSchedulerPath, "%s/Contents/Resources/", vstDataPath);
         sprintf(globalContentPath, "%s/Contents/", vstDataPath);
-        sprintf(globalPluginPath, "%s", vstDataPath);
+        sprintf(globalPluginPath, "%s/", vstDataPath);
         sprintf(globalConfigFile, "%s/%s", vstDataPath, CONFIGFILE);
         //name of plug
         sprintf(globalPluginName, "%s", vstDataPath);
@@ -469,7 +469,7 @@ void parseSetupFile()
     }
     if (setupFile) fclose(setupFile);
 
-#if 1
+#if 0
     // vstmain debug file
     FILE *file_pointer;
     file_pointer = fopen("vstMainDebug.txt", "w");

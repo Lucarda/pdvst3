@@ -9,7 +9,9 @@
 #include "pluginterfaces/vst/ivstparameterchanges.h"
 #include "pdvst3_base_defines.h"
 
+#ifndef __APPLE__
 #include <malloc.h>
+#endif
 #if _WIN32
     #include <process.h>
     #include <windows.h>
@@ -366,7 +368,6 @@ void pdvst3Processor::pdvst()
 
 void pdvst3Processor::pdvstquit()
 {
-
     int i;
     referenceCount--;
     xxWaitForSingleObject(pdvstTransferMutex, -1);
@@ -598,8 +599,10 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
                 #if _WIN32
                     int gotPdProcEvent = (xxWaitForSingleObject(pdProcEvent, 10) == 1); //WAIT_OBJECT_0
                 #else
+                printf("PDPRIOCWAIT\n");
                     sem_wait(pdProcEvent);
                     int gotPdProcEvent = 1;
+                printf("PDPRIOCWAITPOST\n");
                 #endif
 
                 if (gotPdProcEvent)
