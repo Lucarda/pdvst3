@@ -33,10 +33,6 @@ typedef struct _pdvstProgram
 } pdvstProgram;
 
 
-
-
-
-
 namespace Steinberg {
 
 
@@ -169,6 +165,8 @@ protected:
 
     void params_from_pd(Vst::ProcessData& data);
     void params_to_pd(Vst::ProcessData& data);
+	void midi_from_pd(Vst::ProcessData& data);
+    void midi_to_pd(Vst::ProcessData& data);
     void setSyncToVst(int value);
     
     
