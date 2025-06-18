@@ -826,38 +826,34 @@ tresult PLUGIN_API pdvst3Processor::setState (IBStream* state)
 
     IBStreamer streamer (state, kLittleEndian);
 
-    float savedParam1 = 0.f;
-    if (streamer.readFloat (savedParam1) == false)
-        return kResultFalse;
+    xxWaitForSingleObject(pdvstTransferMutex, 10);
+	for (int i = 0; i < pdvstData->nParameters; i++)
+	{
+		double value = 0;
+		streamer.readDouble (value);
+		pdvstData->vstParameters[i].type = FLOAT_TYPE;
+		pdvstData->vstParameters[i].value.floatData = (float)value;
+		pdvstData->vstParameters[i].direction = PD_RECEIVE;
+		pdvstData->vstParameters[i].updated = 1;
+	}
+	xxReleaseMutex(pdvstTransferMutex);
 
-    int32 savedParam2 = 0;
-    if (streamer.readInt32 (savedParam2) == false)
-        return kResultFalse;
-
-    int32 savedBypass = 0;
-    if (streamer.readInt32 (savedBypass) == false)
-        return kResultFalse;
-
-    mParam1 = savedParam1;
-    mParam2 = savedParam2 > 0 ? 1 : 0;
-    mBypass = savedBypass > 0;
-
-    return kResultOk;
+    return kResultOk;    
 }
 
 //------------------------------------------------------------------------
 tresult PLUGIN_API pdvst3Processor::getState (IBStream* state)
 {
     // here we need to save the model (preset or project)
-
-    float toSaveParam1 = mParam1;
-    int32 toSaveParam2 = mParam2;
-    int32 toSaveBypass = mBypass ? 1 : 0;
-
+    
     IBStreamer streamer (state, kLittleEndian);
-    streamer.writeFloat (toSaveParam1);
-    streamer.writeInt32 (toSaveParam2);
-    streamer.writeInt32 (toSaveBypass);
+	xxWaitForSingleObject(pdvstTransferMutex, 10);
+	for (int i = 0; i < pdvstData->nParameters; i++)
+	{
+		double v = (double)pdvstData->vstParameters[i].value.floatData;
+		streamer.writeDouble (v);
+	}
+	xxReleaseMutex(pdvstTransferMutex);
 
     return kResultOk;
 }

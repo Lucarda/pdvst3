@@ -66,25 +66,12 @@ tresult PLUGIN_API pdvst3Controller::setComponentState (IBStream* state)
         return kResultFalse;
 
     IBStreamer streamer (state, kLittleEndian);
-/*
-    float savedParam1 = 0.f;
-    if (streamer.readFloat (savedParam1) == false)
-        return kResultFalse;
-    setParamNormalized (pdvst3Params::kParamVolId, savedParam1);
-
-    int8 savedParam2 = 0;
-    if (streamer.readInt8 (savedParam2) == false)
-        return kResultFalse;
-    setParamNormalized (pdvst3Params::kParamOnId, savedParam2);
-
-    // read the bypass
-    int32 bypassState;
-    if (streamer.readInt32 (bypassState) == false)
-        return kResultFalse;
-    setParamNormalized (kBypassId, bypassState ? 1 : 0);
-
-    return kResultOk;
-*/
+    for (int i = 0; i < globalNParams; i++)
+    {
+        double value = 0;
+        streamer.readDouble (value);
+        setParamNormalized (pdvst3Params::kParamId + i, (Vst::ParamValue)value);
+    }
     return kResultOk;
 }
 
@@ -92,6 +79,8 @@ tresult PLUGIN_API pdvst3Controller::setComponentState (IBStream* state)
 tresult PLUGIN_API pdvst3Controller::setState (IBStream* state)
 {
     // Here you get the state of the controller
+    IBStreamer streamer (state, kLittleEndian);
+
 
     return kResultTrue;
 }
