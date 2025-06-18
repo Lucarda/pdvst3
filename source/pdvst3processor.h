@@ -167,6 +167,7 @@ protected:
     void params_to_pd(Vst::ProcessData& data);
 	void midi_from_pd(Vst::ProcessData& data);
     void midi_to_pd(Vst::ProcessData& data);
+    void playhead_to_pd(Vst::ProcessData& data);
     void setSyncToVst(int value);
     
     

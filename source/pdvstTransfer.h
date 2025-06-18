@@ -22,31 +22,20 @@
 #define __pdvstTransfer_H
 
 #include <stdio.h>
-#define VSTMIDIOUTENABLE
-#define MAXCHANNELS 16
-#define MAXPARAMETERS 128
-#define MAXBLOCKSIZE 256
-#define MAXSTRINGSIZE 4096
-#define MAXMIDIQUEUESIZE 1024
-
-//#ifdef VSTMIDIOUTENABLE
-    #define MAXMIDIOUTQUEUESIZE 1024
-//#endif // VSTMIDIOUTENABLE
-
-
-
+#include <stdint.h>
+#include "pdvst3_base_defines.h"
 
 
 typedef enum _pdvstParameterDataType
 {
-	FLOAT_TYPE,
-	STRING_TYPE
+    FLOAT_TYPE,
+    STRING_TYPE
 } pdvstParameterDataType;
 
 typedef enum _pdvstParameterState
 {
-	PD_SEND,
-	PD_RECEIVE
+    PD_SEND,
+    PD_RECEIVE
 } pdvstParameterState;
 
 typedef enum _pdvstMidiMessageType
@@ -63,16 +52,16 @@ typedef enum _pdvstMidiMessageType
 
 typedef union _pdvstParameterData
 {
-	float floatData;
-	char stringData[MAXSTRINGSIZE];
+    float floatData;
+    char stringData[MAXSTRINGSIZE];
 } pdvstParameterData;
 
 typedef struct _pdvstParameter
 {
-	int updated;
-	pdvstParameterDataType type;
-	pdvstParameterData value;
-	pdvstParameterState direction;
+    int updated;
+    pdvstParameterDataType type;
+    pdvstParameterData value;
+    pdvstParameterState direction;
 } pdvstParameter;
 
 typedef struct _pdvstMidiMessage
@@ -86,49 +75,79 @@ typedef struct _pdvstMidiMessage
 
 typedef struct _vstTimeInfo
 {
+    enum StatesAndFlags
+    {
+        kPlaying          = 1 << 1,     ///< currently playing
+        kCycleActive      = 1 << 2,     ///< cycle is active
+        kRecording        = 1 << 3,     ///< currently recording
+
+        kSystemTimeValid  = 1 << 8,     ///< systemTime contains valid information
+        kContTimeValid    = 1 << 17,    ///< continousTimeSamples contains valid information
+
+        kProjectTimeMusicValid = 1 << 9,///< projectTimeMusic contains valid information
+        kBarPositionValid = 1 << 11,    ///< barPositionMusic contains valid information
+        kCycleValid       = 1 << 12,    ///< cycleStartMusic and barPositionMusic contain valid information
+
+        kTempoValid       = 1 << 10,    ///< tempo contains valid information
+        kTimeSigValid     = 1 << 13,    ///< timeSigNumerator and timeSigDenominator contain valid information
+        kChordValid       = 1 << 18,    ///< chord contains valid information
+
+        kSmpteValid       = 1 << 14,    ///< smpteOffset and frameRate contain valid information
+        kClockValid       = 1 << 15     ///< samplesToNextClock valid
+    };   
+    
+    
     int updated;
-//-------------------------------------------------------------------------------------------------------
-	double samplePos;				///< current Position in audio samples (always valid)
-	double sampleRate;				///< current Sample Rate in Herz (always valid)
-	double nanoSeconds;				///< System Time in nanoseconds (10^-9 second)
-	double ppqPos;					///< Musical Position, in Quarter Note (1.0 equals 1 Quarter Note)
-	double tempo;					///< current Tempo in BPM (Beats Per Minute)
-	double barStartPos;				///< last Bar Start Position, in Quarter Note
-	double cycleStartPos;			///< Cycle Start (left locator), in Quarter Note
-	double cycleEndPos;				///< Cycle End (right locator), in Quarter Note
-	int timeSigNumerator;		///< Time Signature Numerator (e.g. 3 for 3/4)
-	int timeSigDenominator;	///< Time Signature Denominator (e.g. 4 for 3/4)
-	int smpteOffset;			///< SMPTE offset (in SMPTE subframes (bits; 1/80 of a frame)). The current SMPTE position can be calculated using #samplePos, #sampleRate, and #smpteFrameRate.
-	int smpteFrameRate;		///< @see VstSmpteFrameRate
-	int samplesToNextClock;	///< MIDI Clock Resolution (24 Per Quarter Note), can be negative (nearest clock)
-	int flags;					///< @see VstTimeInfoFlags
-//-------------------------------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------
+
+    uint32_t state;                 ///< a combination of the values from \ref StatesAndFlags
+
+    double sampleRate;              ///< current sample rate                    (always valid)
+    int64_t projectTimeSamples; ///< project time in samples                (always valid)
+
+    int64_t systemTime;             ///< system time in nanoseconds                 (optional)
+    int64_t continousTimeSamples;   ///< project time, without loop                 (optional)
+
+    double projectTimeMusic;    ///< musical position in quarter notes (1.0 equals 1 quarter note) (optional)
+    double barPositionMusic;    ///< last bar start position, in quarter notes  (optional)
+    double cycleStartMusic; ///< cycle start in quarter notes               (optional)
+    double cycleEndMusic;   ///< cycle end in quarter notes                 (optional)
+
+    double tempo;                   ///< tempo in BPM (Beats Per Minute)            (optional)
+    int32_t timeSigNumerator;           ///< time signature numerator (e.g. 3 for 3/4)  (optional)
+    int32_t timeSigDenominator;     ///< time signature denominator (e.g. 4 for 3/4) (optional)
+
+    int32_t chord;                  ///< musical info                               (optional)
+
+    int32_t samplesToNextClock;     ///< MIDI Clock Resolution (24 Per Quarter Note), can be negative (nearest) (optional)
+//------------------------------------------------------------------------
 }pdvstTimeInfo;
 
 
 typedef struct _pdvstTransferData
 {
-	int active;
-	int syncToVst;
-	int nChannels;
-	int sampleRate;
-	int blockSize;
-	int nParameters;
+    int active;
+    int syncToVst;
+    int nChannels;
+    int sampleRate;
+    int blockSize;
+    int nParameters;
     int midiQueueSize;
     int midiQueueUpdated;
-	float samples[MAXCHANNELS][MAXBLOCKSIZE];
-	pdvstParameter vstParameters[MAXPARAMETERS];
+    float samples[MAXCHANNELS][MAXBLOCKSIZE];
+    pdvstParameter vstParameters[MAXPARAMETERS];
     pdvstMidiMessage midiQueue[MAXMIDIQUEUESIZE];
-	pdvstParameter guiState;
-	pdvstParameter plugName;  // transmitted by host
+    pdvstParameter guiState;
+    pdvstParameter plugName;  // transmitted by host
     pdvstParameter datachunk;  // get/set chunk from .fxp .fxb files
     pdvstParameter progname2pd;  // send program name to Pd
     pdvstParameter prognumber2pd;  // send program name to Pd
-	pdvstParameter guiName;   // transmitted by pd : name of gui window to be embedded
+    pdvstParameter guiName;   // transmitted by pd : name of gui window to be embedded
  //   #ifdef VSTMIDIOUTENABLE
     int midiOutQueueSize;
     int midiOutQueueUpdated;
-	pdvstMidiMessage midiOutQueue[MAXMIDIOUTQUEUESIZE];
+    pdvstMidiMessage midiOutQueue[MAXMIDIOUTQUEUESIZE];
 
  //   #endif // VSTMIDIOUTENABLE
     pdvstTimeInfo  hostTimeInfo;

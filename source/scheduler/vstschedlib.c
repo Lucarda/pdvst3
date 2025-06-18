@@ -592,6 +592,101 @@ int scheduler()
                     gensym(pdvstData->progname2pd.value.stringData));
             pdvstData->progname2pd.updated=0;
         }
+
+        // playhead from host -----------
+        if (pdvstData->hostTimeInfo.updated)
+        {
+            pdvstData->hostTimeInfo.updated=0;
+            t_symbol *tempSym;
+            if (timeInfo.state!=pdvstData->hostTimeInfo.state)
+            {
+                timeInfo.state=pdvstData->hostTimeInfo.state;
+                tempSym = gensym("vstTimeInfo.state");
+                if (tempSym->s_thing)
+                {
+                    pd_float(tempSym->s_thing, (float)timeInfo.state);
+                }
+                else
+                {
+                    timeInfo.state=0;
+                    pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
+                }
+            }
+            if (timeInfo.tempo!=pdvstData->hostTimeInfo.tempo)
+            {
+                timeInfo.tempo=pdvstData->hostTimeInfo.tempo;
+                tempSym = gensym("vstTimeInfo.tempo");
+                if (tempSym->s_thing)
+                {
+                    pd_float(tempSym->s_thing, (float)timeInfo.tempo);
+                }
+                else
+                {
+                    timeInfo.state=0;
+                    pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
+                }
+            }
+            if (timeInfo.projectTimeMusic!=pdvstData->hostTimeInfo.projectTimeMusic)
+            {
+                timeInfo.projectTimeMusic=pdvstData->hostTimeInfo.projectTimeMusic;
+                tempSym = gensym("vstTimeInfo.projectTimeMusic");
+                if (tempSym->s_thing)
+                {
+                    pd_float(tempSym->s_thing, (float)timeInfo.projectTimeMusic);
+                }
+                else
+                {
+                    timeInfo.state=0;
+                    pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
+                }
+            }
+            if (timeInfo.barPositionMusic!=pdvstData->hostTimeInfo.barPositionMusic)
+            {
+                timeInfo.barPositionMusic=pdvstData->hostTimeInfo.barPositionMusic;
+                tempSym = gensym("vstTimeInfo.barPositionMusic");
+                if (tempSym->s_thing)
+                {
+                    pd_float(tempSym->s_thing, (float)timeInfo.barPositionMusic);
+                }
+                else
+                {
+                    timeInfo.state=0;
+                    pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
+                }
+            }
+
+            if (timeInfo.timeSigNumerator!=pdvstData->hostTimeInfo.timeSigNumerator)
+            {
+                timeInfo.timeSigNumerator=pdvstData->hostTimeInfo.timeSigNumerator;
+                tempSym = gensym("vstTimeInfo.timeSigNumerator");
+                if (tempSym->s_thing)
+                {
+                    pd_float(tempSym->s_thing, (float)timeInfo.timeSigNumerator);
+                }
+                else
+                {
+                    timeInfo.state=0;
+                    pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
+                }
+            }
+            if (timeInfo.timeSigDenominator!=pdvstData->hostTimeInfo.timeSigDenominator)
+            {
+                timeInfo.timeSigDenominator=pdvstData->hostTimeInfo.timeSigDenominator;
+                tempSym = gensym("vstTimeInfo.timeSigDenominator");
+                if (tempSym->s_thing)
+                {
+                    pd_float(tempSym->s_thing, (float)timeInfo.timeSigDenominator);
+                }
+                else
+                {
+                    timeInfo.state=0;
+                    pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
+                }
+            }
+        }
+
+
+        /*
         if (pdvstData->hostTimeInfo.updated)
         {
             pdvstData->hostTimeInfo.updated=0;
@@ -672,6 +767,9 @@ int scheduler()
             }
         }
             // JYG }
+            *
+            *
+            */
         for (i = 0; i < pdvstData->nParameters; i++)
         {
             if (pdvstData->vstParameters[i].direction == PD_RECEIVE && \

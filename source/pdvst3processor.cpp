@@ -9,6 +9,7 @@
 #include "pluginterfaces/vst/ivstparameterchanges.h"
 #include "pluginterfaces/vst/ivstmidicontrollers.h"
 #include "pluginterfaces/vst/ivstevents.h"
+#include "pluginterfaces/vst/ivstprocesscontext.h"
 #include "pdvst3_base_defines.h"
 
 #ifndef __APPLE__
@@ -399,6 +400,22 @@ void pdvst3Processor::pdvstquit()
     }
 }
 
+void pdvst3Processor::playhead_to_pd(Vst::ProcessData& data)
+{
+    if (data.processContext)
+    {
+        xxWaitForSingleObject(pdvstTransferMutex, 10);
+        pdvstData->hostTimeInfo.updated=1;
+        pdvstData->hostTimeInfo.state = data.processContext->state;
+        pdvstData->hostTimeInfo.tempo = data.processContext->tempo;
+        pdvstData->hostTimeInfo.projectTimeMusic = data.processContext->projectTimeMusic;
+        pdvstData->hostTimeInfo.barPositionMusic = data.processContext->barPositionMusic;
+        pdvstData->hostTimeInfo.timeSigNumerator = data.processContext->timeSigNumerator;
+        pdvstData->hostTimeInfo.timeSigDenominator = data.processContext->timeSigDenominator;
+        xxReleaseMutex(pdvstTransferMutex);
+    }
+}
+
 void pdvst3Processor::params_to_pd(Vst::ProcessData& data)
 {
     //--- Read inputs parameter changes-----------
@@ -643,6 +660,9 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
     //--- midi input----------
     midi_to_pd(data);
 
+    //--- playhead to pd----------
+    playhead_to_pd(data);
+
     //--- Process Audio---------------------
     //--- ----------------------------------
     if (data.numInputs == 0 || data.numOutputs == 0)
@@ -827,33 +847,33 @@ tresult PLUGIN_API pdvst3Processor::setState (IBStream* state)
     IBStreamer streamer (state, kLittleEndian);
 
     xxWaitForSingleObject(pdvstTransferMutex, 10);
-	for (int i = 0; i < pdvstData->nParameters; i++)
-	{
-		double value = 0;
-		streamer.readDouble (value);
-		pdvstData->vstParameters[i].type = FLOAT_TYPE;
-		pdvstData->vstParameters[i].value.floatData = (float)value;
-		pdvstData->vstParameters[i].direction = PD_RECEIVE;
-		pdvstData->vstParameters[i].updated = 1;
-	}
-	xxReleaseMutex(pdvstTransferMutex);
+    for (int i = 0; i < pdvstData->nParameters; i++)
+    {
+        double value = 0;
+        streamer.readDouble (value);
+        pdvstData->vstParameters[i].type = FLOAT_TYPE;
+        pdvstData->vstParameters[i].value.floatData = (float)value;
+        pdvstData->vstParameters[i].direction = PD_RECEIVE;
+        pdvstData->vstParameters[i].updated = 1;
+    }
+    xxReleaseMutex(pdvstTransferMutex);
 
-    return kResultOk;    
+    return kResultOk;
 }
 
 //------------------------------------------------------------------------
 tresult PLUGIN_API pdvst3Processor::getState (IBStream* state)
 {
     // here we need to save the model (preset or project)
-    
+
     IBStreamer streamer (state, kLittleEndian);
-	xxWaitForSingleObject(pdvstTransferMutex, 10);
-	for (int i = 0; i < pdvstData->nParameters; i++)
-	{
-		double v = (double)pdvstData->vstParameters[i].value.floatData;
-		streamer.writeDouble (v);
-	}
-	xxReleaseMutex(pdvstTransferMutex);
+    xxWaitForSingleObject(pdvstTransferMutex, 10);
+    for (int i = 0; i < pdvstData->nParameters; i++)
+    {
+        double v = (double)pdvstData->vstParameters[i].value.floatData;
+        streamer.writeDouble (v);
+    }
+    xxReleaseMutex(pdvstTransferMutex);
 
     return kResultOk;
 }
