@@ -747,7 +747,8 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
                     int gotPdProcEvent = (xxWaitForSingleObject(pdProcEvent, 10) == 1); //WAIT_OBJECT_0
                 #else
                 //printf("PDPRIOCWAIT\n");
-                    sem_wait(pdProcEvent);
+                    //sem_wait(pdProcEvent);
+                    xxWaitForSingleObject(pdProcEvent, 10);
                     int gotPdProcEvent = 1;
                 //printf("PDPRIOCWAITPOST\n");
                 #endif
