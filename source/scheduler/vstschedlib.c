@@ -622,7 +622,7 @@ int scheduler()
                 }
                 else
                 {
-                    timeInfo.state=0;
+                    timeInfo.tempo=0;
                     pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
                 }
             }
@@ -636,7 +636,7 @@ int scheduler()
                 }
                 else
                 {
-                    timeInfo.state=0;
+                    timeInfo.projectTimeMusic=0;
                     pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
                 }
             }
@@ -650,7 +650,7 @@ int scheduler()
                 }
                 else
                 {
-                    timeInfo.state=0;
+                    timeInfo.barPositionMusic=0;
                     pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
                 }
             }
@@ -665,7 +665,7 @@ int scheduler()
                 }
                 else
                 {
-                    timeInfo.state=0;
+                    timeInfo.timeSigNumerator=0;
                     pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
                 }
             }
@@ -679,7 +679,7 @@ int scheduler()
                 }
                 else
                 {
-                    timeInfo.state=0;
+                    timeInfo.timeSigDenominator=0;
                     pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
                 }
             }

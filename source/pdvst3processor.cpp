@@ -521,6 +521,14 @@ void pdvst3Processor::midi_from_pd(Vst::ProcessData& data)
                         midiEvent.noteOn.noteId = -1;
                         outlist->addEvent(midiEvent);
                     }
+                    else if (status == 0xA0) // polypressure
+                    {
+                        midiEvent.type = Vst::Event::kPolyPressureEvent;
+                        midiEvent.polyPressure.channel = channel;
+                        midiEvent.polyPressure.pitch = b1;
+                        midiEvent.polyPressure.pressure = b2 / 127.;
+                        outlist->addEvent(midiEvent);
+                    }
                     else if (status == 0xB0) // controller change
                     {
                         midiEvent.type = Vst::Event::kLegacyMIDICCOutEvent;
@@ -568,6 +576,24 @@ void pdvst3Processor::midi_to_pd(Vst::ProcessData& data)
                         pdvstData->midiQueue[pdvstData->midiQueueSize].dataByte2 = (char)127 * event.noteOff.velocity;
                         pdvstData->midiQueue[pdvstData->midiQueueSize].messageType = NOTE_OFF;
                         break;
+                        
+                     //--- -------------------
+                    case Vst::Event::kPolyPressureEvent:
+                        pdvstData->midiQueue[pdvstData->midiQueueSize].channelNumber = event.polyPressure.channel;
+                        pdvstData->midiQueue[pdvstData->midiQueueSize].dataByte1 = event.polyPressure.pitch;
+                        pdvstData->midiQueue[pdvstData->midiQueueSize].dataByte2 = (char)127 * event.polyPressure.pressure;
+                        pdvstData->midiQueue[pdvstData->midiQueueSize].messageType = KEY_PRESSURE;
+                        break;
+                        
+                    //--- -------------------
+                    case Vst::Event::kLegacyMIDICCOutEvent:
+                        pdvstData->midiQueue[pdvstData->midiQueueSize].channelNumber = event.midiCCOut.channel;
+                        pdvstData->midiQueue[pdvstData->midiQueueSize].dataByte1 = event.midiCCOut.controlNumber;
+                        pdvstData->midiQueue[pdvstData->midiQueueSize].dataByte2 = event.midiCCOut.value;
+                        pdvstData->midiQueue[pdvstData->midiQueueSize].messageType = CONTROLLER_CHANGE;
+                        break;
+                        
+                      
                 }
                 pdvstData->midiQueueSize++;
                 pdvstData->midiQueueUpdated = 1;
