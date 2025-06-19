@@ -68,9 +68,10 @@ int Steinberg::pdvst3Processor::referenceCount = 0;
     void xxSetEvent(sem_t *mutex);
     void xxResetEvent(sem_t *mutex);
 #endif
-
-
 extern Steinberg::FUID contUID;
+
+
+
 using namespace Steinberg;
 
 namespace Steinberg {
@@ -143,8 +144,6 @@ void pdvst3Processor::startPd()
     pdvstData->active = 1;
     pdvstData->blockSize = PDBLKSIZE;
     pdvstData->nChannels = nChannels;
-    // fixme
-    //pdvstData->sampleRate = (int)getSampleRate();
     pdvstData->sampleRate = 48000;
     pdvstData->nParameters = globalNParams;
     pdvstData->guiState.updated = 0;
@@ -243,7 +242,6 @@ void pdvst3Processor::startPd()
                   NULL,
                   &si,
                   &pi);
-
     #else
         system(commandLineArgs);
     #endif
@@ -252,13 +250,11 @@ void pdvst3Processor::startPd()
 void pdvst3Processor::setSyncToVst(int value)
 {
     xxWaitForSingleObject(pdvstTransferMutex, 10);
+    if (pdvstData->syncToVst != value)
     {
-        if (pdvstData->syncToVst != value)
-        {
-            pdvstData->syncToVst = value;
-        }
-        xxReleaseMutex(pdvstTransferMutex);
+        pdvstData->syncToVst = value;
     }
+    xxReleaseMutex(pdvstTransferMutex);
 }
 
 
@@ -576,7 +572,7 @@ void pdvst3Processor::midi_to_pd(Vst::ProcessData& data)
                         pdvstData->midiQueue[pdvstData->midiQueueSize].dataByte2 = (char)127 * event.noteOff.velocity;
                         pdvstData->midiQueue[pdvstData->midiQueueSize].messageType = NOTE_OFF;
                         break;
-                        
+
                      //--- -------------------
                     case Vst::Event::kPolyPressureEvent:
                         pdvstData->midiQueue[pdvstData->midiQueueSize].channelNumber = event.polyPressure.channel;
@@ -584,7 +580,7 @@ void pdvst3Processor::midi_to_pd(Vst::ProcessData& data)
                         pdvstData->midiQueue[pdvstData->midiQueueSize].dataByte2 = (char)127 * event.polyPressure.pressure;
                         pdvstData->midiQueue[pdvstData->midiQueueSize].messageType = KEY_PRESSURE;
                         break;
-                        
+
                     //--- -------------------
                     case Vst::Event::kLegacyMIDICCOutEvent:
                         pdvstData->midiQueue[pdvstData->midiQueueSize].channelNumber = event.midiCCOut.channel;
@@ -592,8 +588,8 @@ void pdvst3Processor::midi_to_pd(Vst::ProcessData& data)
                         pdvstData->midiQueue[pdvstData->midiQueueSize].dataByte2 = event.midiCCOut.value;
                         pdvstData->midiQueue[pdvstData->midiQueueSize].messageType = CONTROLLER_CHANGE;
                         break;
-                        
-                      
+
+
                 }
                 pdvstData->midiQueueSize++;
                 pdvstData->midiQueueUpdated = 1;
@@ -710,9 +706,6 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
         const int32 numChannels = data.numInputs+1;
         const int32 numSamples = data.numSamples;
 
-        //printf("numchannels: %d\n",numChannels);
-
-
 
         //---------
 
@@ -730,7 +723,6 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
 
         for (i = 0; i < numSamples; i++)
         {
-            //for (j = 0; j < audioBuffer->nChannels; j++)
             for (j = 0; j < numChannels; j++)
             {
                 audioBuffer->in[j][audioBuffer->inFrameCount] = input[j][i];
@@ -741,16 +733,13 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
             {
                 audioBuffer->inFrameCount = 0;
                 //updatePdvstParameters();
-                params_from_pd(data);
+                //params_from_pd(data);
 
                 #if _WIN32
                     int gotPdProcEvent = (xxWaitForSingleObject(pdProcEvent, 10) == 1); //WAIT_OBJECT_0
                 #else
-                //printf("PDPRIOCWAIT\n");
-                    //sem_wait(pdProcEvent);
                     xxWaitForSingleObject(pdProcEvent, 10);
                     int gotPdProcEvent = 1;
-                //printf("PDPRIOCWAITPOST\n");
                 #endif
 
                 if (gotPdProcEvent)
@@ -795,7 +784,6 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
         // output pd processed samples
         for (i = 0; i < numSamples; i++)
         {
-            //for (j = 0; j < audioBuffer->nChannels; j++)
             for (j = 0; j < numChannels; j++)
             {
                 if (audioBuffer->outFrameCount > 0)

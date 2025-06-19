@@ -1,4 +1,10 @@
 
+#define PDVST3_VER_MAJ 0
+#define PDVST3_VER_MIN 1
+#define PDVST3_VER_PATCH 0
+
+#define PDVST3_AUTH "(c) Lucas Cordiviola"
+#define PDVST3_DATE "2025"
 
 
 #define PDBLKSIZE 64

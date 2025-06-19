@@ -970,7 +970,10 @@ int pd_extern_sched(char *flags)
     pdvstData = (pdvstTransferData *)pdvstTransferFileMap;
     #endif
     xxWaitForSingleObject(pdvstTransferMutex, -1);
-    post("pdvst3sheduler");
+    logpost(NULL, PD_DEBUG,"---");
+    logpost(NULL, PD_DEBUG,"  pdvst3 v%d.%d.%d",PDVST3_VER_MAJ, PDVST3_VER_MIN, PDVST3_VER_PATCH);
+    logpost(NULL, PD_DEBUG,"  %s %s",PDVST3_AUTH, PDVST3_DATE);
+    logpost(NULL, PD_DEBUG,"---");
     sys_setchsr(pdvstData->nChannels,
                 pdvstData->nChannels,
                 pdvstData->sampleRate);
