@@ -1,47 +1,192 @@
 # pdvst3
 
+
+Based on https://github.com/Lucarda/pdvst-0.52 but updated to vst3 (
+Linux, macOS and Windows) and to load with Pd-0.55-2 or higher.
+
+Get pre-built binaries on https://github.com/Lucarda/pdvst3/releases
+or build. see [compiling.md](compiling.md)
+
+
+## How does it work ?
+
+pdvst3 consists of:
+
+* a vst-plugin (`pdvst3.vst3`) to place in your favorite vst folder.
+* a custom external scheduler is included in the bundle.
+
+When a pdvst3 plugin is opened by the host application, a setup file (
+config.txt) is read to determine information about the plugin, such as
+the Pd patch file to use, the number of parameters, etc...
+An instance of Pd (that optionally can be shipped inside the plug in)
+is started and opens the Pd patch file whose name was found in the setup file.
+
+## Installation
+
+You can use your current pure-data installation (>= Pd-0.55-2) with your
+favorite externals.
+
+Copy your plugin `.vst3` bundle file (e.g. `pdvst3.vst3`) to the
+default vst3 plugins directory for your OS.
+
+default dirs:
+
+**Windows**:
+`C:\Program Files\Common Files\VST3`
+
+**macOS**:
+`/Library/Audio/Plug-Ins/VST3/` or `~/Library/Audio/Plug-Ins/VST3/`
+
+**Linux**:
+`$HOME/.vst3/`, `/usr/lib/vst3/`, and `/usr/local/lib/vst3/`.
+The `~/.vst3/` directory is for user-specific plugins, while `/usr/lib/vst3/`
+and `/usr/local/lib/vst3/` are for global (system-wide) plugins. Consult
+your Linux distro docs if needed.
+
+## Creating VST Plugins from Pd Patches
+
+1) Make a copy of the `pdvst3.vst3` bundle and
+  rename it (must be lowercase) to for example "myplug.vst3".
+  If needed move your new plugin bundle to the vst3 plugins folder of your OS.
+
+2) Edit `config.txt` setup file inside the bundle (see the Setup File section).
+Make sure you update the NAME (= myplug) and ID (= <some random 4 letters>).
+
+3)
+**Linux**: inside the bundle locate the <plug>.so file ie
+`<plug>/Contents/x86_64-linux/pdvst3.so` and rename the .so
+file as `myplug.so`
+
+**Windows**: inside the bundle locate the <plug>.dll file ie
+`<plug>\Contents\x86_64-win\pdvst3.dll` and rename the .dll
+file as `myplug.dll`
+
+**macOS** (untested yet): inside the bundle locate the <plug> file ie
+`<plug>/Contents/MacOS/pdvst3` and rename the file as `myplug`.
+Then edit `<plug>/Contents/Info.plist` and change occurrence of "pdvst3"
+to "myplug" (no quotes).
+
+4) place your .pd patch(es) inside the bundle and update "config.txt"
+with the new MAIN (= somepatch.pd)
+
+## The `config.txt` setup file
+
+This file contains all of the information about your plugin. The format is ASCII
+text with keys and values separated by an '=' character and each key and value
+pair separated by a carriage return. Comments are demarked with a '#' character.
+For an example, see Pd_Gain.pdv.
+
+  -Keys-
+
+    PLUGNAME = <string>
+    # Name of plugin must be lowercase and match with vst3 bundle name.
+
+    CHANNELS = <integer>
+    # Number of audio input and output channels. Tested with 2 and 4.
+    # Should work with larger values.
+
+    PDPATH_LINUX = /home/lucarda/Downloads/pure-data
+    PDPATH_MAC = /Applications/Pd-0.55-2.app
+    PDPATH_WIN = C:\Program Files\Pd
+    # Where to find Pd:
+    # you can supply the path of your Pd installation or specify what Pd to use.
+    # Note: the following lines are appended to path:
+    #   Windows: "\bin\pd.exe"
+    #   macOS: "/Contents/Resources/bin/pd"
+    #   Linux: "/bin/pd"
+    # special wildcards:
+    #   @plug_parent : find Pd in the parent dir of the plugin
+    #   @resources   : find Pd inside the plugin's folder "Contents/Resources"
+    #  example:
+    #   PDPATH_LINUX = @resources
+    # when using the wildcards the main Pd folder must be renamed per OS like:
+    #   Windows: Pd-win
+    #   macOS: Pd.app
+    #   Linux: pd
+    # Note: omit the final slash in path
+
+    MAIN = <string>
+    # The .pd file for Pd to open when the plugin is opened.
+
+    ID = <string[4]>
+    # The 4-character unique ID for the VST plugin. This is required by VST and
+    # just needs to be a unique string of four characters.
+
+    SYNTH = <TRUE/FALSE>
+    # Boolean value stating whether this plugin is an instrument (VSTi)
+    # or an effect.
+    # Both types of plugins can send/receive midi events.
+
+    DEBUG = <TRUE/FALSE>
+    # Boolean value stating whether to display the Pd GUI when the plugin is opened.
+
+    PARAMETERS = <integer>
+    # Number of parameters the plugin uses (up to 128).
+
+    NAMEPARAMETER<integer> = <string>
+    # Display name for parameters. Used when CUSTOMGUI is false or the VST host
+    # doesn't support custom editors.
+
+    VERSION = <string>
+    AUTHOR = <string>
+    URL = <string>
+    MAIL = <string>
+    # Optional info that shows in the vst host.
+
+
+
+## Pd/VST audio/midi Communication
+
+When the plugin is opened, the .pd patch file declared in the setup file's MAIN key
+will be opened.
+
+The Pd patch will receive its incoming audio stream from the adc~ object,
+and incoming MIDI data from the Pd objects notein, etc.
+
+Pd patches should output their audio stream to the dac~ object,
+and their midi stream to the noteout, etc objects.
+
+REMARKS :
+* MIDI in out is rather limited in VST3 protocol.
+* Inside puredata plugin, don't use anything on menu audio
+settings, you may crash pd & host.
+* You can continue to use "media/midi settings" menu to select input
+and output midi devices independently from host.
+
+## Pd/VST3 - further communications
+
+For purposes such as GUI interaction and VST automation, your patch may
+need to communicate further with the VST host. Special Pd send/receive
+symbols can be used in your Pd patch. For an example, see the example plugin.
+
+* `rvstparameter<integer>` : Use this symbol to receive parameter values
+from the VST host. Values will be floats between 0 and 1 inclusive.
+* `svstparameter<integer>` : Use this symbol to send parameter values to
+the VST host. Values should be floats between 0 and 1 inclusive.
+* `svstdata` : Use this symbol to save a Pd list as "chunk" data in the
+host DAW's save file (see `PROGRAMSARECHUNKS` setting above).
+* `rvstdata` : Use this symbol to receive a Pd list of "chunk" data that
+was saved into the DAW file by your patch. Triggered at load time.
+* `rvstprognumber`: Use this symbol to receive program number changes from host.
+* `rvstprogname`: Use this symbol to receive program name changes from host.
+* `rvstplugname`: Use this symbol to receive plug & instance name from host
+* `vstTimeInfo`: (play head information support) :
+
+`vstTimeInfo.state`, `vstTimeInfo.tempo`, `vstTimeInfo.projectTimeMusic`,
+`vstTimeInfo.barPositionMusic`, `vstTimeInfo.timeSigNumerator`,
+`vstTimeInfo.timeSigDenominator` are receivers for getting time infos from host.
+Names should change in the future.
+
+
+Note: for most VST hosts, parameters for VST instruments are recorded as
+sysex data, so be sure to disable any MIDI message filtering in the VST host.
+
+## current features
+
+* Multichannel audio in/out support
+* Midi in out support
+* Play head information support (see examples)
+* Save chunk data to host DAW
+
+
 ![vst logo](VST_Compatible_Logo_Steinberg_with_TM.png)
-
-### compiling
-
-base dependencies: cmake, git, c++ compiler (MSVC on Windows)
-
-dependecies for Linux:
-
-`sudo apt-get install cmake gcc "libstdc++6" libx11-xcb-dev libxcb-util-dev libxcb-cursor-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev libfontconfig1-dev libcairo2-dev libgtkmm-3.0-dev libsqlite3-dev libxcb-keysyms1-dev`
-
-* clone repository:
-
-  * `git clone <repo>`
-
-  * `cd to <repo>`
-
-* init submodules:
-
-  * `git submodule update --init --recursive`
-  
-* make build folder and cd to it:
-
-  * `mkdir build && cd build`
-
-
-linux:
-
-`cmake ../ -DCMAKE_BUILD_TYPE:STRING=release -DSMTG_CREATE_MODULE_INFO=off`
-
-`make`
-
-win:
-
-`cmake ../ -DCMAKE_BUILD_TYPE:STRING=release -DSMTG_CREATE_MODULE_INFO=off -DSMTG_USE_STATIC_CRT:BOOL=ON`
-
-`cmake --build .`
-
-mac:
-
-`cmake -DCMAKE_BUILD_TYPE:STRING=release -DSMTG_CREATE_MODULE_INFO=off -DSMTG_DISABLE_CODE_SIGNING=on ../`
-
-`cmake --build . --config Release`
-
-
-

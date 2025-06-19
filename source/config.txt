@@ -43,9 +43,6 @@ MAIN = Pd_example.pd
 # Whether this is a VSTi
 SYNTH = FALSE
 
-# Whether there is a custom GUI (e.g. GrIPD)
-CUSTOMGUI = FALSE
-
 # Display Pd GUI or not
 DEBUG = TRUE
 
@@ -61,22 +58,3 @@ PARAMETERS = 3
 NAMEPARAMETER0 = Level
 NAMEPARAMETER1 = foo
 NAMEPARAMETER2 = bar
-
-
-# Define a program (up to 128)
-PROGRAM = Full Blast
-
-# Set first parameter value for this program
-PARAMETER0 = 1.0
-
-#another program
-PROGRAM = Muted
-
-PARAMETER0 = 0.0
-
-#another program
-PROGRAM = -6dB
-
-PARAMETER0 = 0.94
-
-
