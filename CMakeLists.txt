@@ -1,6 +1,8 @@
 
 cmake_minimum_required (VERSION 3.25.0)
 
+set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
+
 
 # Specify the minimum version of the target platform
 if(NOT DEFINED ENV{MACOSX_DEPLOYMENT_TARGET})
