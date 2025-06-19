@@ -1,4 +1,6 @@
-# pdvst3start
+# pdvst3
+
+### compiling
 
 linux:
 
@@ -14,9 +16,9 @@ win:
 
 mac:
 
-cmake -DCMAKE_BUILD_TYPE:STRING=release -DSMTG_CREATE_MODULE_INFO=off -DSMTG_DISABLE_CODE_SIGNING=on ../
+`cmake -DCMAKE_BUILD_TYPE:STRING=release -DSMTG_CREATE_MODULE_INFO=off -DSMTG_DISABLE_CODE_SIGNING=on ../`
 
-cmake --build . --config Release
+`cmake --build . --config Release`
 
 
 
