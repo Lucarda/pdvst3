@@ -1,22 +1,22 @@
-/* PdVst v0.0.2 - VST - Pd bridging plugin
-** Copyright (C) 2004 Joseph A. Sarlo
-**
-** This program is free software; you can redistribute it and/orsig
-** modify it under the terms of the GNU General Public License
-** as published by the Free Software Foundation; either version 2
-** of the License, or (at your option) any later version.
-**
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-** GNU General Public License for more details.
-**
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-**
-** jsarlo@ucsd.edu
-*/
+/*
+ * This file is part of pdvst3.
+ *
+ * Copyright (C) 2025 Lucas Cordiviola
+ * based on original work from 2004 by Joseph A. Sarlo and 2018 by Jean-Yves Gratius
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 #ifndef __pdvstTransfer_H
 #define __pdvstTransfer_H

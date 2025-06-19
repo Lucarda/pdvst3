@@ -6,7 +6,6 @@
 #define PDVST3_AUTH "(c) Lucas Cordiviola"
 #define PDVST3_DATE "2025"
 
-
 #define PDBLKSIZE 64
 #define MAXEXTERNS 128
 #define MAXVSTBUFSIZE 4096
@@ -19,9 +18,6 @@
 #define PDWAITMAX 1000
 #define SETUPFILEEXT ".pdv"
 #define DEFPDVSTBUFFERSIZE 1024
-
-
-#define VSTMIDIOUTENABLE
 #define MAXCHANNELS 16
 #define MAXPARAMETERS 128
 #define MAXBLOCKSIZE 256

@@ -1,22 +1,22 @@
-/* PdVst v0.0.2 - VST - Pd bridging plugin
-** Copyright (C) 2004 Joseph A. Sarlo
-**
-** This program is free software; you can redistribute it and/orsig
-** modify it under the terms of the GNU General Public License
-** as published by the Free Software Foundation; either version 2
-** of the License, or (at your option) any later version.
-**
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-** GNU General Public License for more details.
-**
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-**
-** jsarlo@ucsd.edu
-*/
+/*
+ * This file is part of pdvst3.
+ *
+ * Copyright (C) 2025 Lucas Cordiviola
+ * based on original work from 2004 by Joseph A. Sarlo and 2018 by Jean-Yves Gratius
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 #ifdef _WIN32
     #define _WIN32_WINDOWS 0x410
@@ -42,32 +42,23 @@
 #define TIMEUNITPERSEC (32.*441000.)
 
 
-#define kVstTransportChanged      1
-#define kVstTransportPlaying      2
-#define kVstTransportRecording    8
-
 FILE *debugFile;
 
-#ifdef VSTMIDIOUTENABLE
-    EXTERN int midi_outhead;
-    int lastmidiouthead=0;
-
-    typedef struct _midiqelem
-    {
-        double q_time;
-        int q_portno;
-        unsigned char q_onebyte;
-        unsigned char q_byte1;
-        unsigned char q_byte2;
-        unsigned char q_byte3;
-    } t_midiqelem;
-
-    #ifndef MIDIQSIZE
-        #define MIDIQSIZE 1024
-    #endif /*MIDIQSIZE  */
-
-    EXTERN t_midiqelem midi_outqueue[MIDIQSIZE];
-#endif // VSTMIDIOUTENABLE
+typedef struct _midiqelem
+{
+    double q_time;
+    int q_portno;
+    unsigned char q_onebyte;
+    unsigned char q_byte1;
+    unsigned char q_byte2;
+    unsigned char q_byte3;
+} t_midiqelem;
+#ifndef MIDIQSIZE
+    #define MIDIQSIZE 1024
+#endif
+EXTERN t_midiqelem midi_outqueue[MIDIQSIZE];
+EXTERN int midi_outhead;
+int lastmidiouthead=0;
 
 #if _WIN32
     int xxWaitForSingleObject(HANDLE mutex, int ms);
@@ -470,16 +461,6 @@ void scheduler_tick( void)
     sys_pollgui();
     pollwatchdog();
 }
-/*
-int HFClock()
-{
-    LARGE_INTEGER freq, now;
-
-    QueryPerformanceFrequency(&freq);
-    QueryPerformanceCounter(&now);
-    return (int)((now.QuadPart * 1000) / freq.QuadPart);
-}
-*/
 
 int scheduler()
 {
@@ -534,10 +515,7 @@ int scheduler()
         *(get_sys_sleepgrain()) = 5000;
     }
     sys_initmidiqueue();
-
-    #ifdef VSTMIDIOUTENABLE
     pdvstData->midiOutQueueSize=0;
-    #endif // VSTMIDIOUTENABLE
     while (active)
     {
         xxWaitForSingleObject(pdvstTransferMutex, -1);
@@ -550,7 +528,7 @@ int scheduler()
                         pdvstData->nChannels,
                         pdvstData->sampleRate);
         }
-        // check for vstParameter changed
+        // check for gui?
         if (pdvstData->guiState.direction == PD_RECEIVE && \
             pdvstData->guiState.updated)
         {
@@ -685,91 +663,6 @@ int scheduler()
             }
         }
 
-
-        /*
-        if (pdvstData->hostTimeInfo.updated)
-        {
-            pdvstData->hostTimeInfo.updated=0;
-            t_symbol *tempSym;
-            if (timeInfo.flags!=pdvstData->hostTimeInfo.flags)
-            {
-                timeInfo.flags=pdvstData->hostTimeInfo.flags;
-
-                tempSym = gensym("vstTimeInfo.flags");
-                if (tempSym->s_thing)
-                {
-                    pd_float(tempSym->s_thing, (float)timeInfo.flags);
-                }
-                else
-                {
-                    timeInfo.flags=0;
-                    pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
-                 }
-            }
-
-            if ((timeInfo.flags&(kVstTransportChanged|kVstTransportPlaying|kVstTransportRecording))||(timeInfo.ppqPos!=(float)pdvstData->hostTimeInfo.ppqPos))
-            {
-                timeInfo.ppqPos=(float)pdvstData->hostTimeInfo.ppqPos;
-                tempSym = gensym("vstTimeInfo.ppqPos");
-                if (tempSym->s_thing)
-                {
-                    pd_float(tempSym->s_thing, timeInfo.ppqPos);
-                }
-                 else
-                {
-                    timeInfo.ppqPos=0.;
-                    pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
-                 }
-            }
-            if ((timeInfo.flags&kVstTransportChanged)|(timeInfo.tempo!=(float)pdvstData->hostTimeInfo.tempo))
-            {
-                timeInfo.tempo=(float)pdvstData->hostTimeInfo.tempo;
-                tempSym = gensym("vstTimeInfo.tempo");
-                if (tempSym->s_thing)
-                {
-                    pd_float(tempSym->s_thing, timeInfo.tempo);
-                }
-                 else
-                 {
-                    timeInfo.tempo=0.;
-                    pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
-                 }
-            }
-
-            if ((timeInfo.flags&kVstTransportChanged)|timeInfo.timeSigNumerator!=pdvstData->hostTimeInfo.timeSigNumerator)
-            {
-                timeInfo.timeSigNumerator=pdvstData->hostTimeInfo.timeSigNumerator;
-
-                tempSym = gensym("vstTimeInfo.timeSigNumerator");
-                if (tempSym->s_thing)
-                {
-                    pd_float(tempSym->s_thing, (float)timeInfo.timeSigNumerator);
-                }
-                 else
-                {
-                    timeInfo.timeSigNumerator=0;
-                    pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
-                 }
-            }
-            if ((timeInfo.flags&kVstTransportChanged)| timeInfo.timeSigDenominator!=pdvstData->hostTimeInfo.timeSigDenominator)
-            {
-                timeInfo.timeSigDenominator=pdvstData->hostTimeInfo.timeSigDenominator;
-                tempSym = gensym("vstTimeInfo.timeSigDenominator");
-                if (tempSym->s_thing)
-                {
-                    pd_float(tempSym->s_thing, (float)timeInfo.timeSigDenominator);
-                }
-                 else
-                {
-                    timeInfo.timeSigDenominator=0;
-                    pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
-                 }
-            }
-        }
-            // JYG }
-            *
-            *
-            */
         for (i = 0; i < pdvstData->nParameters; i++)
         {
             if (pdvstData->vstParameters[i].direction == PD_RECEIVE && \
@@ -851,32 +744,26 @@ int scheduler()
             pdvstData->midiQueueSize = 0;
             pdvstData->midiQueueUpdated = 0;
         }
-
         // flush vstmidi out messages here
-#ifdef VSTMIDIOUTENABLE
-
-            int i=pdvstData->midiOutQueueSize;
-            while (midi_outhead != lastmidiouthead)
-            {
-                pdvstData->midiOutQueue[i].statusByte = midi_outqueue[lastmidiouthead].q_byte1;
-                pdvstData->midiOutQueue[i].dataByte1=  midi_outqueue[lastmidiouthead].q_byte2;
-                pdvstData->midiOutQueue[i].dataByte2= midi_outqueue[lastmidiouthead].q_byte3;
-                lastmidiouthead  = (lastmidiouthead + 1 == MIDIQSIZE ? 0 : lastmidiouthead + 1);
-                i  = i + 1;
-            }
-            if (i>0)
-            {
-                pdvstData->midiOutQueueSize=i;
-                pdvstData->midiOutQueueUpdated=1;
-            }
-            else
-            {
-                pdvstData->midiOutQueueSize=0;
-                pdvstData->midiOutQueueUpdated=0;
-            }
-
-#endif  // VSTMIDIOUTENABLE
-
+        int i=pdvstData->midiOutQueueSize;
+        while (midi_outhead != lastmidiouthead)
+        {
+            pdvstData->midiOutQueue[i].statusByte = midi_outqueue[lastmidiouthead].q_byte1;
+            pdvstData->midiOutQueue[i].dataByte1=  midi_outqueue[lastmidiouthead].q_byte2;
+            pdvstData->midiOutQueue[i].dataByte2= midi_outqueue[lastmidiouthead].q_byte3;
+            lastmidiouthead  = (lastmidiouthead + 1 == MIDIQSIZE ? 0 : lastmidiouthead + 1);
+            i  = i + 1;
+        }
+        if (i>0)
+        {
+            pdvstData->midiOutQueueSize=i;
+            pdvstData->midiOutQueueUpdated=1;
+        }
+        else
+        {
+            pdvstData->midiOutQueueSize=0;
+            pdvstData->midiOutQueueUpdated=0;
+        }
         // run at approx. real-time
         blockTime = (int)((float)(pdvstData->blockSize) / \
                           (float)pdvstData->sampleRate * 1000.0);
