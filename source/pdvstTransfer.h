@@ -144,12 +144,9 @@ typedef struct _pdvstTransferData
     pdvstParameter progname2pd;  // send program name to Pd
     pdvstParameter prognumber2pd;  // send program name to Pd
     pdvstParameter guiName;   // transmitted by pd : name of gui window to be embedded
- //   #ifdef VSTMIDIOUTENABLE
     int midiOutQueueSize;
     int midiOutQueueUpdated;
     pdvstMidiMessage midiOutQueue[MAXMIDIOUTQUEUESIZE];
-
- //   #endif // VSTMIDIOUTENABLE
     pdvstTimeInfo  hostTimeInfo;
 
 } pdvstTransferData;

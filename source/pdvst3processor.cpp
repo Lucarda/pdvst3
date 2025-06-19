@@ -29,7 +29,7 @@
 #include "pdvst3_base_defines.h"
 
 #ifndef __APPLE__
-#include <malloc.h>
+    #include <malloc.h>
 #endif
 #if _WIN32
     #include <process.h>
@@ -49,7 +49,7 @@
 #include <sys/stat.h>
 #include <fstream>
 #ifdef _MSC_VER
-#define stat _stat
+    #define stat _stat
 #endif
 
 extern bool globalDebug;
