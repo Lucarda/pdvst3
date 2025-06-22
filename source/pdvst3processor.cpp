@@ -415,7 +415,6 @@ void pdvst3Processor::playhead_to_pd(Vst::ProcessData& data)
 {
     if (data.processContext)
     {
-        xxWaitForSingleObject(pdvstTransferMutex, 10);
         pdvstData->hostTimeInfo.updated=1;
         pdvstData->hostTimeInfo.state = data.processContext->state;
         pdvstData->hostTimeInfo.tempo = data.processContext->tempo;
@@ -423,46 +422,42 @@ void pdvst3Processor::playhead_to_pd(Vst::ProcessData& data)
         pdvstData->hostTimeInfo.barPositionMusic = data.processContext->barPositionMusic;
         pdvstData->hostTimeInfo.timeSigNumerator = data.processContext->timeSigNumerator;
         pdvstData->hostTimeInfo.timeSigDenominator = data.processContext->timeSigDenominator;
-        xxReleaseMutex(pdvstTransferMutex);
     }
 }
 
 void pdvst3Processor::params_to_pd(Vst::ProcessData& data)
 {
     //--- Read inputs parameter changes-----------
-    xxWaitForSingleObject(pdvstTransferMutex, 10);
+
+    if (data.inputParameterChanges)
     {
-        if (data.inputParameterChanges)
+        int32 numParamsChanged = data.inputParameterChanges->getParameterCount ();
+        for (int32 index = 0; index < numParamsChanged; index++)
         {
-            int32 numParamsChanged = data.inputParameterChanges->getParameterCount ();
-            for (int32 index = 0; index < numParamsChanged; index++)
+            Vst::IParamValueQueue* paramQueue =
+                data.inputParameterChanges->getParameterData (index);
+            if (paramQueue)
             {
-                Vst::IParamValueQueue* paramQueue =
-                    data.inputParameterChanges->getParameterData (index);
-                if (paramQueue)
+                Vst::ParamValue value;
+                int32 sampleOffset;
+                int32 numPoints = paramQueue->getPointCount ();
+                int32 i = paramQueue->getParameterId ();
+                if (paramQueue->getPoint (numPoints - 1, sampleOffset, value) ==
+                            kResultTrue)
                 {
-                    Vst::ParamValue value;
-                    int32 sampleOffset;
-                    int32 numPoints = paramQueue->getPointCount ();
-                    int32 i = paramQueue->getParameterId ();
-                    if (paramQueue->getPoint (numPoints - 1, sampleOffset, value) ==
-                                kResultTrue)
-                    {
-                        pdvstData->vstParameters[i - kParamId].type = FLOAT_TYPE;
-                        pdvstData->vstParameters[i - kParamId].value.floatData = (float)value;
-                        pdvstData->vstParameters[i - kParamId].direction = PD_RECEIVE;
-                        pdvstData->vstParameters[i - kParamId].updated = 1;
-                    }
+                    pdvstData->vstParameters[i - kParamId].type = FLOAT_TYPE;
+                    pdvstData->vstParameters[i - kParamId].value.floatData = (float)value;
+                    pdvstData->vstParameters[i - kParamId].direction = PD_RECEIVE;
+                    pdvstData->vstParameters[i - kParamId].updated = 1;
                 }
             }
         }
     }
-    xxReleaseMutex(pdvstTransferMutex);
+
 }
 
 void pdvst3Processor::params_from_pd(Vst::ProcessData& data)
 {
-    xxWaitForSingleObject(pdvstTransferMutex, 10);
     if (data.outputParameterChanges)
     {
         int32 index = 0;
@@ -488,72 +483,67 @@ void pdvst3Processor::params_from_pd(Vst::ProcessData& data)
             }
         }
     }
-    xxReleaseMutex(pdvstTransferMutex);
 }
 
 void pdvst3Processor::midi_from_pd(Vst::ProcessData& data)
 {
-    xxWaitForSingleObject(pdvstTransferMutex, 10);
+    if (pdvstData->midiOutQueueUpdated)
     {
-        if (pdvstData->midiOutQueueUpdated)
+        Vst::IEventList*  outlist = data.outputEvents;
+        if (outlist)
         {
-            Vst::IEventList*  outlist = data.outputEvents;
-            if (outlist)
+            for (int i = 0;i< pdvstData->midiOutQueueSize; i++)
             {
-                for (int i = 0;i< pdvstData->midiOutQueueSize; i++)
+                long status = pdvstData->midiOutQueue[i].statusByte & 0xF0;
+                long channel =  pdvstData->midiOutQueue[i].statusByte & 0x0F;
+                char b1 = pdvstData->midiOutQueue[i].dataByte1;
+                char b2 = pdvstData->midiOutQueue[i].dataByte2;
+
+                // Add event to output
+                Vst::Event midiEvent = { 0 };
+                midiEvent.busIndex = 0;
+                midiEvent.sampleOffset = 0;
+                midiEvent.ppqPosition = i;
+                midiEvent.flags = 0;
+
+                if (status == 0x80) // note off
                 {
-                    long status = pdvstData->midiOutQueue[i].statusByte & 0xF0;
-                    long channel =  pdvstData->midiOutQueue[i].statusByte & 0x0F;
-                    char b1 = pdvstData->midiOutQueue[i].dataByte1;
-                    char b2 = pdvstData->midiOutQueue[i].dataByte2;
-
-                    // Add event to output
-                    Vst::Event midiEvent = { 0 };
-                    midiEvent.busIndex = 0;
-                    midiEvent.sampleOffset = 0;
-                    midiEvent.ppqPosition = i;
-                    midiEvent.flags = 0;
-
-                    if (status == 0x80) // note off
-                    {
-                        midiEvent.type = Vst::Event::kNoteOffEvent;
-                        midiEvent.noteOff.channel = channel;
-                        midiEvent.noteOff.pitch = b1;
-                        midiEvent.noteOff.velocity = 0;
-                        midiEvent.noteOff.noteId = -1;
-                        outlist->addEvent(midiEvent);
-                    }
-                    else if (status == 0x90) // note on
-                    {
-                        midiEvent.type = Vst::Event::kNoteOnEvent;
-                        midiEvent.noteOn.channel = channel;
-                        midiEvent.noteOn.pitch = b1;
-                        midiEvent.noteOn.velocity = b2 / 127.;
-                        midiEvent.noteOn.noteId = -1;
-                        outlist->addEvent(midiEvent);
-                    }
-                    else if (status == 0xA0) // polypressure
-                    {
-                        midiEvent.type = Vst::Event::kPolyPressureEvent;
-                        midiEvent.polyPressure.channel = channel;
-                        midiEvent.polyPressure.pitch = b1;
-                        midiEvent.polyPressure.pressure = b2 / 127.;
-                        outlist->addEvent(midiEvent);
-                    }
-                    else if (status == 0xB0) // controller change
-                    {
-                        midiEvent.type = Vst::Event::kLegacyMIDICCOutEvent;
-                        midiEvent.midiCCOut.channel = channel;
-                        midiEvent.midiCCOut.controlNumber = b1;
-                        midiEvent.midiCCOut.value = b2;
-                        outlist->addEvent(midiEvent);
-                    }
+                    midiEvent.type = Vst::Event::kNoteOffEvent;
+                    midiEvent.noteOff.channel = channel;
+                    midiEvent.noteOff.pitch = b1;
+                    midiEvent.noteOff.velocity = 0;
+                    midiEvent.noteOff.noteId = -1;
+                    outlist->addEvent(midiEvent);
                 }
-                pdvstData->midiOutQueueUpdated=0;
-                pdvstData->midiOutQueueSize=0;
+                else if (status == 0x90) // note on
+                {
+                    midiEvent.type = Vst::Event::kNoteOnEvent;
+                    midiEvent.noteOn.channel = channel;
+                    midiEvent.noteOn.pitch = b1;
+                    midiEvent.noteOn.velocity = b2 / 127.;
+                    midiEvent.noteOn.noteId = -1;
+                    outlist->addEvent(midiEvent);
+                }
+                else if (status == 0xA0) // polypressure
+                {
+                    midiEvent.type = Vst::Event::kPolyPressureEvent;
+                    midiEvent.polyPressure.channel = channel;
+                    midiEvent.polyPressure.pitch = b1;
+                    midiEvent.polyPressure.pressure = b2 / 127.;
+                    outlist->addEvent(midiEvent);
+                }
+                else if (status == 0xB0) // controller change
+                {
+                    midiEvent.type = Vst::Event::kLegacyMIDICCOutEvent;
+                    midiEvent.midiCCOut.channel = channel;
+                    midiEvent.midiCCOut.controlNumber = b1;
+                    midiEvent.midiCCOut.value = b2;
+                    outlist->addEvent(midiEvent);
+                }
             }
+            pdvstData->midiOutQueueUpdated=0;
+            pdvstData->midiOutQueueSize=0;
         }
-    xxReleaseMutex(pdvstTransferMutex);
     }
 }
 
@@ -562,7 +552,6 @@ void pdvst3Processor::midi_to_pd(Vst::ProcessData& data)
     //---2) Read input events-------------
     if (Vst::IEventList* eventList = data.inputEvents)
     {
-        xxWaitForSingleObject(pdvstTransferMutex, 10);
         int32 numEvent = eventList->getEventCount ();
         for (int32 i = 0; i < numEvent; i++)
         {
@@ -610,7 +599,6 @@ void pdvst3Processor::midi_to_pd(Vst::ProcessData& data)
                 pdvstData->midiQueueUpdated = 1;
             }
         }
-        xxReleaseMutex(pdvstTransferMutex);
     }
 }
 
@@ -691,14 +679,16 @@ tresult PLUGIN_API pdvst3Processor::setActive (TBool state)
 tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
 {
 
-    //--- parameter changes-----------
-    params_to_pd(data);
-
-    //--- midi input----------
-    midi_to_pd(data);
-
-    //--- playhead to pd----------
-    playhead_to_pd(data);
+    xxWaitForSingleObject(pdvstTransferMutex, 10);
+    {
+        //--- parameter changes-----------
+        params_to_pd(data);
+        //--- midi input----------
+        midi_to_pd(data);
+        //--- playhead to pd----------
+        playhead_to_pd(data);
+    }
+    xxReleaseMutex(pdvstTransferMutex);
 
     //--- Process Audio---------------------
     //--- ----------------------------------
@@ -829,10 +819,14 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
         }
 
     }
-    //--- parameter changes-----------
-    params_from_pd(data);
-    //--- output midi to host-----------
-    midi_from_pd(data);
+    xxWaitForSingleObject(pdvstTransferMutex, 10);
+    {
+        //--- parameter changes-----------
+        params_from_pd(data);
+        //--- output midi to host-----------
+        midi_from_pd(data);
+    }
+    xxReleaseMutex(pdvstTransferMutex);
 
 
     return kResultOk;
