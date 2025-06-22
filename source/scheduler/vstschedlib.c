@@ -38,7 +38,7 @@
 #include <string.h>
 #include <math.h>
 #define MAXARGS 1024
-#define MAXSTRLEN 1024
+#define MAXARGSTRLEN 1024
 #define TIMEUNITPERSEC (32.*441000.)
 
 
@@ -185,21 +185,21 @@ void parseArgs(int argc, char **argv)
         if (strcmp(*argv, "-vsthostid") == 0)
         {
             #ifdef _WIN32
-            vstHostProcessId = atoi(argv[1]);
-            vstHostProcess = OpenProcess(PROCESS_ALL_ACCESS,
-                                         FALSE,
-                                         vstHostProcessId);
-            if (vstHostProcess == NULL)
-            {
-                exit(1);
-            }
+                vstHostProcessId = atoi(argv[1]);
+                vstHostProcess = OpenProcess(PROCESS_ALL_ACCESS,
+                                             FALSE,
+                                             vstHostProcessId);
+                if (vstHostProcess == NULL)
+                {
+                    exit(1);
+                }
             #else
-            vstHostProcessId = atoi(argv[1]);
-            if (kill(vstHostProcessId, 0) == -1)
-            {
-                // Process doesn't exist or we don't have permission
-                exit(1);
-            }
+                vstHostProcessId = atoi(argv[1]);
+                if (kill(vstHostProcessId, 0) == -1)
+                {
+                    // Process doesn't exist or we don't have permission
+                    exit(1);
+                }
             #endif
             argc -= 2;
             argv += 2;
@@ -462,11 +462,260 @@ void scheduler_tick( void)
     pollwatchdog();
 }
 
+void sch_general_receivers(void)
+{
+    // check for gui?
+    if (pdvstData->guiState.direction == PD_RECEIVE && \
+        pdvstData->guiState.updated)
+    {
+        if(setPdvstGuiState((int)pdvstData->guiState.value.floatData))
+            pdvstData->guiState.updated=0;
+    }
+    // JYG {  check for vstplug instance name
+    if (pdvstData->plugName.direction == PD_RECEIVE && \
+        pdvstData->plugName.updated)
+    {
+         if (setPdvstPlugName((char*)pdvstData->plugName.value.stringData))
+            pdvstData->plugName.updated=0;
+    }
+    // check for data chunk from file
+    if (pdvstData->datachunk.direction == PD_RECEIVE && \
+        pdvstData->datachunk.updated)
+    {
+         if (setPdvstChunk((char*)pdvstData->datachunk.value.stringData))
+            pdvstData->datachunk.updated=0;
+    }
+    // check for vst program name changed
+    if (pdvstData->prognumber2pd.direction == PD_RECEIVE && \
+        pdvstData->prognumber2pd.updated)
+    {
+        t_symbol *tempSym;
+        tempSym = gensym("rvstprognumber");
+        if (tempSym->s_thing)
+            pd_float(tempSym->s_thing, (t_float)pdvstData->prognumber2pd.value.floatData);
+        pdvstData->prognumber2pd.updated=0;
+    }
+    // check for vst program number changed
+    if (pdvstData->progname2pd.direction == PD_RECEIVE && \
+        pdvstData->progname2pd.updated)
+    {
+        t_symbol *tempSym;
+        tempSym = gensym("rvstprogname");
+        if (tempSym->s_thing)
+            pd_symbol(tempSym->s_thing, \
+                gensym(pdvstData->progname2pd.value.stringData));
+        pdvstData->progname2pd.updated=0;
+    }
+}
+
+void sch_playhead_in(void)
+{
+    // playhead from host -----------
+    if (pdvstData->hostTimeInfo.updated)
+    {
+        pdvstData->hostTimeInfo.updated=0;
+        t_symbol *tempSym;
+        if (timeInfo.state!=pdvstData->hostTimeInfo.state)
+        {
+            timeInfo.state=pdvstData->hostTimeInfo.state;
+            tempSym = gensym("vstTimeInfo.state");
+            if (tempSym->s_thing)
+            {
+                pd_float(tempSym->s_thing, (float)timeInfo.state);
+            }
+            else
+            {
+                timeInfo.state=0;
+                pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
+            }
+        }
+        if (timeInfo.tempo!=pdvstData->hostTimeInfo.tempo)
+        {
+            timeInfo.tempo=pdvstData->hostTimeInfo.tempo;
+            tempSym = gensym("vstTimeInfo.tempo");
+            if (tempSym->s_thing)
+            {
+                pd_float(tempSym->s_thing, (float)timeInfo.tempo);
+            }
+            else
+            {
+                timeInfo.tempo=0;
+                pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
+            }
+        }
+        if (timeInfo.projectTimeMusic!=pdvstData->hostTimeInfo.projectTimeMusic)
+        {
+            timeInfo.projectTimeMusic=pdvstData->hostTimeInfo.projectTimeMusic;
+            tempSym = gensym("vstTimeInfo.projectTimeMusic");
+            if (tempSym->s_thing)
+            {
+                pd_float(tempSym->s_thing, (float)timeInfo.projectTimeMusic);
+            }
+            else
+            {
+                timeInfo.projectTimeMusic=0;
+                pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
+            }
+        }
+        if (timeInfo.barPositionMusic!=pdvstData->hostTimeInfo.barPositionMusic)
+        {
+            timeInfo.barPositionMusic=pdvstData->hostTimeInfo.barPositionMusic;
+            tempSym = gensym("vstTimeInfo.barPositionMusic");
+            if (tempSym->s_thing)
+            {
+                pd_float(tempSym->s_thing, (float)timeInfo.barPositionMusic);
+            }
+            else
+            {
+                timeInfo.barPositionMusic=0;
+                pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
+            }
+        }
+        if (timeInfo.timeSigNumerator!=pdvstData->hostTimeInfo.timeSigNumerator)
+        {
+            timeInfo.timeSigNumerator=pdvstData->hostTimeInfo.timeSigNumerator;
+            tempSym = gensym("vstTimeInfo.timeSigNumerator");
+            if (tempSym->s_thing)
+            {
+                pd_float(tempSym->s_thing, (float)timeInfo.timeSigNumerator);
+            }
+            else
+            {
+                timeInfo.timeSigNumerator=0;
+                pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
+            }
+        }
+        if (timeInfo.timeSigDenominator!=pdvstData->hostTimeInfo.timeSigDenominator)
+        {
+            timeInfo.timeSigDenominator=pdvstData->hostTimeInfo.timeSigDenominator;
+            tempSym = gensym("vstTimeInfo.timeSigDenominator");
+            if (tempSym->s_thing)
+            {
+                pd_float(tempSym->s_thing, (float)timeInfo.timeSigDenominator);
+            }
+            else
+            {
+                timeInfo.timeSigDenominator=0;
+                pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
+            }
+        }
+    }
+}
+
+void sch_midi_in_out(void)
+{
+    // check for new midi-in message (VSTi)
+    if (pdvstData->midiQueueUpdated)
+    {
+        for (int i = 0; i < pdvstData->midiQueueSize; i++)
+        {
+            if (pdvstData->midiQueue[i].messageType == NOTE_ON)
+            {
+                inmidi_noteon(0,
+                              pdvstData->midiQueue[i].channelNumber,
+                              pdvstData->midiQueue[i].dataByte1,
+                              pdvstData->midiQueue[i].dataByte2);
+            }
+            else if (pdvstData->midiQueue[i].messageType == NOTE_OFF)
+            {
+                inmidi_noteon(0,
+                              pdvstData->midiQueue[i].channelNumber,
+                              pdvstData->midiQueue[i].dataByte1,
+                              0);
+            }
+            else if (pdvstData->midiQueue[i].messageType == CONTROLLER_CHANGE)
+            {
+                inmidi_controlchange(0,
+                                     pdvstData->midiQueue[i].channelNumber,
+                                     pdvstData->midiQueue[i].dataByte1,
+                                     pdvstData->midiQueue[i].dataByte2);
+            }
+            else if (pdvstData->midiQueue[i].messageType == PROGRAM_CHANGE)
+            {
+                inmidi_programchange(0,
+                                     pdvstData->midiQueue[i].channelNumber,
+                                     pdvstData->midiQueue[i].dataByte1);
+            }
+            else if (pdvstData->midiQueue[i].messageType == PITCH_BEND)
+            {
+                int value = (((int)pdvstData->midiQueue[i].dataByte2) * 16) + \
+                            (int)pdvstData->midiQueue[i].dataByte1;
+
+                inmidi_pitchbend(0,
+                                 pdvstData->midiQueue[i].channelNumber,
+                                 value);
+            }
+            else if (pdvstData->midiQueue[i].messageType == CHANNEL_PRESSURE)
+            {
+                inmidi_aftertouch(0,
+                                  pdvstData->midiQueue[i].channelNumber,
+                                  pdvstData->midiQueue[i].dataByte1);
+            }
+            else if (pdvstData->midiQueue[i].messageType == KEY_PRESSURE)
+            {
+                inmidi_polyaftertouch(0,
+                                      pdvstData->midiQueue[i].channelNumber,
+                                      pdvstData->midiQueue[i].dataByte1,
+                                      pdvstData->midiQueue[i].dataByte2);
+            }
+            else if (pdvstData->midiQueue[i].messageType == OTHER)
+            {
+                // FIXME: what to do?
+            }
+            else
+            {
+               post("pdvstData->midiQueue error"); // FIXME: error?
+            }
+        }
+        pdvstData->midiQueueSize = 0;
+        pdvstData->midiQueueUpdated = 0;
+    }
+    // flush vstmidi out messages here
+    int i=pdvstData->midiOutQueueSize;
+    while (midi_outhead != lastmidiouthead)
+    {
+        pdvstData->midiOutQueue[i].statusByte = midi_outqueue[lastmidiouthead].q_byte1;
+        pdvstData->midiOutQueue[i].dataByte1=  midi_outqueue[lastmidiouthead].q_byte2;
+        pdvstData->midiOutQueue[i].dataByte2= midi_outqueue[lastmidiouthead].q_byte3;
+        lastmidiouthead  = (lastmidiouthead + 1 == MIDIQSIZE ? 0 : lastmidiouthead + 1);
+        i  = i + 1;
+    }
+    if (i>0)
+    {
+        pdvstData->midiOutQueueSize=i;
+        pdvstData->midiOutQueueUpdated=1;
+    }
+    else
+    {
+        pdvstData->midiOutQueueSize=0;
+        pdvstData->midiOutQueueUpdated=0;
+    }
+}
+
+void sch_receive_parameters(void)
+{
+    for (int i = 0; i < pdvstData->nParameters; i++)
+    {
+        if (pdvstData->vstParameters[i].direction == PD_RECEIVE && \
+            pdvstData->vstParameters[i].updated)
+        {
+            if (pdvstData->vstParameters[i].type == FLOAT_TYPE)
+            {
+                if (setPdvstFloatParameter(i,
+                              pdvstData->vstParameters[i].value.floatData))
+                {
+                    pdvstData->vstParameters[i].updated = 0;
+                }
+            }
+        }
+    }
+}
+
 int scheduler()
 {
     int i, blockTime, active = 1;
     #if _WIN32
-    DWORD vstHostProcessStatus = 0;
+        DWORD vstHostProcessStatus = 0;
     #endif
     vstParameterReceiver_class = class_new(gensym("vstParameterReceiver"),
                                            0,
@@ -523,247 +772,17 @@ int scheduler()
         // check sample rate
         if (pdvstData->sampleRate != (int)sys_getsr())
         {
-           post("check samplerate");
+            post("samplerate changed to %d", pdvstData->sampleRate);
             sys_setchsr(pdvstData->nChannels,
                         pdvstData->nChannels,
                         pdvstData->sampleRate);
         }
-        // check for gui?
-        if (pdvstData->guiState.direction == PD_RECEIVE && \
-            pdvstData->guiState.updated)
-        {
-            if(setPdvstGuiState((int)pdvstData->guiState.value.floatData))
-                pdvstData->guiState.updated=0;
-        }
-        // JYG {  check for vstplug instance name
-        if (pdvstData->plugName.direction == PD_RECEIVE && \
-            pdvstData->plugName.updated)
-        {
-             if (setPdvstPlugName((char*)pdvstData->plugName.value.stringData))
-                pdvstData->plugName.updated=0;
-        }
-        // check for data chunk from file
-        if (pdvstData->datachunk.direction == PD_RECEIVE && \
-            pdvstData->datachunk.updated)
-        {
-             if (setPdvstChunk((char*)pdvstData->datachunk.value.stringData))
-                pdvstData->datachunk.updated=0;
-        }
-        // check for vst program name changed
-        if (pdvstData->prognumber2pd.direction == PD_RECEIVE && \
-            pdvstData->prognumber2pd.updated)
-        {
-            t_symbol *tempSym;
-            tempSym = gensym("rvstprognumber");
-            if (tempSym->s_thing)
-                pd_float(tempSym->s_thing, (t_float)pdvstData->prognumber2pd.value.floatData);
-            pdvstData->prognumber2pd.updated=0;
-        }
-        // check for vst program number changed
-        if (pdvstData->progname2pd.direction == PD_RECEIVE && \
-            pdvstData->progname2pd.updated)
-        {
-            t_symbol *tempSym;
-            tempSym = gensym("rvstprogname");
-            if (tempSym->s_thing)
-                pd_symbol(tempSym->s_thing, \
-                    gensym(pdvstData->progname2pd.value.stringData));
-            pdvstData->progname2pd.updated=0;
-        }
 
-        // playhead from host -----------
-        if (pdvstData->hostTimeInfo.updated)
-        {
-            pdvstData->hostTimeInfo.updated=0;
-            t_symbol *tempSym;
-            if (timeInfo.state!=pdvstData->hostTimeInfo.state)
-            {
-                timeInfo.state=pdvstData->hostTimeInfo.state;
-                tempSym = gensym("vstTimeInfo.state");
-                if (tempSym->s_thing)
-                {
-                    pd_float(tempSym->s_thing, (float)timeInfo.state);
-                }
-                else
-                {
-                    timeInfo.state=0;
-                    pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
-                }
-            }
-            if (timeInfo.tempo!=pdvstData->hostTimeInfo.tempo)
-            {
-                timeInfo.tempo=pdvstData->hostTimeInfo.tempo;
-                tempSym = gensym("vstTimeInfo.tempo");
-                if (tempSym->s_thing)
-                {
-                    pd_float(tempSym->s_thing, (float)timeInfo.tempo);
-                }
-                else
-                {
-                    timeInfo.tempo=0;
-                    pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
-                }
-            }
-            if (timeInfo.projectTimeMusic!=pdvstData->hostTimeInfo.projectTimeMusic)
-            {
-                timeInfo.projectTimeMusic=pdvstData->hostTimeInfo.projectTimeMusic;
-                tempSym = gensym("vstTimeInfo.projectTimeMusic");
-                if (tempSym->s_thing)
-                {
-                    pd_float(tempSym->s_thing, (float)timeInfo.projectTimeMusic);
-                }
-                else
-                {
-                    timeInfo.projectTimeMusic=0;
-                    pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
-                }
-            }
-            if (timeInfo.barPositionMusic!=pdvstData->hostTimeInfo.barPositionMusic)
-            {
-                timeInfo.barPositionMusic=pdvstData->hostTimeInfo.barPositionMusic;
-                tempSym = gensym("vstTimeInfo.barPositionMusic");
-                if (tempSym->s_thing)
-                {
-                    pd_float(tempSym->s_thing, (float)timeInfo.barPositionMusic);
-                }
-                else
-                {
-                    timeInfo.barPositionMusic=0;
-                    pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
-                }
-            }
+        sch_general_receivers();
+        sch_playhead_in();
+        sch_midi_in_out();
+        sch_receive_parameters();
 
-            if (timeInfo.timeSigNumerator!=pdvstData->hostTimeInfo.timeSigNumerator)
-            {
-                timeInfo.timeSigNumerator=pdvstData->hostTimeInfo.timeSigNumerator;
-                tempSym = gensym("vstTimeInfo.timeSigNumerator");
-                if (tempSym->s_thing)
-                {
-                    pd_float(tempSym->s_thing, (float)timeInfo.timeSigNumerator);
-                }
-                else
-                {
-                    timeInfo.timeSigNumerator=0;
-                    pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
-                }
-            }
-            if (timeInfo.timeSigDenominator!=pdvstData->hostTimeInfo.timeSigDenominator)
-            {
-                timeInfo.timeSigDenominator=pdvstData->hostTimeInfo.timeSigDenominator;
-                tempSym = gensym("vstTimeInfo.timeSigDenominator");
-                if (tempSym->s_thing)
-                {
-                    pd_float(tempSym->s_thing, (float)timeInfo.timeSigDenominator);
-                }
-                else
-                {
-                    timeInfo.timeSigDenominator=0;
-                    pdvstData->hostTimeInfo.updated=1;  // keep flag as updated
-                }
-            }
-        }
-
-        for (i = 0; i < pdvstData->nParameters; i++)
-        {
-            if (pdvstData->vstParameters[i].direction == PD_RECEIVE && \
-                pdvstData->vstParameters[i].updated)
-            {
-                if (pdvstData->vstParameters[i].type == FLOAT_TYPE)
-                {
-                    if (setPdvstFloatParameter(i,
-                                  pdvstData->vstParameters[i].value.floatData))
-                    {
-                        pdvstData->vstParameters[i].updated = 0;
-                    }
-                }
-            }
-        }
-        // check for new midi-in message (VSTi)
-        if (pdvstData->midiQueueUpdated)
-        {
-            for (i = 0; i < pdvstData->midiQueueSize; i++)
-            {
-                if (pdvstData->midiQueue[i].messageType == NOTE_ON)
-                {
-                    inmidi_noteon(0,
-                                  pdvstData->midiQueue[i].channelNumber,
-                                  pdvstData->midiQueue[i].dataByte1,
-                                  pdvstData->midiQueue[i].dataByte2);
-                }
-                else if (pdvstData->midiQueue[i].messageType == NOTE_OFF)
-                {
-                    inmidi_noteon(0,
-                                  pdvstData->midiQueue[i].channelNumber,
-                                  pdvstData->midiQueue[i].dataByte1,
-                                  0);
-                }
-                else if (pdvstData->midiQueue[i].messageType == CONTROLLER_CHANGE)
-                {
-                    inmidi_controlchange(0,
-                                         pdvstData->midiQueue[i].channelNumber,
-                                         pdvstData->midiQueue[i].dataByte1,
-                                         pdvstData->midiQueue[i].dataByte2);
-                }
-                else if (pdvstData->midiQueue[i].messageType == PROGRAM_CHANGE)
-                {
-                    inmidi_programchange(0,
-                                         pdvstData->midiQueue[i].channelNumber,
-                                         pdvstData->midiQueue[i].dataByte1);
-                }
-                else if (pdvstData->midiQueue[i].messageType == PITCH_BEND)
-                {
-                    int value = (((int)pdvstData->midiQueue[i].dataByte2) * 16) + \
-                                (int)pdvstData->midiQueue[i].dataByte1;
-
-                    inmidi_pitchbend(0,
-                                     pdvstData->midiQueue[i].channelNumber,
-                                     value);
-                }
-                else if (pdvstData->midiQueue[i].messageType == CHANNEL_PRESSURE)
-                {
-                    inmidi_aftertouch(0,
-                                      pdvstData->midiQueue[i].channelNumber,
-                                      pdvstData->midiQueue[i].dataByte1);
-                }
-                else if (pdvstData->midiQueue[i].messageType == KEY_PRESSURE)
-                {
-                    inmidi_polyaftertouch(0,
-                                          pdvstData->midiQueue[i].channelNumber,
-                                          pdvstData->midiQueue[i].dataByte1,
-                                          pdvstData->midiQueue[i].dataByte2);
-                }
-                else if (pdvstData->midiQueue[i].messageType == OTHER)
-                {
-                    // FIXME: what to do?
-                }
-                else
-                {
-                   post("pdvstData->midiQueue error"); // FIXME: error?
-                }
-            }
-            pdvstData->midiQueueSize = 0;
-            pdvstData->midiQueueUpdated = 0;
-        }
-        // flush vstmidi out messages here
-        int i=pdvstData->midiOutQueueSize;
-        while (midi_outhead != lastmidiouthead)
-        {
-            pdvstData->midiOutQueue[i].statusByte = midi_outqueue[lastmidiouthead].q_byte1;
-            pdvstData->midiOutQueue[i].dataByte1=  midi_outqueue[lastmidiouthead].q_byte2;
-            pdvstData->midiOutQueue[i].dataByte2= midi_outqueue[lastmidiouthead].q_byte3;
-            lastmidiouthead  = (lastmidiouthead + 1 == MIDIQSIZE ? 0 : lastmidiouthead + 1);
-            i  = i + 1;
-        }
-        if (i>0)
-        {
-            pdvstData->midiOutQueueSize=i;
-            pdvstData->midiOutQueueUpdated=1;
-        }
-        else
-        {
-            pdvstData->midiOutQueueSize=0;
-            pdvstData->midiOutQueueUpdated=0;
-        }
         // run at approx. real-time
         blockTime = (int)((float)(pdvstData->blockSize) / \
                           (float)pdvstData->sampleRate * 1000.0);
@@ -794,17 +813,16 @@ int scheduler()
 
         }
         #ifdef _WIN32
-        GetExitCodeProcess(vstHostProcess, &vstHostProcessStatus);
-        if (vstHostProcessStatus != STILL_ACTIVE)
-        {
-            active = 0;
-        }
+            GetExitCodeProcess(vstHostProcess, &vstHostProcessStatus);
+            if (vstHostProcessStatus != STILL_ACTIVE)
+            {
+                active = 0;
+            }
         #else
-
-        if (kill(vstHostProcessId, 0) == -1)
-        {
-            active = 0;
-        }
+            if (kill(vstHostProcessId, 0) == -1)
+            {
+                active = 0;
+            }
         #endif
     }
     return 1;
@@ -823,38 +841,37 @@ int pd_extern_sched(char *flags)
     debugFile = fopen("pdvstschedulerdebug.txt", "wt");
 
     t_audiosettings as;
-
     sys_get_audio_settings(&as);
     as.a_api = API_NONE;
     sys_set_audio_settings(&as);
     for (i = 0; i < MAXARGS; i++)
     {
-        argv[i] = (char *)malloc(MAXSTRLEN * sizeof(char));
+        argv[i] = (char *)malloc(MAXARGSTRLEN * sizeof(char));
     }
     argc = tokenizeCommandLineString(flags, argv);
     parseArgs(argc, argv);
     #ifdef _WIN32
-    pdvstTransferMutex = OpenMutex(MUTEX_ALL_ACCESS, 0, pdvstTransferMutexName);
-    vstProcEvent = OpenEvent(EVENT_ALL_ACCESS, 0, vstProcEventName);
-    pdProcEvent = OpenEvent(EVENT_ALL_ACCESS, 0, pdProcEventName);
-    pdvstTransferFileMap = OpenFileMapping(FILE_MAP_ALL_ACCESS,
-                                           0,
-                                           pdvstTransferFileMapName);
-    pdvstData = (pdvstTransferData *)MapViewOfFile(pdvstTransferFileMap,
-                                                   FILE_MAP_ALL_ACCESS,
-                                                   0,
-                                                   0,
-                                                   sizeof(pdvstTransferData));
+        pdvstTransferMutex = OpenMutex(MUTEX_ALL_ACCESS, 0, pdvstTransferMutexName);
+        vstProcEvent = OpenEvent(EVENT_ALL_ACCESS, 0, vstProcEventName);
+        pdProcEvent = OpenEvent(EVENT_ALL_ACCESS, 0, pdProcEventName);
+        pdvstTransferFileMap = OpenFileMapping(FILE_MAP_ALL_ACCESS,
+                                               0,
+                                               pdvstTransferFileMapName);
+        pdvstData = (pdvstTransferData *)MapViewOfFile(pdvstTransferFileMap,
+                                                       FILE_MAP_ALL_ACCESS,
+                                                       0,
+                                                       0,
+                                                       sizeof(pdvstTransferData));
     #else //unix
-    pdvstTransferMutex = sem_open(pdvstTransferMutexName, O_CREAT, 0666, 0);
-    vstProcEvent  = sem_open(vstProcEventName, O_CREAT, 0666, 1);
-    pdProcEvent = sem_open(pdProcEventName, O_CREAT, 0666, 0);
-    fd = shm_open(pdvstTransferFileMapName, O_CREAT | O_RDWR, 0666);
-    pdvstTransferFileMap = (char*)mmap(NULL, sizeof(pdvstTransferData),
-                                PROT_READ | PROT_WRITE, MAP_SHARED,
-                                fd, 0);
-    close(fd);
-    pdvstData = (pdvstTransferData *)pdvstTransferFileMap;
+        pdvstTransferMutex = sem_open(pdvstTransferMutexName, O_CREAT, 0666, 0);
+        vstProcEvent  = sem_open(vstProcEventName, O_CREAT, 0666, 1);
+        pdProcEvent = sem_open(pdProcEventName, O_CREAT, 0666, 0);
+        fd = shm_open(pdvstTransferFileMapName, O_CREAT | O_RDWR, 0666);
+        pdvstTransferFileMap = (char*)mmap(NULL, sizeof(pdvstTransferData),
+                                    PROT_READ | PROT_WRITE, MAP_SHARED,
+                                    fd, 0);
+        close(fd);
+        pdvstData = (pdvstTransferData *)pdvstTransferFileMap;
     #endif
     xxWaitForSingleObject(pdvstTransferMutex, -1);
     logpost(NULL, PD_DEBUG,"---");

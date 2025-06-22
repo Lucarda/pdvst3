@@ -94,13 +94,10 @@ typedef struct _vstTimeInfo
 
         kSmpteValid       = 1 << 14,    ///< smpteOffset and frameRate contain valid information
         kClockValid       = 1 << 15     ///< samplesToNextClock valid
-    };   
-    
-    
-    int updated;
-
+    };
 //------------------------------------------------------------------------
 
+    int updated;
     uint32_t state;                 ///< a combination of the values from \ref StatesAndFlags
 
     double sampleRate;              ///< current sample rate                    (always valid)

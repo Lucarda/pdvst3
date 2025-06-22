@@ -87,7 +87,6 @@ int Steinberg::pdvst3Processor::referenceCount = 0;
 extern Steinberg::FUID contUID;
 
 
-
 using namespace Steinberg;
 
 namespace Steinberg {
