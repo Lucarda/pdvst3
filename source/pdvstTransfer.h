@@ -75,7 +75,8 @@ typedef struct _pdvstMidiMessage
 
 typedef struct _vstTimeInfo
 {
-    enum StatesAndFlags
+    /*
+	enum StatesAndFlags
     {
         kPlaying          = 1 << 1,     ///< currently playing
         kCycleActive      = 1 << 2,     ///< cycle is active
@@ -95,6 +96,7 @@ typedef struct _vstTimeInfo
         kSmpteValid       = 1 << 14,    ///< smpteOffset and frameRate contain valid information
         kClockValid       = 1 << 15     ///< samplesToNextClock valid
     };
+	*/
 //------------------------------------------------------------------------
 
     int updated;
