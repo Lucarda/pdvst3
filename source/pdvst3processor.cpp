@@ -871,7 +871,8 @@ tresult PLUGIN_API pdvst3Processor::setState (IBStream* state)
     IBStreamer streamer (state, kLittleEndian);
 
     xxWaitForSingleObject(pdvstTransferMutex, 10);
-    for (int i = 0; i < pdvstData->nParameters; i++)
+    int i;
+    for (i = 0; i < pdvstData->nParameters; i++)
     {
         double value = 0;
         streamer.readDouble (value);
@@ -880,6 +881,26 @@ tresult PLUGIN_API pdvst3Processor::setState (IBStream* state)
         pdvstData->vstParameters[i].direction = PD_RECEIVE;
         pdvstData->vstParameters[i].updated = 1;
     }
+    // advance until chunk
+    for (i = pdvstData->nParameters; i < MAXPARAMS; i++)
+    {
+        double unused = 0;
+        streamer.readDouble (unused);
+    }
+    // read chunk
+    int chunklen = 0;
+    streamer.readInt32 (chunklen); // read length of chunk
+    pdvstData->datachunk.size = (int)chunklen;
+    for (i = 0; i < chunklen; i++)
+    {
+        char v = 0;
+        streamer.readChar8 (v);
+        pdvstData->datachunk.data[i] = v;
+    }
+    i++;
+    pdvstData->datachunk.data[i] = '\0';
+    pdvstData->datachunk.direction = PD_RECEIVE;
+    pdvstData->datachunk.updated = 1;
     xxReleaseMutex(pdvstTransferMutex);
 
     return kResultOk;
@@ -892,11 +913,27 @@ tresult PLUGIN_API pdvst3Processor::getState (IBStream* state)
 
     IBStreamer streamer (state, kLittleEndian);
     xxWaitForSingleObject(pdvstTransferMutex, 10);
+    //write params (also zero the rest of the unused ones)
     for (int i = 0; i < pdvstData->nParameters; i++)
     {
         double v = (double)pdvstData->vstParameters[i].value.floatData;
         streamer.writeDouble (v);
     }
+    for (int i = pdvstData->nParameters; i < MAXPARAMS; i++)
+    {
+        double v = 0;
+        streamer.writeDouble (v);
+    }
+    // write data chunk
+    int chunklen = pdvstData->datachunk.size;
+    streamer.writeInt32 (chunklen); // write length of chunk
+    for (int i = 0; i < chunklen; i++)
+    {
+        char v = pdvstData->datachunk.data[i];
+        streamer.writeChar8 (v);
+    }
+    char end = '\0';
+    streamer.writeChar8 (end);
     xxReleaseMutex(pdvstTransferMutex);
 
     return kResultOk;

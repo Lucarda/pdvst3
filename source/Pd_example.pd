@@ -48,7 +48,7 @@
 #X connect 5 0 6 0;
 #X connect 6 0 7 0;
 #X connect 13 0 12 0;
-#X restore 526 380 pd playhead;
+#X restore 654 429 pd playhead;
 #N canvas 388 148 734 553 midi 0;
 #X obj 81 74 notein;
 #X text 134 126 velocity;
@@ -131,7 +131,18 @@
 #X connect 36 0 41 0;
 #X connect 36 1 42 0;
 #X connect 36 2 43 0;
-#X restore 525 327 pd midi;
+#X restore 532 430 pd midi;
+#N canvas 415 292 646 391 datachunk 0;
+#X obj 157 112 s svstdata;
+#X obj 172 287 r rvstdata;
+#X obj 173 334 print;
+#X msg 156 67 hello world :);
+#X text 117 25 1) send the Pd list to be saved.;
+#X text 119 169 2) in the host save your project or create a preset.;
+#X text 120 227 3) next time you open your project or the preset the list will come out here, f 46;
+#X connect 1 0 2 0;
+#X connect 3 0 0 0;
+#X restore 802 427 pd datachunk;
 #X connect 0 0 7 0;
 #X connect 0 1 6 0;
 #X connect 1 0 2 0;

@@ -112,6 +112,7 @@ pdvstTransferData *pdvstData;
             vstProcEvent,
             pdProcEvent,
             vstHostProcess;
+	int 	vstHostProcessId;
 #else
     char    *pdvstTransferFileMap;
     sem_t   *pdvstTransferMutex,
@@ -176,10 +177,6 @@ int tokenizeCommandLineString(char *clString, char **tokens)
 
 void parseArgs(int argc, char **argv)
 {
-    #ifdef _WIN32
-    int vstHostProcessId;
-    #endif
-
     while ((argc > 0) && (**argv == '-'))
     {
         if (strcmp(*argv, "-vsthostid") == 0)
@@ -358,15 +355,17 @@ void sendPdVstChunk(t_vstChunkReceiver *x, t_symbol *s, int argc, t_atom *argv)
     binbuf_free(bbuf);
 
     xxWaitForSingleObject(pdvstTransferMutex, -1);
-    memset(&pdvstData->datachunk.value.stringData, '\0', MAXSTRINGSIZE);
-    pdvstData->datachunk.type = STRING_TYPE;
+    memset(&pdvstData->datachunk.data, '\0', MAXSTRINGSIZE);
     pdvstData->datachunk.direction = PD_SEND;
-    pdvstData->datachunk.updated = 1;
-    //strcpy(pdvstData->datachunk.value.stringData,buf);
-    memcpy(pdvstData->datachunk.value.stringData, buf, length);
+    memcpy(pdvstData->datachunk.data, buf, length);
+    pdvstData->datachunk.size = length;
+	pdvstData->datachunk.updated = 1;
     xxReleaseMutex(pdvstTransferMutex);
 
     freebytes(buf, length+1);
+
+    
+    
 }
 
 void sendPdVstGuiName(t_vstGuiNameReceiver *x, t_symbol *symbolValue)
@@ -482,7 +481,7 @@ void sch_general_receivers(void)
     if (pdvstData->datachunk.direction == PD_RECEIVE && \
         pdvstData->datachunk.updated)
     {
-         if (setPdvstChunk((char*)pdvstData->datachunk.value.stringData))
+         if (setPdvstChunk((char*)pdvstData->datachunk.data))
             pdvstData->datachunk.updated=0;
     }
     // check for vst program name changed

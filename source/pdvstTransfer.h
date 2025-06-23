@@ -73,6 +73,14 @@ typedef struct _pdvstMidiMessage
     char dataByte2;
 } pdvstMidiMessage;
 
+typedef struct _dataChunk
+{
+    int updated;
+    int size;
+    char data[MAXSTRINGSIZE];
+    pdvstParameterState direction;
+} dataChunk;
+
 typedef struct _vstTimeInfo
 {
     /*
@@ -139,7 +147,7 @@ typedef struct _pdvstTransferData
     pdvstMidiMessage midiQueue[MAXMIDIQUEUESIZE];
     pdvstParameter guiState;
     pdvstParameter plugName;  // transmitted by host
-    pdvstParameter datachunk;  // get/set chunk from .fxp .fxb files
+    dataChunk datachunk;  // get/set chunk from .fxp .fxb files
     pdvstParameter progname2pd;  // send program name to Pd
     pdvstParameter prognumber2pd;  // send program name to Pd
     pdvstParameter guiName;   // transmitted by pd : name of gui window to be embedded

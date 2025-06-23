@@ -2,6 +2,7 @@
  * This file is part of pdvst3.
  *
  * Copyright (C) 2025 Lucas Cordiviola
+ * based on original work from 2004 by Joseph A. Sarlo and 2018 by Jean-Yves Gratius
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
