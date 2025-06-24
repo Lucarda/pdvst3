@@ -46,15 +46,16 @@ SYNTH = FALSE
 # Display Pd GUI or not
 DEBUG = TRUE
 
-# External libraries (comma delimited list, relative to pdvst/)
-# ***OBSOLETE, use [declare] inside patch instead*** 
-#LIB = 
+# Flags to be passed when starting Pd.
+# flags we should not put here: -r, -outchannels, -inchannels
+# flag -nogui is set when we set DEBUG = FALSE 
+PDMOREFLAGS =
 
 # Number of VST parameters (up to 128)
 PARAMETERS = 3
 
 # Name of first VST parameter
-# used when CUSTOMGUI is false or VST host doesn't support custom editors
+# used when DEBUG is false
 NAMEPARAMETER0 = Level
 NAMEPARAMETER1 = foo
 NAMEPARAMETER2 = bar

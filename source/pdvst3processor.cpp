@@ -62,6 +62,7 @@ extern char globalExternalLib[MAXEXTERNS][MAXSTRLEN];
 extern char globalVstParamName[MAXPARAMETERS][MAXSTRLEN];
 extern char globalPluginPath[MAXFILENAMELEN];
 extern char globalPluginName[MAXSTRLEN];
+extern char globalPdMoreFlags[MAXSTRLEN];
 extern char globalPdFile[MAXFILENAMELEN];
 extern char globalPureDataPath[MAXFILENAMELEN];
 extern char globalHostPdvstPath[MAXFILENAMELEN];
@@ -194,9 +195,10 @@ void pdvst3Processor::startPd()
     }
 
     sprintf(commandLineArgs,
-            "%s%s",
+            "%s%s %s",
             commandLineArgs,
-            debugString);
+            debugString,
+            globalPdMoreFlags);
 
     sprintf(commandLineArgs,
             "%s -schedlib \"%spdvst3scheduler\"",
@@ -326,7 +328,6 @@ void pdvst3Processor::pdvst()
     pluginId = globalPluginId;
     nExternalLibs = globalNExternalLibs;
     debugLog("name: %s", globalPluginName);
-    debugLog("synth: %d", globalIsASynth);
     // VST setup
 
     //setInitialDelay(PDBLKSIZE * 2);
@@ -356,7 +357,6 @@ void pdvst3Processor::pdvst()
     strcpy(pdFile, globalPdFile);
     debugLog("path: %s", pluginPath);
     debugLog("nParameters = %d", nParameters);
-    debugLog("nPrograms = %d", nPrograms);
     for (i = 0; i < nPrograms; i++)
     {
         strcpy(program[i].name, globalProgram[i].name);
@@ -364,9 +364,7 @@ void pdvst3Processor::pdvst()
         {
             program[i].paramValue[j] = globalProgram[i].paramValue[j];
         }
-        debugLog("    %s", program[i].name);
     }
-
     debugLog("startingPd...");
     // start pd.exe
     startPd();

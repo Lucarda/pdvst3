@@ -74,7 +74,6 @@ with the new MAIN (= somepatch.pd)
 This file contains all of the information about your plugin. The format is ASCII
 text with keys and values separated by an '=' character and each key and value
 pair separated by a carriage return. Comments are demarked with a '#' character.
-For an example, see Pd_Gain.pdv.
 
   -Keys-
 
@@ -133,6 +132,10 @@ For an example, see Pd_Gain.pdv.
     MAIL = <string>
     # Optional info that shows in the vst host.
 
+    PDMOREFLAGS = <string>
+    # Flags to be passed when starting Pd.
+    # flags we should not put here: -r, -outchannels, -inchannels
+    # flag -nogui is set when we set DEBUG = FALSE
 
 
 ## Pd/VST audio/midi Communication
@@ -163,13 +166,11 @@ symbols can be used in your Pd patch. For an example, see the example plugin.
 from the VST host. Values will be floats between 0 and 1 inclusive.
 * `svstparameter<integer>` : Use this symbol to send parameter values to
 the VST host. Values should be floats between 0 and 1 inclusive.
-* `svstdata` : Use this symbol to save a Pd list as "chunk" data in the
-host DAW's save file (see `PROGRAMSARECHUNKS` setting above).
-* `rvstdata` : Use this symbol to receive a Pd list of "chunk" data that
-was saved into the DAW file by your patch. Triggered at load time.
-* `rvstprognumber`: Use this symbol to receive program number changes from host.
-* `rvstprogname`: Use this symbol to receive program name changes from host.
-* `rvstplugname`: Use this symbol to receive plug & instance name from host
+* `svstdata` : Use this symbol to save a Pd list in a preset or in the
+DAW project
+* `rvstdata` : Use this symbol to receive a Pd list that was saved into
+the preset or the DAW project. Triggered at load time or when the preset
+gets loaded.
 * `vstTimeInfo`: (play head information support) :
 
 `vstTimeInfo.state`, `vstTimeInfo.tempo`, `vstTimeInfo.projectTimeMusic`,

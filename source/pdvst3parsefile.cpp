@@ -45,12 +45,8 @@
 
 // for gpath
 
-//#include "pluginterfaces/base/fplatform.h"
 #include "public.sdk/source/vst/utility/stringconvert.h"
-//#include "public.sdk/source/common/commonstringconvert.h"
-//#include <codecvt>
-//#include <istream>
-//#include <locale>
+
 
 
 
@@ -73,6 +69,7 @@ char globalPluginVersion[MAXSTRLEN];
 char globalAuthor[MAXSTRLEN];
 char globalUrl[MAXSTRLEN];
 char globalMail[MAXSTRLEN];
+char globalPdMoreFlags[MAXSTRLEN];
 char globalPdFile[MAXFILENAMELEN];
 char globalPureDataPath[MAXFILENAMELEN];
 char globalHostPdvstPath[MAXFILENAMELEN];
@@ -275,7 +272,7 @@ void parseSetupFile()
         strcpy(globalVstParamName[i], "<unnamed>");
     globalNPrograms = 1;
 
-//
+
     setupFile = fopen(globalConfigFile, "r");
 
     if (setupFile) {
@@ -332,6 +329,68 @@ void parseSetupFile()
                         globalIsASynth = false;
                     }
                 }
+                 // debug (show Pd GUI)
+                if (strcmp(param, "debug") == 0)
+                {
+                    if (strcmp(strlowercase(value), "true") == 0)
+                    {
+                        globalDebug = true;
+                    }
+                    else if (strcmp(strlowercase(value), "false") == 0)
+                    {
+                        globalDebug = false;
+                    }
+                }
+                // number of parameters
+                if (strcmp(param, "parameters") == 0)
+                {
+                    int numParams = atoi(value);
+
+                    if (numParams >= 0 && numParams < MAXPARAMS)
+                        globalNParams = numParams;
+                }
+                // parameters names
+                if (strstr(param, "nameparameter") == \
+                        param && globalNPrograms < MAXPARAMS)
+                {
+                    int paramNum = atoi(param + strlen("nameparameter"));
+
+                    if (paramNum < MAXPARAMS && paramNum >= 0)
+                        strcpy(globalVstParamName[paramNum], value);
+                }
+                // plug version
+                if (strcmp(param, "version") == 0)
+                {
+                    strcpy(globalPluginVersion, value);
+                }
+                // author
+                if (strcmp(param, "author") == 0)
+                {
+                    strcpy(globalAuthor, value);
+                }
+                // url
+                if (strcmp(param, "url") == 0)
+                {
+                    strcpy(globalUrl, value);
+                }
+                // mail
+                if (strcmp(param, "mail") == 0)
+                {
+                    strcpy(globalMail, value);
+                }
+                // plugname
+                if (strcmp(param, "plugname") == 0)
+                {
+                    strcpy(globalPluginName, value);
+                }
+                // more pd flags
+                if (strcmp(param, "pdmoreflags") == 0)
+                {
+                    strcpy(globalPdMoreFlags, value);
+                }
+            // --------------------------------------------
+                // unused in pdvst3
+                #if 0
                 // external libraries
                 if (strcmp(param, "lib") == 0)
                 {
@@ -379,35 +438,7 @@ void parseSetupFile()
                     globalCustomGuiWidth = atoi(value);
 
                 }
-                // debug (show Pd GUI)
-                if (strcmp(param, "debug") == 0)
-                {
-                    if (strcmp(strlowercase(value), "true") == 0)
-                    {
-                        globalDebug = true;
-                    }
-                    else if (strcmp(strlowercase(value), "false") == 0)
-                    {
-                        globalDebug = false;
-                    }
-                }
-                // number of parameters
-                if (strcmp(param, "parameters") == 0)
-                {
-                    int numParams = atoi(value);
 
-                    if (numParams >= 0 && numParams < MAXPARAMS)
-                        globalNParams = numParams;
-                }
-                // parameters names
-                if (strstr(param, "nameparameter") == \
-                        param && globalNPrograms < MAXPARAMS)
-                {
-                    int paramNum = atoi(param + strlen("nameparameter"));
-
-                    if (paramNum < MAXPARAMS && paramNum >= 0)
-                        strcpy(globalVstParamName[paramNum], value);
-                }
                 // program name
                 if (strcmp(param, "program") == 0 && \
                     globalNPrograms < MAXPROGRAMS)
@@ -439,31 +470,8 @@ void parseSetupFile()
                         globalProgramsAreChunks = false;
                     }
                 }
-                // plug version
-                if (strcmp(param, "version") == 0)
-                {
-                    strcpy(globalPluginVersion, value);
-                }
-                // author
-                if (strcmp(param, "author") == 0)
-                {
-                    strcpy(globalAuthor, value);
-                }
-                // url
-                if (strcmp(param, "url") == 0)
-                {
-                    strcpy(globalUrl, value);
-                }
-                // mail
-                if (strcmp(param, "mail") == 0)
-                {
-                    strcpy(globalMail, value);
-                }
-                // plugname
-                if (strcmp(param, "plugname") == 0)
-                {
-                    strcpy(globalPluginName, value);
-                }
+                #endif // unused in pdvst3
+            // ------------------------------------
             }
         }
     }
