@@ -119,6 +119,8 @@ add_custom_command(
     ${FOLDER_MAIN}
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/source/Pd_example.pd
     ${FOLDER_MAIN}
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/README.md
+    ${FOLDER_MAIN}
 )
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

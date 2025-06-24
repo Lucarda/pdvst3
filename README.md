@@ -1,8 +1,8 @@
 # pdvst3
 
 
-Based on https://github.com/Lucarda/pdvst-0.52 but updated to vst3 (
-Linux, macOS and Windows) and to load with Pd-0.55-2 or higher.
+Based on https://github.com/Lucarda/pdvst-0.52 but updated to vst3 
+(Linux, macOS and Windows) and to load with Pd-0.55-2 or higher.
 
 Get pre-built binaries on https://github.com/Lucarda/pdvst3/releases
 or build. see [compiling.md](compiling.md)
@@ -10,13 +10,8 @@ or build. see [compiling.md](compiling.md)
 
 ## How does it work ?
 
-pdvst3 consists of:
-
-* a vst-plugin (`pdvst3.vst3`) to place in your favorite vst folder.
-* a custom external scheduler is included in the bundle.
-
-When a pdvst3 plugin is opened by the host application, a setup file (
-config.txt) is read to determine information about the plugin, such as
+When a pdvst3 plugin is opened by the host application, a setup file 
+(config.txt) is read to determine information about the plugin, such as
 the Pd patch file to use, the number of parameters, etc...
 An instance of Pd (that optionally can be shipped inside the plug in)
 is started and opens the Pd patch file whose name was found in the setup file.
@@ -46,8 +41,8 @@ your Linux distro docs if needed.
 ## Creating VST Plugins from Pd Patches
 
 1) Make a copy of the `pdvst3.vst3` bundle and
-  rename it (must be lowercase) to for example "myplug.vst3".
-  If needed move your new plugin bundle to the vst3 plugins folder of your OS.
+rename it (must be lowercase) to for example "myplug.vst3".
+If needed move your new plugin bundle to the vst3 plugins folder of your OS.
 
 2) Edit `config.txt` setup file inside the bundle (see the Setup File section).
 Make sure you update the NAME (= myplug) and ID (= <some random 4 letters>).
@@ -179,15 +174,11 @@ gets loaded.
 Names should change in the future.
 
 
-Note: for most VST hosts, parameters for VST instruments are recorded as
-sysex data, so be sure to disable any MIDI message filtering in the VST host.
-
 ## current features
 
 * Multichannel audio in/out support
 * Midi in out support
 * Play head information support (see examples)
-* Save chunk data to host DAW
 
 
 ![vst logo](VST_Compatible_Logo_Steinberg_with_TM.png)
