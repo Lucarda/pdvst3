@@ -528,6 +528,7 @@ void pdvst3Processor::midi_from_pd(Vst::ProcessData& data)
                     midiEvent.polyPressure.channel = channel;
                     midiEvent.polyPressure.pitch = b1;
                     midiEvent.polyPressure.pressure = b2 / 127.;
+                    midiEvent.polyPressure.noteId = -1;
                     outlist->addEvent(midiEvent);
                 }
                 else if (status == 0xB0) // controller change
@@ -590,8 +591,7 @@ void pdvst3Processor::midi_to_pd(Vst::ProcessData& data)
                         pdvstData->midiQueue[pdvstData->midiQueueSize].dataByte2 = event.midiCCOut.value;
                         pdvstData->midiQueue[pdvstData->midiQueueSize].messageType = CONTROLLER_CHANGE;
                         break;
-
-
+                        
                 }
                 pdvstData->midiQueueSize++;
                 pdvstData->midiQueueUpdated = 1;
