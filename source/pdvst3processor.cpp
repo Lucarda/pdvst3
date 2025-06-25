@@ -27,6 +27,7 @@
 #include "pluginterfaces/vst/ivstevents.h"
 #include "pluginterfaces/vst/ivstprocesscontext.h"
 #include "pdvst3_base_defines.h"
+#include "pluginterfaces/vst/ivstmidicontrollers.h"
 
 #ifndef __APPLE__
     #include <malloc.h>
@@ -535,8 +536,9 @@ void pdvst3Processor::midi_from_pd(Vst::ProcessData& data)
                 {
                     midiEvent.type = Vst::Event::kLegacyMIDICCOutEvent;
                     midiEvent.midiCCOut.channel = channel;
-                    midiEvent.midiCCOut.controlNumber = b1;
-                    midiEvent.midiCCOut.value = b2;
+                    midiEvent.midiCCOut.value = b1;
+                    midiEvent.midiCCOut.value2 = b2;
+                    midiEvent.midiCCOut.controlNumber = Vst::ControllerNumbers::kCtrlGPC5;
                     outlist->addEvent(midiEvent);
                 }
             }
@@ -587,8 +589,8 @@ void pdvst3Processor::midi_to_pd(Vst::ProcessData& data)
                     //--- -------------------
                     case Vst::Event::kLegacyMIDICCOutEvent:
                         pdvstData->midiQueue[pdvstData->midiQueueSize].channelNumber = event.midiCCOut.channel;
-                        pdvstData->midiQueue[pdvstData->midiQueueSize].dataByte1 = event.midiCCOut.controlNumber;
-                        pdvstData->midiQueue[pdvstData->midiQueueSize].dataByte2 = event.midiCCOut.value;
+                        pdvstData->midiQueue[pdvstData->midiQueueSize].dataByte1 = event.midiCCOut.value;
+                        pdvstData->midiQueue[pdvstData->midiQueueSize].dataByte2 = event.midiCCOut.value2;
                         pdvstData->midiQueue[pdvstData->midiQueueSize].messageType = CONTROLLER_CHANGE;
                         break;
                         
