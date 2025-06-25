@@ -1,5 +1,6 @@
 # pdvst3
 
+Run Pure-Data inside a vst3 host.
 
 Based on https://github.com/Lucarda/pdvst-0.52 but updated to vst3 
 (Linux, macOS and Windows) and to load with Pd-0.55-2 or higher.
@@ -145,10 +146,10 @@ Pd patches should output their audio stream to the dac~ object,
 and their midi stream to the noteout, etc objects.
 
 REMARKS :
-* MIDI in out is rather limited in VST3 protocol.
-* Inside puredata plugin, don't use anything on menu audio
-settings, you may crash pd & host.
-* You can continue to use "media/midi settings" menu to select input
+- MIDI in out is rather limited in VST3 protocol.
+- Inside puredata plugin, don't use anything on menu "media/audio
+settings", you may crash pd & host.
+- You can continue to use "media/midi settings" menu to select input
 and output midi devices independently from host.
 
 ## Pd/VST3 - further communications
@@ -157,16 +158,16 @@ For purposes such as GUI interaction and VST automation, your patch may
 need to communicate further with the VST host. Special Pd send/receive
 symbols can be used in your Pd patch. For an example, see the example plugin.
 
-* `rvstparameter<integer>` : Use this symbol to receive parameter values
+- `rvstparameter<integer>` : Use this symbol to receive parameter values
 from the VST host. Values will be floats between 0 and 1 inclusive.
-* `svstparameter<integer>` : Use this symbol to send parameter values to
+- `svstparameter<integer>` : Use this symbol to send parameter values to
 the VST host. Values should be floats between 0 and 1 inclusive.
-* `svstdata` : Use this symbol to save a Pd list in a preset or in the
+- `svstdata` : Use this symbol to save a Pd list in a preset or in the
 DAW project
-* `rvstdata` : Use this symbol to receive a Pd list that was saved into
+- `rvstdata` : Use this symbol to receive a Pd list that was saved into
 the preset or the DAW project. Triggered at load time or when the preset
 gets loaded.
-* `vstTimeInfo`: (play head information support) :
+- `vstTimeInfo`: (play head information support) :
 
 `vstTimeInfo.state`, `vstTimeInfo.tempo`, `vstTimeInfo.projectTimeMusic`,
 `vstTimeInfo.barPositionMusic`, `vstTimeInfo.timeSigNumerator`,
@@ -176,9 +177,24 @@ Names should change in the future.
 
 ## current features
 
-* Multichannel audio in/out support
-* Midi in out support
-* Play head information support (see examples)
+- Multichannel audio in/out support
+- Midi in out support
+- Play head information support (see examples)
+
+## additional notes on macOS
+
+the plugin bundle is automatically build in github's CI and is not signed
+with an apple-developer id. To use the plugin downloaded from here you must
+remove its quarantine attributes:
+
+- open Applications/Utilities/Terminal
+- type "sudo xattr -r -d com.apple.quarantine" and add a space
+- drag the pdvst3.vst3 bundle onto Terminal to add the path
+- hit enter
+- enter your password.
+
+now you can place the bundle in your vst3 default dir and the host will
+find it and make it available.
 
 
 ![vst logo](VST_Compatible_Logo_Steinberg_with_TM.png)
