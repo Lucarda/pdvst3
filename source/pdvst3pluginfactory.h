@@ -151,7 +151,7 @@ using namespace Steinberg; \
         {
             static Steinberg::PClassInfo2 processorClass (
                 procUID, Steinberg::PClassInfo::kManyInstances, kVstAudioEffectClass, globalPluginName,    \
-                Vst::kDistributable, "Fx|Instrument", 0, globalPluginVersion, kVstVersionString);
+                Vst::kDistributable, "Fx", 0, globalPluginVersion, kVstVersionString);
             gPluginFactory->registerClass (&processorClass, pdvst3Processor::createInstance);
         }
         {
