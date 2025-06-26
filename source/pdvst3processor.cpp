@@ -28,6 +28,7 @@
 #include "pluginterfaces/vst/ivstprocesscontext.h"
 #include "pdvst3_base_defines.h"
 #include "pluginterfaces/vst/ivstmidicontrollers.h"
+#include "public.sdk/source/vst/utility/stringconvert.h"
 
 #ifndef __APPLE__
     #include <malloc.h>
@@ -323,7 +324,7 @@ void pdvst3Processor::pdvst()
     customGui = globalCustomGui;
     customGuiHeight = globalCustomGuiHeight;
     customGuiWidth = globalCustomGuiWidth;
-    nChannels = globalNChannels;
+    nChannels = (globalNChannels > 64) ? 64 : globalNChannels;;
     nPrograms = globalNPrograms;
     nParameters = globalNParams;
     pluginId = globalPluginId;
@@ -593,7 +594,7 @@ void pdvst3Processor::midi_to_pd(Vst::ProcessData& data)
                         pdvstData->midiQueue[pdvstData->midiQueueSize].dataByte2 = event.midiCCOut.value2;
                         pdvstData->midiQueue[pdvstData->midiQueueSize].messageType = CONTROLLER_CHANGE;
                         break;
-                        
+
                 }
                 pdvstData->midiQueueSize++;
                 pdvstData->midiQueueUpdated = 1;
@@ -633,9 +634,32 @@ tresult PLUGIN_API pdvst3Processor::initialize (FUnknown* context)
         return result;
     }
 
-    //--- create Audio IO ------
-    addAudioInput (STR16 ("Stereo In"), Steinberg::Vst::SpeakerArr::kStereo);
-    addAudioOutput (STR16 ("Stereo Out"), Steinberg::Vst::SpeakerArr::kStereo);
+    // create stereo buses with the sources/config.txt CHANNELS value.
+    // when building make sure to set it to 2 or we get a segfault
+    // in the validator
+
+    stereoBuses = (int) nChannels / 2;
+    int i, n;
+    int k = 0;
+    for (i=0; i<stereoBuses;i++)
+    {
+        k += 2;
+        bus2ch[i] = k;
+    }
+    n = 1;
+    for (i = 0; i < stereoBuses; i++)
+    {
+        char buf[32];
+        Vst::TChar buf2[127];
+        sprintf ( buf, "in ch%d ch%d", n, n+1 );
+        Vst::StringConvert::convert (buf,  buf2);
+        addAudioInput (buf2, Steinberg::Vst::SpeakerArr::kStereo);
+        sprintf (buf, "out ch%d ch%d", n, n+1 );
+        Vst::StringConvert::convert (buf, buf2);
+        addAudioOutput (buf2, Steinberg::Vst::SpeakerArr::kStereo);
+        n += 2;
+    }
+
 
     /* If you don't need an event bus, you can remove the next line */
     addEventInput (STR16 ("Event In"), 1);
@@ -659,11 +683,16 @@ tresult PLUGIN_API pdvst3Processor::setBusArrangements (Vst::SpeakerArrangement*
                                                       Vst::SpeakerArrangement* outputs,
                                                       int32 numOuts)
 {
+/*
     // Only support stereo input and output
     if (numIns != 1 || inputs[0] != Steinberg::Vst::SpeakerArr::kStereo)
         return kResultFalse;
     if (numOuts != 1 || outputs[0] != Steinberg::Vst::SpeakerArr::kStereo)
         return kResultFalse;
+*/
+    if (outputs[0] == Steinberg::Vst::SpeakerArr::kMono)
+        return kResultFalse;
+
 
     return AudioEffect::setBusArrangements(inputs, numIns, outputs, numOuts);
 }
@@ -708,9 +737,8 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
         Steinberg::Vst::Sample32** input = data.inputs[0].channelBuffers32;
         Steinberg::Vst::Sample32** output = data.outputs[0].channelBuffers32;
 
-        const int32 numChannels = data.numInputs+1;
+        const int32 numChannels = bus2ch[stereoBuses-1];
         const int32 numSamples = data.numSamples;
-
 
         //---------
 
@@ -737,8 +765,6 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
             if (audioBuffer->inFrameCount >= PDBLKSIZE)
             {
                 audioBuffer->inFrameCount = 0;
-                //updatePdvstParameters();
-                //params_from_pd(data);
 
                 #if _WIN32
                     int gotPdProcEvent = (xxWaitForSingleObject(pdProcEvent, 10) == 1); //WAIT_OBJECT_0

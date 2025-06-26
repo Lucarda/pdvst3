@@ -76,9 +76,18 @@ pair separated by a carriage return. Comments are demarked with a '#' character.
     PLUGNAME = <string>
     # Name of plugin must be lowercase and match with vst3 bundle name.
 
+    MAIN = <string>
+    # The .pd file for Pd to open when the plugin is opened.
+
+    ID = <string[4]>
+    # The 4-character unique ID for the VST plugin. This is required by VST and
+    # just needs to be a unique string of four characters.
+
     CHANNELS = <integer>
-    # Number of audio input and output channels. Tested with 2 and 4.
-    # Should work with larger values.
+	# Number of audio input and output channels.
+	# must be a multiple of 2. (2, 4, 6, ...)
+	# if you change this your host must rescan the plugins
+	# or changes wont show up when you load the plugin.
 
     PDPATH_LINUX = /home/lucarda/Downloads/pure-data
     PDPATH_MAC = /Applications/Pd-0.55-2.app
@@ -99,18 +108,6 @@ pair separated by a carriage return. Comments are demarked with a '#' character.
     #   macOS: Pd.app
     #   Linux: pd
     # Note: omit the final slash in path
-
-    MAIN = <string>
-    # The .pd file for Pd to open when the plugin is opened.
-
-    ID = <string[4]>
-    # The 4-character unique ID for the VST plugin. This is required by VST and
-    # just needs to be a unique string of four characters.
-
-    SYNTH = <TRUE/FALSE>
-    # Boolean value stating whether this plugin is an instrument (VSTi)
-    # or an effect.
-    # Both types of plugins can send/receive midi events.
 
     DEBUG = <TRUE/FALSE>
     # Boolean value stating whether to display the Pd GUI when the plugin is opened.

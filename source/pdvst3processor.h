@@ -193,6 +193,8 @@ protected:
     int syncDefeatNumber;
     // JYG  }
     int GsampleRate;
+    int stereoBuses;
+    int bus2ch[1024];
 
 };
 

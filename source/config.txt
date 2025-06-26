@@ -6,12 +6,14 @@ PLUGNAME = pdvst3
 # Unique four character plugin ID
 ID = xvxv
 
+# Number of audio input and output channels.
+# must be a multiple of 2. (2, 4, 6, ...)
+# if you change this your host must rescan the plugins
+# or changes wont show up when you load the plugin.
+CHANNELS = 2
 
-# Optional info
-VERSION = 0.0.0
-AUTHOR = Me
-URL = http://example.org
-MAIL = info@example.com
+# Main Pd patch of the plugin
+MAIN = Pd_example.pd
 
 # Where to find Pd:
 # you can supply the path of your Pd installation or specify what Pd to use.
@@ -19,10 +21,10 @@ MAIL = info@example.com
 # 	Windows: "\bin\pd.exe"
 # 	macOS: "/Contents/Resources/bin/pd"
 # 	Linux: "/bin/pd"
-# special wildcards: 
+# special wildcards:
 #	@plug_parent : find Pd in the parent dir of the plugin
 #	@resources   : find Pd inside the plugin's folder "Contents/Resources"
-#   example: 
+#   example:
 #		PDPATH_LINUX = @resources
 # when using the wildcards the main Pd folder must be renamed per OS like:
 #	Windows: Pd-win
@@ -34,21 +36,12 @@ PDPATH_LINUX = /home/lucarda/Downloads/pure-data
 PDPATH_MAC = /Applications/Pd-0.55-2.app
 PDPATH_WIN = C:\Program Files\Pd
 
-# Number of audio input and output channels
-CHANNELS = 2
-
-# Main Pd patch of the plugin
-MAIN = Pd_example.pd
-
-# Whether this is a VSTi
-SYNTH = FALSE
-
 # Display Pd GUI or not
 DEBUG = TRUE
 
 # Flags to be passed when starting Pd.
 # flags we should not put here: -r, -outchannels, -inchannels
-# flag -nogui is set when we set DEBUG = FALSE 
+# flag -nogui is set when we set DEBUG = FALSE
 PDMOREFLAGS =
 
 # Number of VST parameters (up to 128)
@@ -59,3 +52,9 @@ PARAMETERS = 3
 NAMEPARAMETER0 = Level
 NAMEPARAMETER1 = foo
 NAMEPARAMETER2 = bar
+
+# Optional info that shows in the host.
+VERSION = 0.0.0
+AUTHOR = testing-pdvst3
+URL = https://example.org
+MAIL = info@example.org
