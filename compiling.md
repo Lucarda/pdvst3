@@ -33,13 +33,17 @@ win:
 
     cmake ../ -DCMAKE_BUILD_TYPE:STRING=release -DSMTG_CREATE_MODULE_INFO=off -DSMTG_USE_STATIC_CRT:BOOL=ON
 
-    cmake --build .
+    cmake --build . --config Release
 
 mac:
 
     cmake -DCMAKE_BUILD_TYPE:STRING=release -DSMTG_CREATE_MODULE_INFO=off -DSMTG_DISABLE_CODE_SIGNING=on ../
 
     cmake --build . --config Release
+    
+Notes: for the github's CI builds i have to replace the content of
+"cmake\modules\SMTG_AddVST3Library.cmake" with "xcodehack.txt". you might
+need to do this if compiling with xcode >= 15. 
 
 
 ### vst3 validator
