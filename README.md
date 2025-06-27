@@ -118,6 +118,16 @@ pair separated by a carriage return. Comments are demarked with a '#' character.
     NAMEPARAMETER<integer> = <string>
     # Display name for parameters. Used when CUSTOMGUI is false or the VST host
     # doesn't support custom editors.
+    
+    PDMOREFLAGS = <string>
+    # Flags to be passed when starting Pd.
+    # flags we should not put here: -r, -outchannels, -inchannels
+    # flag -nogui is set when we set DEBUG = FALSE
+    
+    LATENCY = <integer>
+    # Latency of the plug-in. For example, if the plug-in internally 
+    # needs to look in advance (like compressors) 512 samples then 
+    # this plug-in should report 512 as latency.    
 
     VERSION = <string>
     AUTHOR = <string>
@@ -125,10 +135,7 @@ pair separated by a carriage return. Comments are demarked with a '#' character.
     MAIL = <string>
     # Optional info that shows in the vst host.
 
-    PDMOREFLAGS = <string>
-    # Flags to be passed when starting Pd.
-    # flags we should not put here: -r, -outchannels, -inchannels
-    # flag -nogui is set when we set DEBUG = FALSE
+
 
 
 ## Pd/VST audio/midi Communication

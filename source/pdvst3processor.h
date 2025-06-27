@@ -115,6 +115,9 @@ public:
 	Steinberg::tresult PLUGIN_API setState (Steinberg::IBStream* state) SMTG_OVERRIDE;
 	Steinberg::tresult PLUGIN_API getState (Steinberg::IBStream* state) SMTG_OVERRIDE;
 	
+	/** Inform latency */
+	uint32 PLUGIN_API getLatencySamples () SMTG_OVERRIDE;
+	
 	////////////
 	virtual void suspend();
     virtual void resume();

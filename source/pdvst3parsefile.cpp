@@ -81,6 +81,7 @@ int globalCustomGuiWidth= 320;
 int globalCustomGuiHeight= 150;
 pdvstProgram globalProgram[MAXPROGRAMS];
 bool globalProgramsAreChunks = false;
+int globalLatency = 0;
 
 
 #if SMTG_OS_WINDOWS
@@ -387,6 +388,11 @@ void parseSetupFile()
                 if (strcmp(param, "pdmoreflags") == 0)
                 {
                     strcpy(globalPdMoreFlags, value);
+                }
+                // latency
+                if (strcmp(param, "latency") == 0)
+                {
+                    globalLatency = atoi(value);
                 }
             // --------------------------------------------
                 // unused in pdvst3

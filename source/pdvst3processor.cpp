@@ -75,7 +75,9 @@ extern int globalCustomGuiHeight;
 extern bool globalProgramsAreChunks;
 extern bool globalIsASynth;
 extern pdvstProgram globalProgram[MAXPROGRAMS];
+extern int globalLatency;
 int Steinberg::pdvst3Processor::referenceCount = 0;
+
 #if _WIN32
     int xxWaitForSingleObject(HANDLE mutex, int ms);
     int xxReleaseMutex(HANDLE mutex);
@@ -700,6 +702,12 @@ tresult PLUGIN_API pdvst3Processor::setBusArrangements (Vst::SpeakerArrangement*
 
 
     return AudioEffect::setBusArrangements(inputs, numIns, outputs, numOuts);
+}
+
+//------------------------------------------------------------------------
+uint32 PLUGIN_API pdvst3Processor::getLatencySamples ()
+{
+	return (uint32)globalLatency;
 }
 
 //------------------------------------------------------------------------

@@ -53,6 +53,11 @@ NAMEPARAMETER0 = Level
 NAMEPARAMETER1 = foo
 NAMEPARAMETER2 = bar
 
+# Latency of the plug-in. For example, if the plug-in internally 
+# needs to look in advance (like compressors) 512 samples then 
+# this plug-in should report 512 as latency.
+LATENCY = 0
+
 # Optional info that shows in the host.
 VERSION = 0.0.0
 AUTHOR = testing-pdvst3
