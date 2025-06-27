@@ -850,10 +850,10 @@ int pd_extern_sched(char *flags)
     argc = tokenizeCommandLineString(flags, argv);
     parseArgs(argc, argv);
     #ifdef _WIN32
-        pdvstTransferMutex = OpenMutex(MUTEX_ALL_ACCESS, 0, pdvstTransferMutexName);
-        vstProcEvent = OpenEvent(EVENT_ALL_ACCESS, 0, vstProcEventName);
-        pdProcEvent = OpenEvent(EVENT_ALL_ACCESS, 0, pdProcEventName);
-        pdvstTransferFileMap = OpenFileMapping(FILE_MAP_ALL_ACCESS,
+        pdvstTransferMutex = OpenMutexA(MUTEX_ALL_ACCESS, 0, pdvstTransferMutexName);
+        vstProcEvent = OpenEventA(EVENT_ALL_ACCESS, 0, vstProcEventName);
+        pdProcEvent = OpenEventA(EVENT_ALL_ACCESS, 0, pdProcEventName);
+        pdvstTransferFileMap = OpenFileMappingA(FILE_MAP_ALL_ACCESS,
                                                0,
                                                pdvstTransferFileMapName);
         pdvstData = (pdvstTransferData *)MapViewOfFile(pdvstTransferFileMap,
