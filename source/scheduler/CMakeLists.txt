@@ -1,4 +1,6 @@
 cmake_minimum_required (VERSION 3.25.0)
+set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO")
+
 
 project(pdvst3scheduler C)
 
