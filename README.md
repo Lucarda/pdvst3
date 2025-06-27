@@ -39,6 +39,25 @@ The `~/.vst3/` directory is for user-specific plugins, while `/usr/lib/vst3/`
 and `/usr/local/lib/vst3/` are for global (system-wide) plugins. Consult
 your Linux distro docs if needed.
 
+Note: you must edit `config.txt` setup file inside the bundle and specify
+the path of your Pd installation so that you can load the example plug-in.
+See below for an explanation.
+
+### additional notes on macOS
+
+the plugin bundle is automatically build in github's CI and is not signed
+with an apple-developer id. To use the plugin downloaded from here you must
+remove its quarantine attributes:
+
+- open Applications/Utilities/Terminal
+- type "sudo xattr -r -d com.apple.quarantine" and add a space
+- drag the pdvst3.vst3 bundle onto Terminal to add the path
+- hit enter
+- enter your password.
+
+now you can place the bundle in your vst3 default dir and the host will
+find it and make it available.
+
 ## Creating VST Plugins from Pd Patches
 
 1) Make a copy of the `pdvst3.vst3` bundle and
@@ -184,21 +203,6 @@ Names should change in the future.
 - Multichannel audio in/out support
 - Midi in out support
 - Play head information support (see examples)
-
-## additional notes on macOS
-
-the plugin bundle is automatically build in github's CI and is not signed
-with an apple-developer id. To use the plugin downloaded from here you must
-remove its quarantine attributes:
-
-- open Applications/Utilities/Terminal
-- type "sudo xattr -r -d com.apple.quarantine" and add a space
-- drag the pdvst3.vst3 bundle onto Terminal to add the path
-- hit enter
-- enter your password.
-
-now you can place the bundle in your vst3 default dir and the host will
-find it and make it available.
 
 
 ![vst logo](VST_Compatible_Logo_Steinberg_with_TM.png)
