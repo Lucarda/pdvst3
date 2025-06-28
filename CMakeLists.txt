@@ -107,6 +107,10 @@ target_link_libraries(pdvst3
         sdk
 )
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND GITHUB-CI)
+    add_compile_definitions(-D_FORTIFY_SOURCE=0)
+endif()
+
 add_dependencies(pdvst3 pdvst3scheduler)
 
 #set folders variables
