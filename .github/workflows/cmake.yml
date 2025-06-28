@@ -82,7 +82,7 @@ jobs:
     - name: Configure CMake
       shell: bash
       working-directory: ${{github.workspace}}/build
-      run: cmake ../ -DCMAKE_BUILD_TYPE:STRING=release -DSMTG_CREATE_MODULE_INFO=off -DSMTG_USE_STATIC_CRT:BOOL=ON -DSMTG_RUN_VST_VALIDATOR=off
+      run: cmake ../ -DCMAKE_BUILD_TYPE:STRING=release -DSMTG_CREATE_MODULE_INFO=off -DSMTG_USE_STATIC_CRT:BOOL=ON -DSMTG_RUN_VST_VALIDATOR=off -DGITHUB-CI=ON
 
     - name: Build
       working-directory: ${{github.workspace}}/build

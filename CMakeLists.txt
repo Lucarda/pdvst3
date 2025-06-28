@@ -1,6 +1,8 @@
 
 cmake_minimum_required (VERSION 3.25.0)
 
+option(GITHUB-CI "If we are running the github builds" OFF)
+
 set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
 set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO")
 
@@ -146,13 +148,21 @@ add_custom_command(
         ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/pdvst3scheduler.pd_darwin
         ${FOLDER_RESOURCES}
 )
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND GITHUB-CI)
 add_custom_command(
     TARGET pdvst3
     PRE_LINK
-    COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_BINARY_DIR}/bin/Release/pdvst3scheduler.dll
-        ${FOLDER_RESOURCES}
+	COMMAND ${CMAKE_COMMAND} -E copy
+		${CMAKE_CURRENT_BINARY_DIR}/bin/Release/pdvst3scheduler.dll
+		${FOLDER_RESOURCES}
+)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND NOT DEFINED GITHUB-CI)
+add_custom_command(
+    TARGET pdvst3
+    PRE_LINK
+	COMMAND ${CMAKE_COMMAND} -E copy
+		${CMAKE_CURRENT_BINARY_DIR}/bin/pdvst3scheduler.dll
+		${FOLDER_RESOURCES}
 )
 endif()
 
