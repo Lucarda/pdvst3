@@ -69,6 +69,7 @@ extern char globalPdFile[MAXFILENAMELEN];
 extern char globalPureDataPath[MAXFILENAMELEN];
 extern char globalHostPdvstPath[MAXFILENAMELEN];
 extern char globalSchedulerPath[MAXFILENAMELEN];
+extern char globalConfigFile[MAXFILENAMELEN];
 extern bool globalCustomGui;
 extern int globalCustomGuiWidth;
 extern int globalCustomGuiHeight;
@@ -114,7 +115,8 @@ void pdvst3Processor::debugLog(char *fmt, ...)
 void pdvst3Processor::startPd()
 {
     char commandLineArgs[MAXSTRLEN],
-         debugString[MAXSTRLEN];
+             debugString[MAXSTRLEN],
+                     buf[MAXSTRLEN];
     char *unixlastargs = "2>/dev/null &";
 
     #if _WIN32 //Windows
@@ -192,25 +194,23 @@ void pdvst3Processor::startPd()
             break;
         else
         {
-        sprintf(errorMessage,"pd program not found. Check your settings in \n%s%s.pdv \n setup file. (search for the line PDPATH)",
-                              globalPluginPath,globalPluginName);
+        sprintf(errorMessage,"pd program not found. Check your settings in in file: %s",
+                              globalConfigFile);
             break;
         }
     }
 
-    sprintf(commandLineArgs,
-            "%s%s %s",
-            commandLineArgs,
+    sprintf(buf,
+            "%s %s",
             debugString,
             globalPdMoreFlags);
-
-    sprintf(commandLineArgs,
-            "%s -schedlib \"%spdvst3scheduler\"",
-            commandLineArgs, globalSchedulerPath);
-
-    sprintf(commandLineArgs,
-            "%s -extraflags \"-vstproceventname %s -pdproceventname %s -vsthostid %d -mutexname %s -filemapname %s\"",
-            commandLineArgs,
+    strcat(commandLineArgs, buf);
+    sprintf(buf,
+            " -schedlib \"%spdvst3scheduler\"",
+            globalSchedulerPath);
+    strcat(commandLineArgs, buf);
+    sprintf(buf,
+            " -extraflags \"-vstproceventname %s -pdproceventname %s -vsthostid %d -mutexname %s -filemapname %s\"",
             vstProcEventName,
             pdProcEventName,
             #if _WIN32
@@ -220,34 +220,37 @@ void pdvst3Processor::startPd()
             #endif
             pdvstTransferMutexName,
             pdvstTransferFileMapName);
-    sprintf(commandLineArgs,
-            "%s -outchannels %d -inchannels %d",
-            commandLineArgs,
+    strcat(commandLineArgs, buf);
+    sprintf(buf,
+            " -outchannels %d -inchannels %d",
             nChannels,
             nChannels);
-    sprintf(commandLineArgs,
-            "%s -r %d",
-            commandLineArgs,
+    strcat(commandLineArgs, buf);
+    sprintf(buf,
+            " -r %d",
             48000);
-
-    sprintf(commandLineArgs,
-            "%s -open \"%s%s\"",
-            commandLineArgs,
+    strcat(commandLineArgs, buf);
+    sprintf(buf,
+            " -open \"%s%s\"",
             pluginPath,
             pdFile);
-    sprintf(commandLineArgs,
-            "%s -path \"%s\"",
-            commandLineArgs,
+    strcat(commandLineArgs, buf);
+    sprintf(buf,
+            " -path \"%s\"",
             pluginPath);
+    strcat(commandLineArgs, buf);
     for (i = 0; i < nExternalLibs; i++)
     {
-        sprintf(commandLineArgs,
-                "%s -lib %s",
-                commandLineArgs,
+        sprintf(buf,
+                " -lib %s",
                 externalLib[i]);
+        strcat(commandLineArgs, buf);
     }
     #ifndef _WIN32
-    sprintf(commandLineArgs,"%s %s",commandLineArgs, unixlastargs);
+    sprintf(buf,
+                " %s",
+        unixlastargs);
+    strcat(commandLineArgs, buf);
     #endif
     debugLog("command line: %s", commandLineArgs);
     suspend();
@@ -535,7 +538,7 @@ void pdvst3Processor::midi_from_pd(Vst::ProcessData& data)
                     midiEvent.polyPressure.noteId = -1;
                     outlist->addEvent(midiEvent);
                 }
-                
+
                 else if (status == 0xB0) // controller change
                 {
                     midiEvent.type = Vst::Event::kLegacyMIDICCOutEvent;
@@ -548,7 +551,7 @@ void pdvst3Processor::midi_from_pd(Vst::ProcessData& data)
                     outlist->addEvent(midiEvent);
 
                 }
-                
+
             }
             pdvstData->midiOutQueueUpdated=0;
             pdvstData->midiOutQueueSize=0;
@@ -594,7 +597,7 @@ void pdvst3Processor::midi_to_pd(Vst::ProcessData& data)
                         pdvstData->midiQueue[pdvstData->midiQueueSize].messageType = KEY_PRESSURE;
                         break;
 
-                    //--- ------------------- this seems the problem. like if we never get here.                  
+                    //--- ------------------- this seems the problem. like if we never get here.
                     case Vst::Event::kLegacyMIDICCOutEvent:
                         pdvstData->midiQueue[pdvstData->midiQueueSize].channelNumber = 0; //event.midiCCOut.channel;
                         pdvstData->midiQueue[pdvstData->midiQueueSize].dataByte1 = 1;// event.midiCCOut.controlNumber & 0x0F;
@@ -707,7 +710,7 @@ tresult PLUGIN_API pdvst3Processor::setBusArrangements (Vst::SpeakerArrangement*
 //------------------------------------------------------------------------
 uint32 PLUGIN_API pdvst3Processor::getLatencySamples ()
 {
-	return (uint32)globalLatency;
+    return (uint32)globalLatency;
 }
 
 //------------------------------------------------------------------------
