@@ -27,25 +27,12 @@ jobs:
       working-directory: ${{github.workspace}}/build
       shell: bash
       run: make
-
-    - name: Prepare Artefacts
-      working-directory: ${{github.workspace}}/build/VST3/release
-      shell: bash
-      run: ${{github.workspace}}/.github/scripts/package.sh Linux-x64
-
-    - name: Archive Artifacts
+    
+    - name: Upload Zip
       uses: actions/upload-artifact@v4
       with:
-        name: pdvst3-Linux
-        path: ${{github.workspace}}/build/VST3/release/pdvst3-Linux-x64.zip
-        
-    - name: Release Artifacts
-      uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
-      with:
-        prerelease: true
-        draft: true
-        files: pdvst3-Linux-x64.zip
+        name: pdvst3-Linux-x64
+        path: ${{github.workspace}}/build/VST3/release/*
 
   macos-universal-build:
     runs-on: macos-latest
@@ -73,24 +60,11 @@ jobs:
       shell: bash
       run: cmake --build . --config Release
 
-    - name: Prepare Artefacts
-      working-directory: ${{github.workspace}}/build/VST3/Release
-      shell: bash
-      run: ${{github.workspace}}/.github/scripts/package.sh MacOS-Universal
-
-    - name: Archive Artifacts
+    - name: Upload Zip
       uses: actions/upload-artifact@v4
       with:
-        name: pdvst3-macOS
-        path: ${{github.workspace}}/build/VST3/Release/pdvst3-MacOS-Universal.zip
-        
-    - name: Release Artifacts
-      uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
-      with:
-        prerelease: true
-        draft: true
-        files: pdvst3-MacOS-Universal.zip
+        name: pdvst3-MacOS-x64-arm64
+        path: ${{github.workspace}}/build/VST3/release/*
 
   windows-64-build:
     runs-on: windows-latest
@@ -115,21 +89,8 @@ jobs:
       shell: bash
       run: cmake --build . --config Release
 
-    - name: Prepare Artefacts
-      working-directory: ${{github.workspace}}\build\VST3\Release
-      shell: cmd
-      run: ${{github.workspace}}/.github/scripts/package.bat Win64
-
-    - name: Archive Artifacts
+    - name: Upload Zip
       uses: actions/upload-artifact@v4
       with:
-        name: pdvst3-Windows
-        path: ${{github.workspace}}/build/VST3/Release/pdvst3-Win64.zip
-        
-    - name: Release Artifacts
-      uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
-      with:
-        prerelease: true
-        draft: true
-        files: pdvst3-Win64.zip
+        name: pdvst3-Windows-x64
+        path: ${{github.workspace}}/build/VST3/release/*
