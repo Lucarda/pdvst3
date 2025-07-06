@@ -136,13 +136,15 @@ typedef struct _pdvstTransferData
 {
     int active;
     int syncToVst;
-    int nChannels;
+    int nChannelsIn;
+    int nChannelsOut;
     int sampleRate;
     int blockSize;
     int nParameters;
     int midiQueueSize;
     int midiQueueUpdated;
-    float samples[MAXCHANNELS][MAXBLOCKSIZE];
+    float samplesIn[MAXCHANNELS][MAXBLOCKSIZE];
+    float samplesOut[MAXCHANNELS][MAXBLOCKSIZE];
     pdvstParameter vstParameters[MAXPARAMETERS];
     pdvstMidiMessage midiQueue[MAXMIDIQUEUESIZE];
     pdvstParameter guiState;

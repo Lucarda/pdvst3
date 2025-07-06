@@ -406,22 +406,31 @@ void makevstChunkReceiver()
 
 void send_dacs(void)
 {
-    int i, j, sampleCount, nChannels, blockSize;
+    int i, j, sampleCount, nChannelsIn, nChannelsOut, blockSize;
     t_sample *soundin, *soundout;
 
     soundin = get_sys_soundin();
     soundout = get_sys_soundout();
-    nChannels = pdvstData->nChannels;
+    nChannelsIn = pdvstData->nChannelsIn;
+    nChannelsOut = pdvstData->nChannelsOut;
     blockSize = pdvstData->blockSize;
     if (blockSize == *(get_sys_schedblocksize()))
     {
         sampleCount = 0;
-        for (i = 0; i < nChannels; i++)
+        for (i = 0; i < nChannelsIn; i++)
         {
             for (j = 0; j < blockSize; j++)
             {
-                soundin[sampleCount] = pdvstData->samples[i][j];
-                pdvstData->samples[i][j] = soundout[sampleCount];
+                soundin[sampleCount] = pdvstData->samplesIn[i][j];
+                sampleCount++;
+            }
+        }
+        sampleCount = 0;
+        for (i = 0; i < nChannelsOut; i++)
+        {
+            for (j = 0; j < blockSize; j++)
+            {
+                pdvstData->samplesOut[i][j] = soundout[sampleCount];
                 soundout[sampleCount] = 0;
                 sampleCount++;
             }
@@ -772,8 +781,8 @@ int scheduler()
         if (pdvstData->sampleRate != (int)sys_getsr())
         {
             post("samplerate changed to %d", pdvstData->sampleRate);
-            sys_setchsr(pdvstData->nChannels,
-                        pdvstData->nChannels,
+            sys_setchsr(pdvstData->nChannelsIn,
+                        pdvstData->nChannelsOut,
                         pdvstData->sampleRate);
         }
 
@@ -877,11 +886,10 @@ int pd_extern_sched(char *flags)
     logpost(NULL, PD_DEBUG,"  pdvst3 v%d.%d.%d",PDVST3_VER_MAJ, PDVST3_VER_MIN, PDVST3_VER_PATCH);
     logpost(NULL, PD_DEBUG,"  %s %s",PDVST3_AUTH, PDVST3_DATE);
     logpost(NULL, PD_DEBUG,"---");
-    sys_setchsr(pdvstData->nChannels,
-                pdvstData->nChannels,
+    sys_setchsr(pdvstData->nChannelsIn,
+                pdvstData->nChannelsOut,
                 pdvstData->sampleRate);
     xxReleaseMutex(pdvstTransferMutex);
-    //timeBeginPeriod(1);
 
     scheduler();
 

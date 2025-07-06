@@ -55,7 +55,8 @@
 #endif
 
 extern bool globalDebug;
-extern int globalNChannels;
+extern int globalNChannelsIn;
+extern int globalNChannelsOut;
 extern int globalNPrograms;
 extern int globalNParams;
 extern long globalPluginId;
@@ -165,7 +166,8 @@ void pdvst3Processor::startPd()
     int i;
     pdvstData->active = 1;
     pdvstData->blockSize = PDBLKSIZE;
-    pdvstData->nChannels = nChannels;
+    pdvstData->nChannelsIn = nChannelsIn;
+    pdvstData->nChannelsOut = nChannelsOut;
     pdvstData->sampleRate = 48000;
     pdvstData->nParameters = globalNParams;
     pdvstData->guiState.updated = 0;
@@ -223,8 +225,8 @@ void pdvst3Processor::startPd()
     strcat(commandLineArgs, buf);
     sprintf(buf,
             " -outchannels %d -inchannels %d",
-            nChannels,
-            nChannels);
+            nChannelsOut,
+            nChannelsIn);
     strcat(commandLineArgs, buf);
     sprintf(buf,
             " -r %d",
@@ -288,15 +290,16 @@ void pdvst3Processor::suspend()
     setSyncToVst(0);
     xxSetEvent(vstProcEvent);
 
-    for (i = 0; i < audioBuffer->nChannels; i++)
+    for (i = 0; i < audioBuffer->nChannelsIn; i++)
     {
         memset(audioBuffer->in[i], 0, audioBuffer->size * sizeof(float));
+    }
+    for (i = 0; i < audioBuffer->nChannelsOut; i++)
+    {
         memset(audioBuffer->out[i], 0, audioBuffer->size * sizeof(float));
     }
     audioBuffer->inFrameCount = audioBuffer->outFrameCount = 0;
     dspActive = false;
-    //setInitialDelay(PDBLKSIZE * 2);
-    //setInitialDelay(0);
 }
 
 void pdvst3Processor::resume()
@@ -304,15 +307,16 @@ void pdvst3Processor::resume()
     int i;
     setSyncToVst(1);
     xxSetEvent(vstProcEvent);
-    for (i = 0; i < audioBuffer->nChannels; i++)
+    for (i = 0; i < audioBuffer->nChannelsIn; i++)
     {
         memset(audioBuffer->in[i], 0, audioBuffer->size * sizeof(float));
+    }
+    for (i = 0; i < audioBuffer->nChannelsOut; i++)
+    {
         memset(audioBuffer->out[i], 0, audioBuffer->size * sizeof(float));
     }
     audioBuffer->inFrameCount = audioBuffer->outFrameCount = 0;
     dspActive = true;
-    //setInitialDelay(PDBLKSIZE * 2);
-    //setInitialDelay(0);
     if (isASynth)
     {
         //wantEvents();  deprecated since VST 2.4
@@ -329,16 +333,14 @@ void pdvst3Processor::pdvst()
     customGui = globalCustomGui;
     customGuiHeight = globalCustomGuiHeight;
     customGuiWidth = globalCustomGuiWidth;
-    nChannels = (globalNChannels > 64) ? 64 : globalNChannels;;
+    nChannelsIn = (globalNChannelsIn > MAXCHANNELS) ? MAXCHANNELS : globalNChannelsIn;
+    nChannelsOut = (globalNChannelsOut > MAXCHANNELS) ? MAXCHANNELS : globalNChannelsOut;
     nPrograms = globalNPrograms;
     nParameters = globalNParams;
     pluginId = globalPluginId;
     nExternalLibs = globalNExternalLibs;
     debugLog("name: %s", globalPluginName);
     // VST setup
-
-    //setInitialDelay(PDBLKSIZE * 2);
-    //setInitialDelay(0);
 
     int i, j;
     // initialize memory
@@ -352,8 +354,22 @@ void pdvst3Processor::pdvst()
     {
         strcpy(externalLib[i], globalExternalLib[i]);
     }
-    debugLog("channels: %d", nChannels);
-    audioBuffer = new pdVstBuffer(nChannels);
+    // channels to stereo buses (convert user input into multiple of 2 channels)
+    stereoBusesIn = (int) nChannelsIn / 2;
+    stereoBusesOut = (int) nChannelsOut / 2;
+    int k = 0;
+    // map bus n to n channels (0 2, 1 4, 2 6 ...)
+    for (int i=0; i<MAXCHANNELS;i++)
+    {
+        k += 2;
+        bus2ch[i] = k;
+    }
+    nChannelsIn = bus2ch[stereoBusesIn-1];
+    nChannelsOut = bus2ch[stereoBusesOut-1];
+    debugLog("in channels: %d", nChannelsIn);
+    debugLog("out channels: %d", nChannelsOut);
+    audioBuffer = new pdVstBuffer(nChannelsIn, nChannelsOut);
+
     for (i = 0; i < MAXPARAMETERS; i++)
     {
         strcpy(vstParamName[i], globalVstParamName[i]);
@@ -378,11 +394,7 @@ void pdvst3Processor::pdvst()
     debugLog("done");
     //setProgram(curProgram);
     referenceCount++;
-     //  {JYG   see pdvst::setProgram below for explanation
-    #if _WIN32
-    timeFromStartup=GetTickCount();
-    //  JYG  }
-    #endif
+
 }
 
 void pdvst3Processor::pdvstquit()
@@ -648,22 +660,23 @@ tresult PLUGIN_API pdvst3Processor::initialize (FUnknown* context)
     // when building make sure to set it to 2 or we get a segfault
     // in the validator
 
-    stereoBuses = (int) nChannels / 2;
     int i, n;
     int k = 0;
-    for (i=0; i<stereoBuses;i++)
-    {
-        k += 2;
-        bus2ch[i] = k;
-    }
     n = 1;
-    for (i = 0; i < stereoBuses; i++)
+    for (i = 0; i < stereoBusesIn; i++)
     {
         char buf[32];
         Vst::TChar buf2[127];
         sprintf ( buf, "in ch%d ch%d", n, n+1 );
         Vst::StringConvert::convert (buf,  buf2);
         addAudioInput (buf2, Steinberg::Vst::SpeakerArr::kStereo);
+        n += 2;
+    }
+    n = 1;
+    for (i = 0; i < stereoBusesOut; i++)
+    {
+        char buf[32];
+        Vst::TChar buf2[127];
         sprintf (buf, "out ch%d ch%d", n, n+1 );
         Vst::StringConvert::convert (buf, buf2);
         addAudioOutput (buf2, Steinberg::Vst::SpeakerArr::kStereo);
@@ -753,7 +766,8 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
         Steinberg::Vst::Sample32** input = data.inputs[0].channelBuffers32;
         Steinberg::Vst::Sample32** output = data.outputs[0].channelBuffers32;
 
-        const int32 numChannels = bus2ch[stereoBuses-1];
+        const int32 numChannelsIn = bus2ch[stereoBusesIn-1];
+        const int32 numChannelsOut = bus2ch[stereoBusesOut-1];
         const int32 numSamples = data.numSamples;
 
         //---------
@@ -769,10 +783,9 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
         {
             setSyncToVst(1);
         }
-
         for (i = 0; i < numSamples; i++)
         {
-            for (j = 0; j < numChannels; j++)
+            for (j = 0; j < numChannelsIn; j++)
             {
                 audioBuffer->in[j][audioBuffer->inFrameCount] = input[j][i];
             }
@@ -781,85 +794,44 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
             if (audioBuffer->inFrameCount >= PDBLKSIZE)
             {
                 audioBuffer->inFrameCount = 0;
-
-                #if _WIN32
-                    int gotPdProcEvent = (xxWaitForSingleObject(pdProcEvent, 10) == 1); //WAIT_OBJECT_0
-                #else
-                    xxWaitForSingleObject(pdProcEvent, 10);
-                    int gotPdProcEvent = 1;
-                #endif
-
-                if (gotPdProcEvent)
-                    {
-                        xxResetEvent(pdProcEvent);
-                        syncDefeatNumber=0;
-                    }
-                else if (syncDefeatNumber==50)
-                {
-                    //afficher messageErreur
-                    //CreateThread(NULL, 0, &NotifySyncError, NULL, 0, NULL);
-                    //startPd();
-                    syncDefeatNumber++;
-                }
-                else
-                    syncDefeatNumber++;
+                xxWaitForSingleObject(pdProcEvent, 10);
+                xxResetEvent(pdProcEvent);
 
                 for (k = 0; k < PDBLKSIZE; k++)
                 {
-                    for (l = 0; l < numChannels; l++)
+                    for (l = 0; l < numChannelsOut; l++)
                     {
                         while (audioBuffer->outFrameCount >= audioBuffer->size)
                         {
                             audioBuffer->resize(audioBuffer->size * 2);
                         }
                         // get pd processed samples
-                        if (gotPdProcEvent)
-                        {
-                            audioBuffer->out[l][audioBuffer->outFrameCount] = pdvstData->samples[l][k];
-                            // put new samples in for processing
-                            pdvstData->samples[l][k] = audioBuffer->in[l][k];
-                        }
+                        audioBuffer->out[l][audioBuffer->outFrameCount] = pdvstData->samplesOut[l][k];
                     }
                     (audioBuffer->outFrameCount)++;
+                }
+                for (k = 0; k < PDBLKSIZE; k++)
+                {
+                    for (l = 0; l < numChannelsIn; l++)
+                    {
+                        // put new samples in for processing
+                        pdvstData->samplesIn[l][k] = audioBuffer->in[l][k];
+                    }
                 }
                 pdvstData->sampleRate = (int)GsampleRate;
                 // signal vst process event
                 xxSetEvent(vstProcEvent);
             }
         }
-
         // output pd processed samples
         for (i = 0; i < numSamples; i++)
         {
-            for (j = 0; j < numChannels; j++)
+            for (j = 0; j < numChannelsOut; j++)
             {
-                if (audioBuffer->outFrameCount > 0)
-                {
-                    output[j][i] = audioBuffer->out[j][i];
-                }
-                else
-                {
-                    output[j][i] = 0;
-                }
-            }
-            if (audioBuffer->outFrameCount > 0)
-            {
-                audioBuffer->outFrameCount--;
-                framesOut++;
+                output[j][i] = audioBuffer->out[j][i];
             }
         }
-        // shift any remaining buffered out samples
-        if (audioBuffer->outFrameCount > 0)
-        {
-            for (i = 0; i < numChannels; i++)
-            //for (i = 0; i < audioBuffer->nChannels; i++)
-            {
-                memmove(&(audioBuffer->out[i][0]),
-                        &(audioBuffer->out[i][framesOut]),
-                        (audioBuffer->outFrameCount) * sizeof(float));
-            }
-        }
-
+        audioBuffer->outFrameCount = 0;
     }
     xxWaitForSingleObject(pdvstTransferMutex, 10);
     {
@@ -983,17 +955,21 @@ tresult PLUGIN_API pdvst3Processor::getState (IBStream* state)
 
 
 
-pdVstBuffer::pdVstBuffer(int nChans)
+pdVstBuffer::pdVstBuffer(int nchIn, int nchOut)
 {
     int i;
+    nChannelsIn = nchIn;
+    nChannelsOut = nchOut;
 
-    nChannels = nChans;
-    in = (float **)malloc(nChannels * sizeof(float *));
-    out = (float **)malloc(nChannels * sizeof(float *));
-    for (i = 0; i < nChannels; i++)
+    in = (float **)malloc(nChannelsIn * sizeof(float *));
+    out = (float **)malloc(nChannelsOut * sizeof(float *));
+    for (i = 0; i < nChannelsIn; i++)
     {
         in[i] = (float *)calloc(DEFPDVSTBUFFERSIZE,
                                 sizeof(float));
+    }
+    for (i = 0; i < nChannelsOut; i++)
+    {
         out[i] = (float *)calloc(DEFPDVSTBUFFERSIZE,
                                  sizeof(float));
     }
@@ -1004,9 +980,12 @@ pdVstBuffer::~pdVstBuffer()
 {
     int i;
 
-    for (i = 0; i < nChannels; i++)
+    for (i = 0; i < nChannelsIn; i++)
     {
         free(in[i]);
+    }
+    for (i = 0; i < nChannelsOut; i++)
+    {
         free(out[i]);
     }
 }
@@ -1015,9 +994,12 @@ void pdVstBuffer::resize(int newSize)
 {
     int i;
 
-    for (i = 0; i < nChannels; i++)
+    for (i = 0; i < nChannelsIn; i++)
     {
         in[i] = (float *)realloc(in[i], newSize * sizeof(float));
+    }
+    for (i = 0; i < nChannelsOut; i++)
+    {
         out[i] = (float *)realloc(out[i], newSize * sizeof(float));
     }
     size = newSize;

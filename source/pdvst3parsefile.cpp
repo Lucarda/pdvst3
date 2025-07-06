@@ -56,7 +56,8 @@
 bool oome = false;
 bool globalIsASynth = false;
 bool globalDebug = false;
-int globalNChannels = 0;
+int globalNChannelsIn = 0;
+int globalNChannelsOut = 0;
 int globalNPrograms = 0;
 int globalNParams = 0;
 int globalNExternalLibs = 0;
@@ -287,14 +288,18 @@ void parseSetupFile()
                 strcpy(value, line + equalPos + 1);
                 strcpy(param, trimWhitespace(strlowercase(param)));
                 strcpy(value, trimWhitespace(value));
-                // number of channels
-                if (strcmp(param, "channels") == 0)
-                    globalNChannels = atoi(value);
+                // number of channels in
+                if (strcmp(param, "in-channels") == 0)
+                    globalNChannelsIn = atoi(value);
+                // number of channels out
+                if (strcmp(param, "out-channels") == 0)
+                    globalNChannelsOut = atoi(value);
                 // main PD patch
                 if (strcmp(param, "main") == 0)
                 {
                     strcpy(globalPdFile, value);
                 }
+                // Pd path
                 #ifdef __APPLE__
                 if (strcmp(param, "pdpath_mac") == 0)
                 {

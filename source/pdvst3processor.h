@@ -58,14 +58,15 @@ class pdVstBuffer
     friend class pdvst3Processor;
 
 public:
-    pdVstBuffer(int nChans);
+    pdVstBuffer(int nchIn, int nchOut);
     ~pdVstBuffer();
     void resize(int newSize);
 
 protected:
-    int nChannels;
     int inFrameCount;
     int outFrameCount;
+    int nChannelsIn;
+    int nChannelsOut;
     int size;
     float **in;
     float **out;
@@ -152,7 +153,8 @@ protected:
     pdvstProgram *program;
     //pdvstProgramAreChunks *Chunk;
     int nPrograms;
-    int nChannels;
+    int nChannelsIn;
+    int nChannelsOut;
     int nExternalLibs;
     bool customGui;
     int customGuiHeight;
@@ -196,7 +198,8 @@ protected:
     int syncDefeatNumber;
     // JYG  }
     int GsampleRate;
-    int stereoBuses;
+    int stereoBusesIn;
+    int stereoBusesOut;
     int bus2ch[1024];
 
 };

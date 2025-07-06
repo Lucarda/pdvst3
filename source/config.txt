@@ -10,7 +10,8 @@ ID = xvxv
 # must be a multiple of 2. (2, 4, 6, ...)
 # if you change this your host must rescan the plugins
 # or changes wont show up when you load the plugin.
-CHANNELS = 2
+IN-CHANNELS = 2
+OUT-CHANNELS = 2
 
 # Main Pd patch of the plugin
 MAIN = Pd_example.pd
