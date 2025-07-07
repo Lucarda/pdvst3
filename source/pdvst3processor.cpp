@@ -68,13 +68,9 @@ extern char globalPluginName[MAXSTRLEN];
 extern char globalPdMoreFlags[MAXSTRLEN];
 extern char globalPdFile[MAXFILENAMELEN];
 extern char globalPureDataPath[MAXFILENAMELEN];
-extern char globalHostPdvstPath[MAXFILENAMELEN];
 extern char globalSchedulerPath[MAXFILENAMELEN];
 extern char globalConfigFile[MAXFILENAMELEN];
 extern bool globalCustomGui;
-extern int globalCustomGuiWidth;
-extern int globalCustomGuiHeight;
-extern bool globalProgramsAreChunks;
 extern bool globalIsASynth;
 extern pdvstProgram globalProgram[MAXPROGRAMS];
 extern int globalLatency;
@@ -234,12 +230,12 @@ void pdvst3Processor::startPd()
     strcat(commandLineArgs, buf);
     sprintf(buf,
             " -open \"%s%s\"",
-            pluginPath,
-            pdFile);
+            globalPluginPath,
+            globalPdFile);
     strcat(commandLineArgs, buf);
     sprintf(buf,
             " -path \"%s\"",
-            pluginPath);
+            globalPluginPath);
     strcat(commandLineArgs, buf);
     for (i = 0; i < nExternalLibs; i++)
     {
@@ -317,10 +313,6 @@ void pdvst3Processor::resume()
     }
     audioBuffer->inFrameCount = audioBuffer->outFrameCount = 0;
     dspActive = true;
-    if (isASynth)
-    {
-        //wantEvents();  deprecated since VST 2.4
-    }
 }
 
 void pdvst3Processor::pdvst()
@@ -331,13 +323,10 @@ void pdvst3Processor::pdvst()
     // copy global data
     isASynth = globalIsASynth;
     customGui = globalCustomGui;
-    customGuiHeight = globalCustomGuiHeight;
-    customGuiWidth = globalCustomGuiWidth;
     nChannelsIn = (globalNChannelsIn > MAXCHANNELS) ? MAXCHANNELS : globalNChannelsIn;
     nChannelsOut = (globalNChannelsOut > MAXCHANNELS) ? MAXCHANNELS : globalNChannelsOut;
     nPrograms = globalNPrograms;
     nParameters = globalNParams;
-    pluginId = globalPluginId;
     nExternalLibs = globalNExternalLibs;
     debugLog("name: %s", globalPluginName);
     // VST setup
@@ -369,16 +358,11 @@ void pdvst3Processor::pdvst()
     debugLog("in channels: %d", nChannelsIn);
     debugLog("out channels: %d", nChannelsOut);
     audioBuffer = new pdVstBuffer(nChannelsIn, nChannelsOut);
-
     for (i = 0; i < MAXPARAMETERS; i++)
     {
         strcpy(vstParamName[i], globalVstParamName[i]);
     }
-    strcpy(pluginPath, globalPluginPath);
-    strcpy(vstPluginPath, globalPluginPath);
-    strcpy(pluginName, globalPluginName);
-    strcpy(pdFile, globalPdFile);
-    debugLog("path: %s", pluginPath);
+    debugLog("path: %s", globalPluginPath);
     debugLog("nParameters = %d", nParameters);
     for (i = 0; i < nPrograms; i++)
     {
@@ -389,10 +373,8 @@ void pdvst3Processor::pdvst()
         }
     }
     debugLog("startingPd...");
-    // start pd.exe
     startPd();
     debugLog("done");
-    //setProgram(curProgram);
     referenceCount++;
 
 }
@@ -657,7 +639,7 @@ tresult PLUGIN_API pdvst3Processor::initialize (FUnknown* context)
     }
 
     // create stereo buses with the sources/config.txt CHANNELS value.
-    // when building make sure to set it to 2 or we get a segfault
+    // when building make sure to set it to 2 in 2 out or we get a segfault
     // in the validator
 
     int i, n;
@@ -682,7 +664,6 @@ tresult PLUGIN_API pdvst3Processor::initialize (FUnknown* context)
         addAudioOutput (buf2, Steinberg::Vst::SpeakerArr::kStereo);
         n += 2;
     }
-
 
     /* If you don't need an event bus, you can remove the next line */
     addEventInput (STR16 ("Event In"), 1);
@@ -739,11 +720,8 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
 
     xxWaitForSingleObject(pdvstTransferMutex, 10);
     {
-        //--- parameter changes-----------
         params_to_pd(data);
-        //--- midi input----------
         midi_to_pd(data);
-        //--- playhead to pd----------
         playhead_to_pd(data);
     }
     xxReleaseMutex(pdvstTransferMutex);
@@ -835,9 +813,7 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
     }
     xxWaitForSingleObject(pdvstTransferMutex, 10);
     {
-        //--- parameter changes-----------
         params_from_pd(data);
-        //--- output midi to host-----------
         midi_from_pd(data);
     }
     xxReleaseMutex(pdvstTransferMutex);

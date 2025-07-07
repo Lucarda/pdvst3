@@ -48,11 +48,6 @@
 #include "public.sdk/source/vst/utility/stringconvert.h"
 
 
-
-
-
-
-//static AudioEffect *effect = 0;
 bool oome = false;
 bool globalIsASynth = false;
 bool globalDebug = false;
@@ -73,7 +68,6 @@ char globalMail[MAXSTRLEN];
 char globalPdMoreFlags[MAXSTRLEN];
 char globalPdFile[MAXFILENAMELEN];
 char globalPureDataPath[MAXFILENAMELEN];
-char globalHostPdvstPath[MAXFILENAMELEN];
 char globalSchedulerPath[MAXFILENAMELEN];
 char globalContentPath[MAXFILENAMELEN];
 char globalConfigFile[MAXFILENAMELEN];
@@ -81,7 +75,6 @@ bool globalCustomGui = false;
 int globalCustomGuiWidth= 320;
 int globalCustomGuiHeight= 150;
 pdvstProgram globalProgram[MAXPROGRAMS];
-bool globalProgramsAreChunks = false;
 int globalLatency = 0;
 
 

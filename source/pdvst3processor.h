@@ -78,92 +78,76 @@ protected:
 class pdvst3Processor : public Steinberg::Vst::AudioEffect
 {
 public:
-	pdvst3Processor ();
-	~pdvst3Processor () SMTG_OVERRIDE;
+    pdvst3Processor ();
+    ~pdvst3Processor () SMTG_OVERRIDE;
 
     // Create function
-	static Steinberg::FUnknown* createInstance (void* /*context*/) 
-	{ 
-		return (Steinberg::Vst::IAudioProcessor*)new pdvst3Processor; 
-	}
+    static Steinberg::FUnknown* createInstance (void* /*context*/)
+    {
+        return (Steinberg::Vst::IAudioProcessor*)new pdvst3Processor;
+    }
 
-	//--- ---------------------------------------------------------------------
-	// AudioEffect overrides:
-	//--- ---------------------------------------------------------------------
-	/** Called at first after constructor */
-	Steinberg::tresult PLUGIN_API initialize (Steinberg::FUnknown* context) SMTG_OVERRIDE;
-	
-	Steinberg::tresult PLUGIN_API setBusArrangements (Vst::SpeakerArrangement* inputs, int32 numIns,
+    //--- ---------------------------------------------------------------------
+    // AudioEffect overrides:
+    //--- ---------------------------------------------------------------------
+    /** Called at first after constructor */
+    Steinberg::tresult PLUGIN_API initialize (Steinberg::FUnknown* context) SMTG_OVERRIDE;
+
+    Steinberg::tresult PLUGIN_API setBusArrangements (Vst::SpeakerArrangement* inputs, int32 numIns,
                                                       Vst::SpeakerArrangement* outputs,
                                                       int32 numOuts) SMTG_OVERRIDE;
-	
-	/** Called at the end before destructor */
-	Steinberg::tresult PLUGIN_API terminate () SMTG_OVERRIDE;
-	
-	/** Switch the Plug-in on/off */
-	Steinberg::tresult PLUGIN_API setActive (Steinberg::TBool state) SMTG_OVERRIDE;
 
-	/** Will be called before any process call */
-	Steinberg::tresult PLUGIN_API setupProcessing (Steinberg::Vst::ProcessSetup& newSetup) SMTG_OVERRIDE;
-	
-	/** Asks if a given sample size is supported see SymbolicSampleSizes. */
-	Steinberg::tresult PLUGIN_API canProcessSampleSize (Steinberg::int32 symbolicSampleSize) SMTG_OVERRIDE;
+    /** Called at the end before destructor */
+    Steinberg::tresult PLUGIN_API terminate () SMTG_OVERRIDE;
 
-	/** Here we go...the process call */
-	Steinberg::tresult PLUGIN_API process (Steinberg::Vst::ProcessData& data) SMTG_OVERRIDE;
-		
-	/** For persistence */
-	Steinberg::tresult PLUGIN_API setState (Steinberg::IBStream* state) SMTG_OVERRIDE;
-	Steinberg::tresult PLUGIN_API getState (Steinberg::IBStream* state) SMTG_OVERRIDE;
-	
-	/** Inform latency */
-	uint32 PLUGIN_API getLatencySamples () SMTG_OVERRIDE;
-	
-	////////////
-	virtual void suspend();
+    /** Switch the Plug-in on/off */
+    Steinberg::tresult PLUGIN_API setActive (Steinberg::TBool state) SMTG_OVERRIDE;
+
+    /** Will be called before any process call */
+    Steinberg::tresult PLUGIN_API setupProcessing (Steinberg::Vst::ProcessSetup& newSetup) SMTG_OVERRIDE;
+
+    /** Asks if a given sample size is supported see SymbolicSampleSizes. */
+    Steinberg::tresult PLUGIN_API canProcessSampleSize (Steinberg::int32 symbolicSampleSize) SMTG_OVERRIDE;
+
+    /** Here we go...the process call */
+    Steinberg::tresult PLUGIN_API process (Steinberg::Vst::ProcessData& data) SMTG_OVERRIDE;
+
+    /** For persistence */
+    Steinberg::tresult PLUGIN_API setState (Steinberg::IBStream* state) SMTG_OVERRIDE;
+    Steinberg::tresult PLUGIN_API getState (Steinberg::IBStream* state) SMTG_OVERRIDE;
+
+    /** Inform latency */
+    uint32 PLUGIN_API getLatencySamples () SMTG_OVERRIDE;
+
+    ////////////
+    virtual void suspend();
     virtual void resume();
-	virtual void pdvst();
+    virtual void pdvst();
     virtual void pdvstquit();
 
 
 //------------------------------------------------------------------------
 protected:
-	// example later delete this
-	Vst::ParamValue mParam1 = 0;
-	int16 mParam2 = 0;
-	bool mBypass = false;
-	
-	// pdvst
-	static int referenceCount;
+
+    static int referenceCount;
     void debugLog(char *fmt, ...);
     FILE *debugFile;
-    int pdInFrameCount;
-    int pdOutFrameCount;
     pdVstBuffer *audioBuffer;
-    char pluginPath[MAXFILENAMELEN];
-    char vstPluginPath[MAXFILENAMELEN];
-    char pluginName[MAXSTRLEN];
-    long pluginId;
-    char pdFile[MAXFILENAMELEN];
     char errorMessage[MAXFILENAMELEN];
     char externalLib[MAXEXTERNS][MAXSTRLEN];
     float vstParam[MAXPARAMS];
     char **vstParamName;
     int nParameters;
     pdvstProgram *program;
-    //pdvstProgramAreChunks *Chunk;
     int nPrograms;
     int nChannelsIn;
     int nChannelsOut;
     int nExternalLibs;
     bool customGui;
-    int customGuiHeight;
-    int customGuiWidth;
-
     bool isASynth;
     bool dspActive;
-#if _WIN32    
-	HANDLE	pdvstTransferMutex,
+#if _WIN32
+    HANDLE  pdvstTransferMutex,
             pdvstTransferFileMap,
             vstProcEvent,
             pdProcEvent;
@@ -171,36 +155,34 @@ protected:
     char    *pdvstTransferFileMap;
     sem_t   *pdvstTransferMutex,
             *vstProcEvent,
-            *pdProcEvent; 
-    int     fd;  
-#endif              
+            *pdProcEvent;
+    int     fd;
+#endif
     pdvstTransferData *pdvstData;
     char pdvstTransferMutexName[1024];
     char pdvstTransferFileMapName[1024];
     char vstProcEventName[1024];
     char pdProcEventName[1024];
-    char guiName[1024];
-    bool guiNameUpdated;  // used to signal to editor that the parameter guiName has changed
-    void startPd();
-    void parseSetupFile();
-
-    void params_from_pd(Vst::ProcessData& data);
-    void params_to_pd(Vst::ProcessData& data);
-	void midi_from_pd(Vst::ProcessData& data);
-    void midi_to_pd(Vst::ProcessData& data);
-    void playhead_to_pd(Vst::ProcessData& data);
-    void setSyncToVst(int value);
-    
-    
-    //  {JYG
-    uint32_t timeFromStartup; // to measure time before vst::setProgram call
-
-    int syncDefeatNumber;
-    // JYG  }
     int GsampleRate;
     int stereoBusesIn;
     int stereoBusesOut;
-    int bus2ch[1024];
+    int bus2ch[1024];    
+    
+    void startPd();
+    void parseSetupFile();
+    void params_from_pd(Vst::ProcessData& data);
+    void params_to_pd(Vst::ProcessData& data);
+    void midi_from_pd(Vst::ProcessData& data);
+    void midi_to_pd(Vst::ProcessData& data);
+    void playhead_to_pd(Vst::ProcessData& data);
+    void setSyncToVst(int value);
+
+
+    // unused
+    char guiName[1024];
+    bool guiNameUpdated;  // used to signal to editor that the parameter guiName has changed    
+    int customGuiHeight;
+    int customGuiWidth;
 
 };
 
