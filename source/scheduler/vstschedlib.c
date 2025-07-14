@@ -70,7 +70,6 @@ int lastmidiouthead=0;
     int xxReleaseMutex(sem_t *mutex);
     void xxSetEvent(sem_t *mutex);
     void xxResetEvent(sem_t *mutex);
-    int fd;
 #endif
 
 typedef struct _vstParameterReceiver
@@ -99,12 +98,18 @@ t_class *vstParameterReceiver_class;
 t_class *vstGuiNameReceiver_class;
 t_class *vstChunkReceiver_class;
 
-char *pdvstTransferMutexName,
-     *pdvstTransferFileMapName,
-     *vstProcEventName,
-     *pdProcEventName;
+#ifdef _WIN32
+    char *pdvstTransferMutexName,
+         *pdvstTransferFileMapName,
+         *vstProcEventName,
+         *pdProcEventName;
+#else
+    char *pdvstSharedAddressesMapName;
+    pdvstSharedAddresses *pdvstShared;
+#endif
 
 pdvstTransferData *pdvstData;
+pdvstTimeInfo  timeInfo;
 
 #if _WIN32
     HANDLE  pdvstTransferMutex,
@@ -112,16 +117,16 @@ pdvstTransferData *pdvstData;
             vstProcEvent,
             pdProcEvent,
             vstHostProcess;
-	int 	vstHostProcessId;
+    int     vstHostProcessId;
 #else
-    char    *pdvstTransferFileMap;
+    char    *pdvstSharedAddressesMap,
+            *pdvstTransferFileMap;
     sem_t   *pdvstTransferMutex,
             *vstProcEvent,
             *pdProcEvent;
     pid_t   vstHostProcessId;
+    int     fd;
 #endif
-
-pdvstTimeInfo  timeInfo;
 
 void debugLog(char *fmt, ...)
 {
@@ -201,30 +206,39 @@ void parseArgs(int argc, char **argv)
             argc -= 2;
             argv += 2;
         }
-        if (strcmp(*argv, "-mutexname") == 0)
-        {
-            pdvstTransferMutexName = argv[1];
-            argc -= 2;
-            argv += 2;
-        }
-        if (strcmp(*argv, "-filemapname") == 0)
-        {
-            pdvstTransferFileMapName = argv[1];
-            argc -= 2;
-            argv += 2;
-        }
-        if (strcmp(*argv, "-vstproceventname") == 0)
-        {
-            vstProcEventName = argv[1];
-            argc -= 2;
-            argv += 2;
-        }
-        if (strcmp(*argv, "-pdproceventname") == 0)
-        {
-            pdProcEventName = argv[1];
-            argc -= 2;
-            argv += 2;
-        }
+        #ifdef _WIN32
+            if (strcmp(*argv, "-mutexname") == 0)
+            {
+                pdvstTransferMutexName = argv[1];
+                argc -= 2;
+                argv += 2;
+            }
+            if (strcmp(*argv, "-filemapname") == 0)
+            {
+                pdvstTransferFileMapName = argv[1];
+                argc -= 2;
+                argv += 2;
+            }
+            if (strcmp(*argv, "-vstproceventname") == 0)
+            {
+                vstProcEventName = argv[1];
+                argc -= 2;
+                argv += 2;
+            }
+            if (strcmp(*argv, "-pdproceventname") == 0)
+            {
+                pdProcEventName = argv[1];
+                argc -= 2;
+                argv += 2;
+            }
+        #else
+            if (strcmp(*argv, "-sharedmapname") == 0)
+            {
+                pdvstSharedAddressesMapName = argv[1];
+                argc -= 2;
+                argv += 2;
+            }
+        #endif
         else
         {
             argc--;
@@ -359,7 +373,7 @@ void sendPdVstChunk(t_vstChunkReceiver *x, t_symbol *s, int argc, t_atom *argv)
     pdvstData->datachunk.direction = PD_SEND;
     memcpy(pdvstData->datachunk.data, buf, length);
     pdvstData->datachunk.size = length;
-	pdvstData->datachunk.updated = 1;
+    pdvstData->datachunk.updated = 1;
     xxReleaseMutex(pdvstTransferMutex);
 
     freebytes(buf, length+1);
@@ -871,10 +885,18 @@ int pd_extern_sched(char *flags)
                                                        0,
                                                        sizeof(pdvstTransferData));
     #else //unix
-        pdvstTransferMutex = sem_open(pdvstTransferMutexName, O_CREAT, 0666, 0);
-        vstProcEvent  = sem_open(vstProcEventName, O_CREAT, 0666, 1);
-        pdProcEvent = sem_open(pdProcEventName, O_CREAT, 0666, 0);
-        fd = shm_open(pdvstTransferFileMapName, O_CREAT | O_RDWR, 0666);
+    
+        fd = shm_open(pdvstSharedAddressesMapName, O_CREAT | O_RDWR, 0666);
+        ftruncate(fd, sizeof(pdvstSharedAddresses));
+        pdvstSharedAddressesMap = (char*)mmap(NULL, sizeof(pdvstSharedAddresses),
+                                    PROT_READ | PROT_WRITE, MAP_SHARED,
+                                    fd, 0);
+        close(fd);
+        pdvstShared = (pdvstSharedAddresses *)pdvstSharedAddressesMap;    
+        pdvstTransferMutex = sem_open(pdvstShared->pdvstTransferMutexName, O_CREAT, 0666, 0);
+        vstProcEvent  = sem_open(pdvstShared->vstProcEventName, O_CREAT, 0666, 1);
+        pdProcEvent = sem_open(pdvstShared->pdProcEventName, O_CREAT, 0666, 0);
+        fd = shm_open(pdvstShared->pdvstTransferFileMapName, O_CREAT | O_RDWR, 0666);
         pdvstTransferFileMap = (char*)mmap(NULL, sizeof(pdvstTransferData),
                                     PROT_READ | PROT_WRITE, MAP_SHARED,
                                     fd, 0);
@@ -897,12 +919,17 @@ int pd_extern_sched(char *flags)
         CloseHandle(pdvstTransferMutex);
         UnmapViewOfFile(pdvstTransferFileMap);
         CloseHandle(pdvstTransferFileMap);
-    #else
+    #else    
+        sem_close(pdProcEvent);
+        sem_unlink((char *)pdProcEvent);
+        sem_close(vstProcEvent);
+        sem_unlink((char *)vstProcEvent);
         sem_close(pdvstTransferMutex);
         sem_unlink((char *)pdvstTransferMutex);
         munmap(pdvstTransferFileMap, sizeof(pdvstTransferData));
-        close(fd);
+        munmap(pdvstSharedAddressesMap, sizeof(pdvstSharedAddresses));
         shm_unlink(pdvstTransferFileMap);
+        shm_unlink(pdvstSharedAddressesMap);
     #endif
     for (i = 0; i < MAXARGS; i++)
     {

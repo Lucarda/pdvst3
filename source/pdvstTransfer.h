@@ -160,4 +160,13 @@ typedef struct _pdvstTransferData
 
 } pdvstTransferData;
 
+typedef struct _pdvstSharedAddresses
+{
+	char pdvstTransferMutexName[MAXFILENAMELEN];
+    char pdvstTransferFileMapName[MAXFILENAMELEN];
+    char vstProcEventName[MAXFILENAMELEN];
+    char pdProcEventName[MAXFILENAMELEN];
+
+} pdvstSharedAddresses;
+
 #endif

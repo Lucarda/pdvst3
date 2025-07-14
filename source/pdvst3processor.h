@@ -151,18 +151,21 @@ protected:
             pdvstTransferFileMap,
             vstProcEvent,
             pdProcEvent;
+    char    pdvstTransferMutexName[MAXFILENAMELEN],
+            pdvstTransferFileMapName[MAXFILENAMELEN],
+            vstProcEventName[MAXFILENAMELEN],
+            pdProcEventName[MAXFILENAMELEN];
 #else
-    char    *pdvstTransferFileMap;
+    char    *pdvstSharedAddressesMap,
+			*pdvstTransferFileMap;
     sem_t   *pdvstTransferMutex,
             *vstProcEvent,
             *pdProcEvent;
     int     fd;
 #endif
+    pdvstSharedAddresses *pdvstShared;
+    char pdvstSharedAddressesMapName[MAXFILENAMELEN];
     pdvstTransferData *pdvstData;
-    char pdvstTransferMutexName[1024];
-    char pdvstTransferFileMapName[1024];
-    char vstProcEventName[1024];
-    char pdProcEventName[1024];
     int GsampleRate;
     int stereoBusesIn;
     int stereoBusesOut;

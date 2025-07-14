@@ -143,14 +143,26 @@ void pdvst3Processor::startPd()
                                                    sizeof(pdvstTransferData));
     #else // Unix
 
-    sprintf(pdvstTransferMutexName, "/mutex%d%x", getpid(), this);
-    sprintf(pdvstTransferFileMapName, "/filemap%d%x", getpid(), this);
-    sprintf(vstProcEventName, "/vstprocevent%d%x", getpid(), this);
-    sprintf(pdProcEventName, "/pdprocevent%d%x", getpid(), this);
-    pdvstTransferMutex = sem_open(pdvstTransferMutexName, O_CREAT, 0666, 1);
-    vstProcEvent = sem_open(vstProcEventName, O_CREAT, 0666, 1);  // Initial value 1 (TRUE)
-    pdProcEvent = sem_open(pdProcEventName, O_CREAT, 0666, 0);
-    fd = shm_open(pdvstTransferFileMapName, O_CREAT | O_RDWR, 0666);
+    sprintf(pdvstSharedAddressesMapName, "/sharedmap%d%x", getpid(), this);
+    fd = shm_open(pdvstSharedAddressesMapName, O_CREAT | O_RDWR, 0666);
+    ftruncate(fd, sizeof(pdvstSharedAddresses));
+    pdvstSharedAddressesMap = (char*)mmap(NULL, sizeof(pdvstSharedAddresses),
+                                PROT_READ | PROT_WRITE, MAP_SHARED,
+                                fd, 0);
+    ::close(fd);
+    pdvstShared = (pdvstSharedAddresses *)pdvstSharedAddressesMap;
+    
+
+    sprintf(pdvstShared->pdvstTransferMutexName, "/mutex%d%x", getpid(), this);
+    sprintf(pdvstShared->pdvstTransferFileMapName, "/filemap%d%x", getpid(), this);
+    sprintf(pdvstShared->vstProcEventName, "/vstprocevent%d%x", getpid(), this);
+    sprintf(pdvstShared->pdProcEventName, "/pdprocevent%d%x", getpid(), this);
+    
+    
+    pdvstTransferMutex = sem_open(pdvstShared->pdvstTransferMutexName, O_CREAT, 0666, 1);
+    vstProcEvent = sem_open(pdvstShared->vstProcEventName, O_CREAT, 0666, 1);  // Initial value 1 (TRUE)
+    pdProcEvent = sem_open(pdvstShared->pdProcEventName, O_CREAT, 0666, 0);
+    fd = shm_open(pdvstShared->pdvstTransferFileMapName, O_CREAT | O_RDWR, 0666);
     ftruncate(fd, sizeof(pdvstTransferData));
     pdvstTransferFileMap = (char*)mmap(NULL, sizeof(pdvstTransferData),
                                 PROT_READ | PROT_WRITE, MAP_SHARED,
@@ -185,7 +197,7 @@ void pdvst3Processor::startPd()
 
     while(1)
     {
-        sprintf(commandLineArgs, "%s", globalPureDataPath);
+        sprintf(commandLineArgs, "\"%s\"", globalPureDataPath);
         FILE *foo;
         foo = fopen(globalPureDataPath, "r");
         if( foo != NULL )
@@ -207,17 +219,20 @@ void pdvst3Processor::startPd()
             " -schedlib \"%spdvst3scheduler\"",
             globalSchedulerPath);
     strcat(commandLineArgs, buf);
-    sprintf(buf,
-            " -extraflags \"-vstproceventname %s -pdproceventname %s -vsthostid %d -mutexname %s -filemapname %s\"",
-            vstProcEventName,
-            pdProcEventName,
-            #if _WIN32
+    #ifdef _WIN32
+        sprintf(buf,
+                " -extraflags \"-vstproceventname %s -pdproceventname %s -vsthostid %d -mutexname %s -filemapname %s\"",
+                vstProcEventName,
+                pdProcEventName,
                 GetCurrentProcessId(),
-            #else
-                getpid(),
-            #endif
-            pdvstTransferMutexName,
-            pdvstTransferFileMapName);
+                pdvstTransferMutexName,
+                pdvstTransferFileMapName);
+    #else
+        sprintf(buf,
+                " -extraflags \"-vsthostid %d  -sharedmapname %s\"",
+               getpid(),
+               pdvstSharedAddressesMapName);
+    #endif
     strcat(commandLineArgs, buf);
     sprintf(buf,
             " -outchannels %d -inchannels %d",
@@ -392,12 +407,14 @@ void pdvst3Processor::pdvstquit()
         UnmapViewOfFile(pdvstTransferFileMap);
         CloseHandle(pdvstTransferFileMap);
     #else
-        sem_close((sem_t*)vstProcEventName);
-        sem_close((sem_t*)pdProcEventName);
-        sem_close((sem_t*)pdvstTransferMutexName);
-        sem_unlink(pdvstTransferMutexName);
+        sem_close((sem_t*)pdvstShared->vstProcEventName);
+        sem_close((sem_t*)pdvstShared->pdProcEventName);
+        sem_close((sem_t*)pdvstShared->pdvstTransferMutexName);
+        sem_unlink(pdvstShared->vstProcEventName);
+        sem_unlink(pdvstShared->pdProcEventName);
+        sem_unlink(pdvstShared->pdvstTransferMutexName);
         munmap(pdvstTransferFileMap, sizeof(pdvstTransferData));
-        ::close(fd);
+        munmap(pdvstSharedAddressesMap, sizeof(pdvstSharedAddresses));
     #endif
     for (i = 0; i < MAXPARAMETERS; i++)
         delete vstParamName[i];
