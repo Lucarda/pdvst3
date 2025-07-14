@@ -157,7 +157,7 @@ protected:
             pdProcEventName[MAXFILENAMELEN];
 #else
     char    *pdvstSharedAddressesMap,
-			*pdvstTransferFileMap;
+            *pdvstTransferFileMap;
     sem_t   *pdvstTransferMutex,
             *vstProcEvent,
             *pdProcEvent;
@@ -169,8 +169,11 @@ protected:
     int GsampleRate;
     int stereoBusesIn;
     int stereoBusesOut;
-    int bus2ch[1024];    
-    
+    int bus2ch[1024];
+
+
+    void set_resources();
+    void clean_resources();
     void startPd();
     void parseSetupFile();
     void params_from_pd(Vst::ProcessData& data);
@@ -183,7 +186,7 @@ protected:
 
     // unused
     char guiName[1024];
-    bool guiNameUpdated;  // used to signal to editor that the parameter guiName has changed    
+    bool guiNameUpdated;  // used to signal to editor that the parameter guiName has changed
     int customGuiHeight;
     int customGuiWidth;
 

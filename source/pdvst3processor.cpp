@@ -91,7 +91,6 @@ extern Steinberg::FUID contUID;
 
 
 using namespace Steinberg;
-
 namespace Steinberg {
 
 
@@ -109,20 +108,9 @@ void pdvst3Processor::debugLog(char *fmt, ...)
     }
 }
 
-void pdvst3Processor::startPd()
+void pdvst3Processor::set_resources()
 {
-    char commandLineArgs[MAXSTRLEN],
-             debugString[MAXSTRLEN],
-                     buf[MAXSTRLEN];
-    char *unixlastargs = "2>/dev/null &";
-
-    #if _WIN32 //Windows
-
-    STARTUPINFOA si;
-    PROCESS_INFORMATION pi;
-    ZeroMemory(&si, sizeof(si));
-    si.cb = sizeof(si);
-    ZeroMemory(&pi, sizeof(pi));
+    #ifdef _WIN32
     sprintf(pdvstTransferMutexName, "mutex%d%x", GetCurrentProcessId(), this);
     sprintf(pdvstTransferFileMapName, "filemap%d%x", GetCurrentProcessId(), this);
     sprintf(vstProcEventName, "vstprocevent%d%x", GetCurrentProcessId(), this);
@@ -151,14 +139,10 @@ void pdvst3Processor::startPd()
                                 fd, 0);
     ::close(fd);
     pdvstShared = (pdvstSharedAddresses *)pdvstSharedAddressesMap;
-    
-
     sprintf(pdvstShared->pdvstTransferMutexName, "/mutex%d%x", getpid(), this);
     sprintf(pdvstShared->pdvstTransferFileMapName, "/filemap%d%x", getpid(), this);
     sprintf(pdvstShared->vstProcEventName, "/vstprocevent%d%x", getpid(), this);
     sprintf(pdvstShared->pdProcEventName, "/pdprocevent%d%x", getpid(), this);
-    
-    
     pdvstTransferMutex = sem_open(pdvstShared->pdvstTransferMutexName, O_CREAT, 0666, 1);
     vstProcEvent = sem_open(pdvstShared->vstProcEventName, O_CREAT, 0666, 1);  // Initial value 1 (TRUE)
     pdProcEvent = sem_open(pdvstShared->pdProcEventName, O_CREAT, 0666, 0);
@@ -171,7 +155,33 @@ void pdvst3Processor::startPd()
     pdvstData = (pdvstTransferData *)pdvstTransferFileMap;
 
     #endif
+}
+
+void pdvst3Processor::clean_resources()
+{
+    #ifdef _WIN32
+        CloseHandle(pdvstTransferMutex);
+        UnmapViewOfFile(pdvstTransferFileMap);
+        CloseHandle(pdvstTransferFileMap);
+    #else
+        sem_close((sem_t*)pdvstShared->vstProcEventName);
+        sem_close((sem_t*)pdvstShared->pdProcEventName);
+        sem_close((sem_t*)pdvstShared->pdvstTransferMutexName);
+        sem_unlink(pdvstShared->vstProcEventName);
+        sem_unlink(pdvstShared->pdProcEventName);
+        sem_unlink(pdvstShared->pdvstTransferMutexName);
+        munmap(pdvstTransferFileMap, sizeof(pdvstTransferData));
+        munmap(pdvstSharedAddressesMap, sizeof(pdvstSharedAddresses));
+    #endif
+}
+
+void pdvst3Processor::startPd()
+{
+    char commandLineArgs[MAXSTRLEN],
+             debugString[MAXSTRLEN],
+                     buf[MAXSTRLEN];
     int i;
+    set_resources();
     pdvstData->active = 1;
     pdvstData->blockSize = PDBLKSIZE;
     pdvstData->nChannelsIn = nChannelsIn;
@@ -260,25 +270,29 @@ void pdvst3Processor::startPd()
         strcat(commandLineArgs, buf);
     }
     #ifndef _WIN32
-    sprintf(buf,
-                " %s",
-        unixlastargs);
-    strcat(commandLineArgs, buf);
+        sprintf(buf,
+                    " 2>/dev/null &");
+        strcat(commandLineArgs, buf);
     #endif
     debugLog("command line: %s", commandLineArgs);
     suspend();
 
-    #if _WIN32
-    CreateProcessA(NULL,
-                  commandLineArgs,
-                  NULL,
-                  NULL,
-                  0,
-                  0,
-                  NULL,
-                  NULL,
-                  &si,
-                  &pi);
+    #ifdef _WIN32
+        STARTUPINFOA si;
+        PROCESS_INFORMATION pi;
+        ZeroMemory(&si, sizeof(si));
+        si.cb = sizeof(si);
+        ZeroMemory(&pi, sizeof(pi));
+        CreateProcessA(NULL,
+                      commandLineArgs,
+                      NULL,
+                      NULL,
+                      0,
+                      0,
+                      NULL,
+                      NULL,
+                      &si,
+                      &pi);
     #else
         system(commandLineArgs);
     #endif
@@ -401,21 +415,7 @@ void pdvst3Processor::pdvstquit()
     xxWaitForSingleObject(pdvstTransferMutex, -1);
     pdvstData->active = 0;
     xxReleaseMutex(pdvstTransferMutex);
-
-    #ifdef _WIN32
-        CloseHandle(pdvstTransferMutex);
-        UnmapViewOfFile(pdvstTransferFileMap);
-        CloseHandle(pdvstTransferFileMap);
-    #else
-        sem_close((sem_t*)pdvstShared->vstProcEventName);
-        sem_close((sem_t*)pdvstShared->pdProcEventName);
-        sem_close((sem_t*)pdvstShared->pdvstTransferMutexName);
-        sem_unlink(pdvstShared->vstProcEventName);
-        sem_unlink(pdvstShared->pdProcEventName);
-        sem_unlink(pdvstShared->pdvstTransferMutexName);
-        munmap(pdvstTransferFileMap, sizeof(pdvstTransferData));
-        munmap(pdvstSharedAddressesMap, sizeof(pdvstSharedAddresses));
-    #endif
+    clean_resources();
     for (i = 0; i < MAXPARAMETERS; i++)
         delete vstParamName[i];
     delete vstParamName;

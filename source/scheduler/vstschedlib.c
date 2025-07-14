@@ -378,8 +378,8 @@ void sendPdVstChunk(t_vstChunkReceiver *x, t_symbol *s, int argc, t_atom *argv)
 
     freebytes(buf, length+1);
 
-    
-    
+
+
 }
 
 void sendPdVstGuiName(t_vstGuiNameReceiver *x, t_symbol *symbolValue)
@@ -850,6 +850,60 @@ int scheduler()
     return 1;
 }
 
+void set_resources()
+{
+    #ifdef _WIN32
+        pdvstTransferMutex = OpenMutexA(MUTEX_ALL_ACCESS, 0, pdvstTransferMutexName);
+        vstProcEvent = OpenEventA(EVENT_ALL_ACCESS, 0, vstProcEventName);
+        pdProcEvent = OpenEventA(EVENT_ALL_ACCESS, 0, pdProcEventName);
+        pdvstTransferFileMap = OpenFileMappingA(FILE_MAP_ALL_ACCESS,
+                                               0,
+                                               pdvstTransferFileMapName);
+        pdvstData = (pdvstTransferData *)MapViewOfFile(pdvstTransferFileMap,
+                                                       FILE_MAP_ALL_ACCESS,
+                                                       0,
+                                                       0,
+                                                       sizeof(pdvstTransferData));
+    #else //unix
+
+        fd = shm_open(pdvstSharedAddressesMapName, O_CREAT | O_RDWR, 0666);
+        ftruncate(fd, sizeof(pdvstSharedAddresses));
+        pdvstSharedAddressesMap = (char*)mmap(NULL, sizeof(pdvstSharedAddresses),
+                                    PROT_READ | PROT_WRITE, MAP_SHARED,
+                                    fd, 0);
+        close(fd);
+        pdvstShared = (pdvstSharedAddresses *)pdvstSharedAddressesMap;
+        pdvstTransferMutex = sem_open(pdvstShared->pdvstTransferMutexName, O_CREAT, 0666, 0);
+        vstProcEvent  = sem_open(pdvstShared->vstProcEventName, O_CREAT, 0666, 1);
+        pdProcEvent = sem_open(pdvstShared->pdProcEventName, O_CREAT, 0666, 0);
+        fd = shm_open(pdvstShared->pdvstTransferFileMapName, O_CREAT | O_RDWR, 0666);
+        pdvstTransferFileMap = (char*)mmap(NULL, sizeof(pdvstTransferData),
+                                    PROT_READ | PROT_WRITE, MAP_SHARED,
+                                    fd, 0);
+        close(fd);
+        pdvstData = (pdvstTransferData *)pdvstTransferFileMap;
+    #endif
+}
+
+void clean_resources()
+{
+    #ifdef _WIN32
+        CloseHandle(pdvstTransferMutex);
+        UnmapViewOfFile(pdvstTransferFileMap);
+        CloseHandle(pdvstTransferFileMap);
+    #else
+        sem_close(pdProcEvent);
+        sem_unlink((char *)pdProcEvent);
+        sem_close(vstProcEvent);
+        sem_unlink((char *)vstProcEvent);
+        sem_close(pdvstTransferMutex);
+        sem_unlink((char *)pdvstTransferMutex);
+        munmap(pdvstTransferFileMap, sizeof(pdvstTransferData));
+        munmap(pdvstSharedAddressesMap, sizeof(pdvstSharedAddresses));
+        shm_unlink(pdvstTransferFileMap);
+        shm_unlink(pdvstSharedAddressesMap);
+    #endif
+}
 #if _MSC_VER
 __declspec(dllexport)
 #else
@@ -872,37 +926,7 @@ int pd_extern_sched(char *flags)
     }
     argc = tokenizeCommandLineString(flags, argv);
     parseArgs(argc, argv);
-    #ifdef _WIN32
-        pdvstTransferMutex = OpenMutexA(MUTEX_ALL_ACCESS, 0, pdvstTransferMutexName);
-        vstProcEvent = OpenEventA(EVENT_ALL_ACCESS, 0, vstProcEventName);
-        pdProcEvent = OpenEventA(EVENT_ALL_ACCESS, 0, pdProcEventName);
-        pdvstTransferFileMap = OpenFileMappingA(FILE_MAP_ALL_ACCESS,
-                                               0,
-                                               pdvstTransferFileMapName);
-        pdvstData = (pdvstTransferData *)MapViewOfFile(pdvstTransferFileMap,
-                                                       FILE_MAP_ALL_ACCESS,
-                                                       0,
-                                                       0,
-                                                       sizeof(pdvstTransferData));
-    #else //unix
-    
-        fd = shm_open(pdvstSharedAddressesMapName, O_CREAT | O_RDWR, 0666);
-        ftruncate(fd, sizeof(pdvstSharedAddresses));
-        pdvstSharedAddressesMap = (char*)mmap(NULL, sizeof(pdvstSharedAddresses),
-                                    PROT_READ | PROT_WRITE, MAP_SHARED,
-                                    fd, 0);
-        close(fd);
-        pdvstShared = (pdvstSharedAddresses *)pdvstSharedAddressesMap;    
-        pdvstTransferMutex = sem_open(pdvstShared->pdvstTransferMutexName, O_CREAT, 0666, 0);
-        vstProcEvent  = sem_open(pdvstShared->vstProcEventName, O_CREAT, 0666, 1);
-        pdProcEvent = sem_open(pdvstShared->pdProcEventName, O_CREAT, 0666, 0);
-        fd = shm_open(pdvstShared->pdvstTransferFileMapName, O_CREAT | O_RDWR, 0666);
-        pdvstTransferFileMap = (char*)mmap(NULL, sizeof(pdvstTransferData),
-                                    PROT_READ | PROT_WRITE, MAP_SHARED,
-                                    fd, 0);
-        close(fd);
-        pdvstData = (pdvstTransferData *)pdvstTransferFileMap;
-    #endif
+    set_resources();
     xxWaitForSingleObject(pdvstTransferMutex, -1);
     logpost(NULL, PD_DEBUG,"---");
     logpost(NULL, PD_DEBUG,"  pdvst3 v%d.%d.%d",PDVST3_VER_MAJ, PDVST3_VER_MIN, PDVST3_VER_PATCH);
@@ -912,25 +936,9 @@ int pd_extern_sched(char *flags)
                 pdvstData->nChannelsOut,
                 pdvstData->sampleRate);
     xxReleaseMutex(pdvstTransferMutex);
-
     scheduler();
-
-    #ifdef _WIN32
-        CloseHandle(pdvstTransferMutex);
-        UnmapViewOfFile(pdvstTransferFileMap);
-        CloseHandle(pdvstTransferFileMap);
-    #else    
-        sem_close(pdProcEvent);
-        sem_unlink((char *)pdProcEvent);
-        sem_close(vstProcEvent);
-        sem_unlink((char *)vstProcEvent);
-        sem_close(pdvstTransferMutex);
-        sem_unlink((char *)pdvstTransferMutex);
-        munmap(pdvstTransferFileMap, sizeof(pdvstTransferData));
-        munmap(pdvstSharedAddressesMap, sizeof(pdvstSharedAddresses));
-        shm_unlink(pdvstTransferFileMap);
-        shm_unlink(pdvstSharedAddressesMap);
-    #endif
+    // on exit
+    clean_resources();
     for (i = 0; i < MAXARGS; i++)
     {
         free(argv[i]);
