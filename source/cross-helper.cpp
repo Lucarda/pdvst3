@@ -26,7 +26,10 @@
 #include <semaphore.h>
 #include <unistd.h>
 #endif
-
+extern "C"
+{
+    #include "pdvstTransfer.h"
+}
 
 
 #if _WIN32

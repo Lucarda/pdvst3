@@ -169,4 +169,11 @@ typedef struct _pdvstSharedAddresses
 
 } pdvstSharedAddresses;
 
+typedef enum _traffic
+{
+    PDVSTTRANSFERMUTEX,
+    VSTPROCEVENT,
+    PDPROCEVENT
+} traffic;
+
 #endif
