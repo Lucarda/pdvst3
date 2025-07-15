@@ -82,10 +82,11 @@ int Steinberg::pdvst3Processor::referenceCount = 0;
     void xxSetEvent(HANDLE mutex);
     void xxResetEvent(HANDLE mutex);
 #else
-    int xxWaitForSingleObject(sem_t *mutex, int ms);
-    int xxReleaseMutex(sem_t *mutex);
-    void xxSetEvent(sem_t *mutex);
-    void xxResetEvent(sem_t *mutex);
+    int xxWaitForSingleObject(int mutex, int ms);
+    int xxReleaseMutex(int mutex);
+    void xxSetEvent(int mutex);
+    void xxResetEvent(int mutex);
+    sem_t *mu_tex[3];
 #endif
 extern Steinberg::FUID contUID;
 
@@ -143,9 +144,9 @@ void pdvst3Processor::set_resources()
     sprintf(pdvstShared->pdvstTransferFileMapName, "/filemap%d%x", getpid(), this);
     sprintf(pdvstShared->vstProcEventName, "/vstprocevent%d%x", getpid(), this);
     sprintf(pdvstShared->pdProcEventName, "/pdprocevent%d%x", getpid(), this);
-    pdvstTransferMutex = sem_open(pdvstShared->pdvstTransferMutexName, O_CREAT, 0666, 1);
-    vstProcEvent = sem_open(pdvstShared->vstProcEventName, O_CREAT, 0666, 1);  // Initial value 1 (TRUE)
-    pdProcEvent = sem_open(pdvstShared->pdProcEventName, O_CREAT, 0666, 0);
+    mu_tex[PDVSTTRANSFERMUTEX] = sem_open(pdvstShared->pdvstTransferMutexName, O_CREAT, 0666, 1);
+    mu_tex[VSTPROCEVENT] = sem_open(pdvstShared->vstProcEventName, O_CREAT, 0666, 1);  // Initial value 1 (TRUE)
+    mu_tex[PDPROCEVENT] = sem_open(pdvstShared->pdProcEventName, O_CREAT, 0666, 0);
     fd = shm_open(pdvstShared->pdvstTransferFileMapName, O_CREAT | O_RDWR, 0666);
     ftruncate(fd, sizeof(pdvstTransferData));
     pdvstTransferFileMap = (char*)mmap(NULL, sizeof(pdvstTransferData),
@@ -164,14 +165,15 @@ void pdvst3Processor::clean_resources()
         UnmapViewOfFile(pdvstTransferFileMap);
         CloseHandle(pdvstTransferFileMap);
     #else
-        sem_close((sem_t*)pdvstShared->vstProcEventName);
-        sem_close((sem_t*)pdvstShared->pdProcEventName);
-        sem_close((sem_t*)pdvstShared->pdvstTransferMutexName);
+        sem_close(mu_tex[VSTPROCEVENT]);
+        sem_close(mu_tex[PDPROCEVENT]);
+        sem_close(mu_tex[PDVSTTRANSFERMUTEX]);
         sem_unlink(pdvstShared->vstProcEventName);
         sem_unlink(pdvstShared->pdProcEventName);
         sem_unlink(pdvstShared->pdvstTransferMutexName);
         munmap(pdvstTransferFileMap, sizeof(pdvstTransferData));
         munmap(pdvstSharedAddressesMap, sizeof(pdvstSharedAddresses));
+        
     #endif
 }
 
@@ -300,12 +302,12 @@ void pdvst3Processor::startPd()
 
 void pdvst3Processor::setSyncToVst(int value)
 {
-    xxWaitForSingleObject(pdvstTransferMutex, 10);
+    xxWaitForSingleObject(PDVSTTRANSFERMUTEX, 10);
     if (pdvstData->syncToVst != value)
     {
         pdvstData->syncToVst = value;
     }
-    xxReleaseMutex(pdvstTransferMutex);
+    xxReleaseMutex(PDVSTTRANSFERMUTEX);
 }
 
 
@@ -313,7 +315,7 @@ void pdvst3Processor::suspend()
 {
     int i;
     setSyncToVst(0);
-    xxSetEvent(vstProcEvent);
+    xxSetEvent(VSTPROCEVENT);
 
     for (i = 0; i < audioBuffer->nChannelsIn; i++)
     {
@@ -331,7 +333,7 @@ void pdvst3Processor::resume()
 {
     int i;
     setSyncToVst(1);
-    xxSetEvent(vstProcEvent);
+    xxSetEvent(VSTPROCEVENT);
     for (i = 0; i < audioBuffer->nChannelsIn; i++)
     {
         memset(audioBuffer->in[i], 0, audioBuffer->size * sizeof(float));
@@ -412,9 +414,9 @@ void pdvst3Processor::pdvstquit()
 {
     int i;
     referenceCount--;
-    xxWaitForSingleObject(pdvstTransferMutex, -1);
+    xxWaitForSingleObject(PDVSTTRANSFERMUTEX, -1);
     pdvstData->active = 0;
-    xxReleaseMutex(pdvstTransferMutex);
+    xxReleaseMutex(PDVSTTRANSFERMUTEX);
     clean_resources();
     for (i = 0; i < MAXPARAMETERS; i++)
         delete vstParamName[i];
@@ -735,13 +737,13 @@ tresult PLUGIN_API pdvst3Processor::setActive (TBool state)
 tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
 {
 
-    xxWaitForSingleObject(pdvstTransferMutex, 10);
+    xxWaitForSingleObject(PDVSTTRANSFERMUTEX, 10);
     {
         params_to_pd(data);
         midi_to_pd(data);
         playhead_to_pd(data);
     }
-    xxReleaseMutex(pdvstTransferMutex);
+    xxReleaseMutex(PDVSTTRANSFERMUTEX);
 
     //--- Process Audio---------------------
     //--- ----------------------------------
@@ -789,8 +791,8 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
             if (audioBuffer->inFrameCount >= PDBLKSIZE)
             {
                 audioBuffer->inFrameCount = 0;
-                xxWaitForSingleObject(pdProcEvent, 10);
-                xxResetEvent(pdProcEvent);
+                xxWaitForSingleObject(PDPROCEVENT, 10);
+                xxResetEvent(PDPROCEVENT);
 
                 for (k = 0; k < PDBLKSIZE; k++)
                 {
@@ -815,7 +817,7 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
                 }
                 pdvstData->sampleRate = (int)GsampleRate;
                 // signal vst process event
-                xxSetEvent(vstProcEvent);
+                xxSetEvent(VSTPROCEVENT);
             }
         }
         // output pd processed samples
@@ -828,12 +830,12 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
         }
         audioBuffer->outFrameCount = 0;
     }
-    xxWaitForSingleObject(pdvstTransferMutex, 10);
+    xxWaitForSingleObject(PDVSTTRANSFERMUTEX, 10);
     {
         params_from_pd(data);
         midi_from_pd(data);
     }
-    xxReleaseMutex(pdvstTransferMutex);
+    xxReleaseMutex(PDVSTTRANSFERMUTEX);
 
 
     return kResultOk;
@@ -877,7 +879,7 @@ tresult PLUGIN_API pdvst3Processor::setState (IBStream* state)
 
     IBStreamer streamer (state, kLittleEndian);
 
-    xxWaitForSingleObject(pdvstTransferMutex, 10);
+    xxWaitForSingleObject(PDVSTTRANSFERMUTEX, 10);
     int i;
     for (i = 0; i < pdvstData->nParameters; i++)
     {
@@ -908,7 +910,7 @@ tresult PLUGIN_API pdvst3Processor::setState (IBStream* state)
     pdvstData->datachunk.data[i] = '\0';
     pdvstData->datachunk.direction = PD_RECEIVE;
     pdvstData->datachunk.updated = 1;
-    xxReleaseMutex(pdvstTransferMutex);
+    xxReleaseMutex(PDVSTTRANSFERMUTEX);
 
     return kResultOk;
 }
@@ -919,7 +921,7 @@ tresult PLUGIN_API pdvst3Processor::getState (IBStream* state)
     // here we need to save the model (preset or project)
 
     IBStreamer streamer (state, kLittleEndian);
-    xxWaitForSingleObject(pdvstTransferMutex, 10);
+    xxWaitForSingleObject(PDVSTTRANSFERMUTEX, 10);
     //write params (also zero the rest of the unused ones)
     for (int i = 0; i < pdvstData->nParameters; i++)
     {
@@ -941,7 +943,7 @@ tresult PLUGIN_API pdvst3Processor::getState (IBStream* state)
     }
     char end = '\0';
     streamer.writeChar8 (end);
-    xxReleaseMutex(pdvstTransferMutex);
+    xxReleaseMutex(PDVSTTRANSFERMUTEX);
 
     return kResultOk;
 }

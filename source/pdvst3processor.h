@@ -126,6 +126,7 @@ public:
     virtual void pdvstquit();
 
 
+
 //------------------------------------------------------------------------
 protected:
 
@@ -147,8 +148,8 @@ protected:
     bool isASynth;
     bool dspActive;
 #if _WIN32
-    HANDLE  pdvstTransferMutex,
-            pdvstTransferFileMap,
+    HANDLE  pdvstTransferFileMap,
+            pdvstTransferMutex,
             vstProcEvent,
             pdProcEvent;
     char    pdvstTransferMutexName[MAXFILENAMELEN],
@@ -158,9 +159,6 @@ protected:
 #else
     char    *pdvstSharedAddressesMap,
             *pdvstTransferFileMap;
-    sem_t   *pdvstTransferMutex,
-            *vstProcEvent,
-            *pdProcEvent;
     int     fd;
 #endif
     pdvstSharedAddresses *pdvstShared;

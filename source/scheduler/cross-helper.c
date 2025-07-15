@@ -17,8 +17,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-
-#include "pdvstTransfer.h"
 #include <stdlib.h>
 #include <stdio.h>
 #if _WIN32
@@ -29,6 +27,13 @@
 #include <unistd.h>
 #endif
 
+#include "pdvstTransfer.h"
+
+#if _WIN32
+
+#else
+extern sem_t *mu_tex[3];
+#endif
 
 
 #if _WIN32
@@ -48,7 +53,7 @@ int xxWaitForSingleObject(HANDLE mutex, int ms)
 
 #else
 
-int xxWaitForSingleObject(sem_t *mutex, int ms)
+int xxWaitForSingleObject(int mutex, int ms)
 {
     if (ms == -1) ms = 30000;
     float elapsed_time = 0;
@@ -56,7 +61,7 @@ int xxWaitForSingleObject(sem_t *mutex, int ms)
     int ret= -1;
     while (1)
     {
-        if (sem_trywait(mutex) == 0)
+        if (sem_trywait(mu_tex[mutex]) == 0)
             return 1;
         if (elapsed_time >= ms) {
             // Timeout has been reached
@@ -78,9 +83,9 @@ int xxReleaseMutex(HANDLE mutex)
 
 #else
 
-int xxReleaseMutex(sem_t *mutex)
+int xxReleaseMutex(int mutex)
 {
-    sem_post(mutex);
+    sem_post(mu_tex[mutex]);
     return 0;
 }
 #endif
@@ -94,12 +99,12 @@ void xxSetEvent(HANDLE mutex)
 
 #else
 
-void xxSetEvent(sem_t *mutex)
+void xxSetEvent(int mutex)
 {
     int value;
-    sem_getvalue(mutex, &value);
+    sem_getvalue(mu_tex[mutex], &value);
     if (value == 0) {
-        sem_post(mutex);  // Increment to 1 (signaled)
+        sem_post(mu_tex[mutex]);  // Increment to 1 (signaled)
     }
 }
 #endif
@@ -113,13 +118,13 @@ void xxResetEvent(HANDLE mutex)
 
 #else
 
-void xxResetEvent(sem_t *mutex)
+void xxResetEvent(int mutex)
 {
     int value;
-    sem_getvalue(mutex, &value);
+    sem_getvalue(mu_tex[mutex], &value);
     while (value > 0) {
-        sem_wait(mutex);  // Decrement until count is 0
-        sem_getvalue(mutex, &value);
+        sem_wait(mu_tex[mutex]);  // Decrement until count is 0
+        sem_getvalue(mu_tex[mutex], &value);
     }
 }
 #endif
