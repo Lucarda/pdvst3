@@ -106,7 +106,7 @@ t_class *vstChunkReceiver_class;
             *pdvstSharedAddressesMapName;
     pid_t   vstHostProcessId;
     int     fd;
-    sem_t   *mu_tex[3];    
+    sem_t   *mu_tex[3];
     pdvstSharedAddresses *pdvstShared;
 #endif
 
@@ -866,6 +866,7 @@ void set_resources()
         pdvstTransferFileMap = (char*)mmap(NULL, sizeof(pdvstTransferData),
                                     PROT_READ | PROT_WRITE, MAP_SHARED,
                                     fd, 0);
+        mlock(pdvstTransferFileMap, sizeof(pdvstTransferData));
         close(fd);
         pdvstData = (pdvstTransferData *)pdvstTransferFileMap;
     #endif
@@ -884,6 +885,7 @@ void clean_resources()
         sem_unlink(pdvstShared->vstProcEventName);
         sem_unlink(pdvstShared->pdProcEventName);
         sem_unlink(pdvstShared->pdvstTransferMutexName);
+        munlock(pdvstTransferFileMap, sizeof(pdvstTransferData));
         munmap(pdvstTransferFileMap, sizeof(pdvstTransferData));
         munmap(pdvstSharedAddressesMap, sizeof(pdvstSharedAddresses));
         shm_unlink(pdvstTransferFileMap);

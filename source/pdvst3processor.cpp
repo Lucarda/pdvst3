@@ -141,6 +141,7 @@ void pdvst3Processor::set_resources()
     pdvstTransferFileMap = (char*)mmap(NULL, sizeof(pdvstTransferData),
                                 PROT_READ | PROT_WRITE, MAP_SHARED,
                                 fd, 0);
+    mlock(pdvstTransferFileMap, sizeof(pdvstTransferData));
     ::close(fd);
     pdvstData = (pdvstTransferData *)pdvstTransferFileMap;
 
@@ -160,6 +161,7 @@ void pdvst3Processor::clean_resources()
         sem_unlink(pdvstShared->vstProcEventName);
         sem_unlink(pdvstShared->pdProcEventName);
         sem_unlink(pdvstShared->pdvstTransferMutexName);
+        munlock(pdvstTransferFileMap, sizeof(pdvstTransferData));
         munmap(pdvstTransferFileMap, sizeof(pdvstTransferData));
         munmap(pdvstSharedAddressesMap, sizeof(pdvstSharedAddresses));
 
