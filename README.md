@@ -2,7 +2,7 @@
 
 Run Pure-Data inside a vst3 host.
 
-Based on https://github.com/Lucarda/pdvst-0.52 but updated to vst3 
+Based on https://github.com/Lucarda/pdvst-0.52 but updated to vst3
 (Linux, macOS and Windows) and to load with Pd-0.55-2 or higher.
 
 Get pre-built binaries on https://github.com/Lucarda/pdvst3/releases
@@ -11,7 +11,7 @@ or build. see [compiling.md](compiling.md)
 
 ## How does it work ?
 
-When a pdvst3 plugin is opened by the host application, a setup file 
+When a pdvst3 plugin is opened by the host application, a setup file
 (config.txt) is read to determine information about the plugin, such as
 the Pd patch file to use, the number of parameters, etc...
 An instance of Pd (that optionally can be shipped inside the plug in)
@@ -102,11 +102,12 @@ pair separated by a carriage return. Comments are demarked with a '#' character.
     # The 4-character unique ID for the VST plugin. This is required by VST and
     # just needs to be a unique string of four characters.
 
-    CHANNELS = <integer>
-	# Number of audio input and output channels.
-	# must be a multiple of 2. (2, 4, 6, ...)
-	# if you change this your host must rescan the plugins
-	# or changes wont show up when you load the plugin.
+    IN-CHANNELS = <integer>
+    OUT-CHANNELS = <integer>
+    # Number of audio input and output channels.
+    # must be a multiple of 2. (2, 4, 6, ...)
+    # if you change this your host must rescan the plugins
+    # or changes wont show up when you load the plugin.
 
     PDPATH_LINUX = /home/lucarda/Downloads/pure-data
     PDPATH_MAC = /Applications/Pd-0.55-2.app
@@ -137,16 +138,16 @@ pair separated by a carriage return. Comments are demarked with a '#' character.
     NAMEPARAMETER<integer> = <string>
     # Display name for parameters. Used when CUSTOMGUI is false or the VST host
     # doesn't support custom editors.
-    
+
     PDMOREFLAGS = <string>
     # Flags to be passed when starting Pd.
     # flags we should not put here: -r, -outchannels, -inchannels
     # flag -nogui is set when we set DEBUG = FALSE
-    
+
     LATENCY = <integer>
-    # Latency of the plug-in. For example, if the plug-in internally 
-    # needs to look in advance (like compressors) 512 samples then 
-    # this plug-in should report 512 as latency.    
+    # Latency of the plug-in. For example, if the plug-in internally
+    # needs to look in advance (like compressors) 512 samples then
+    # this plug-in should report 512 as latency.
 
     VERSION = <string>
     AUTHOR = <string>

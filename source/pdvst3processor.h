@@ -179,12 +179,12 @@ protected:
     void midi_to_pd(Vst::ProcessData& data);
     void playhead_to_pd(Vst::ProcessData& data);
     void setSyncToVst(int value);
-    
 
-	int xxWaitForSingleObject(int mutex, int ms);
-	int xxReleaseMutex(int mutex);
-	void xxSetEvent(int mutex);
-	void xxResetEvent(int mutex);
+
+    int xxWaitForSingleObject(int mutex, int ms);
+    int xxReleaseMutex(int mutex);
+    void xxSetEvent(int mutex);
+    void xxResetEvent(int mutex);
 
 
 
