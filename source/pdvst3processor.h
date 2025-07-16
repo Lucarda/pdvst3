@@ -159,6 +159,7 @@ protected:
 #else
     char    *pdvstSharedAddressesMap,
             *pdvstTransferFileMap;
+            sem_t *mu_tex[3];
     int     fd;
 #endif
     pdvstSharedAddresses *pdvstShared;
@@ -180,6 +181,18 @@ protected:
     void midi_to_pd(Vst::ProcessData& data);
     void playhead_to_pd(Vst::ProcessData& data);
     void setSyncToVst(int value);
+    
+	#if _WIN32
+		int xxWaitForSingleObject(HANDLE mutex, int ms);
+		int xxReleaseMutex(HANDLE mutex);
+		void xxSetEvent(HANDLE mutex);
+		void xxResetEvent(HANDLE mutex);
+	#else
+		int xxWaitForSingleObject(int mutex, int ms);
+		int xxReleaseMutex(int mutex);
+		void xxSetEvent(int mutex);
+		void xxResetEvent(int mutex);
+	#endif
 
 
     // unused

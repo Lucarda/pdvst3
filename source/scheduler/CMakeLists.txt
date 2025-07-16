@@ -7,7 +7,6 @@ project(pdvst3scheduler C)
 # Specify the DLL source files
 add_library(pdvst3scheduler SHARED
     vstschedlib.c
-    cross-helper.c
 )
 
 target_include_directories(pdvst3scheduler PUBLIC
