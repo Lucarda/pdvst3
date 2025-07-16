@@ -60,18 +60,10 @@ EXTERN t_midiqelem midi_outqueue[MIDIQSIZE];
 EXTERN int midi_outhead;
 int lastmidiouthead=0;
 
-#if _WIN32
-    int xxWaitForSingleObject(HANDLE mutex, int ms);
-    int xxReleaseMutex(HANDLE mutex);
-    void xxSetEvent(HANDLE mutex);
-    void xxResetEvent(HANDLE mutex);
-#else
-    int xxWaitForSingleObject(int mutex, int ms);
-    int xxReleaseMutex(int mutex);
-    void xxSetEvent(int mutex);
-    void xxResetEvent(int mutex);
-    sem_t *mu_tex[3];
-#endif
+int xxWaitForSingleObject(int mutex, int ms);
+int xxReleaseMutex(int mutex);
+void xxSetEvent(int mutex);
+void xxResetEvent(int mutex);
 
 typedef struct _vstParameterReceiver
 {
@@ -100,31 +92,27 @@ t_class *vstGuiNameReceiver_class;
 t_class *vstChunkReceiver_class;
 
 #ifdef _WIN32
-    char *pdvstTransferMutexName,
-         *pdvstTransferFileMapName,
-         *vstProcEventName,
-         *pdProcEventName;
+    char    *pdvstTransferMutexName,
+            *pdvstTransferFileMapName,
+            *vstProcEventName,
+            *pdProcEventName;
+    HANDLE  pdvstTransferFileMap,
+            mu_tex[3],
+            vstHostProcess;
+    int     vstHostProcessId;
 #else
-    char *pdvstSharedAddressesMapName;
+    char    *pdvstSharedAddressesMap,
+            *pdvstTransferFileMap,
+            *pdvstSharedAddressesMapName;
+    pid_t   vstHostProcessId;
+    int     fd;
+    sem_t   *mu_tex[3];    
     pdvstSharedAddresses *pdvstShared;
 #endif
 
 pdvstTransferData *pdvstData;
 pdvstTimeInfo  timeInfo;
 
-#if _WIN32
-    HANDLE  pdvstTransferMutex,
-            pdvstTransferFileMap,
-            vstProcEvent,
-            pdProcEvent,
-            vstHostProcess;
-    int     vstHostProcessId;
-#else
-    char    *pdvstSharedAddressesMap,
-            *pdvstTransferFileMap;
-    pid_t   vstHostProcessId;
-    int     fd;
-#endif
 
 void debugLog(char *fmt, ...)
 {
@@ -851,9 +839,9 @@ int scheduler()
 void set_resources()
 {
     #ifdef _WIN32
-        pdvstTransferMutex = OpenMutexA(MUTEX_ALL_ACCESS, 0, pdvstTransferMutexName);
-        vstProcEvent = OpenEventA(EVENT_ALL_ACCESS, 0, vstProcEventName);
-        pdProcEvent = OpenEventA(EVENT_ALL_ACCESS, 0, pdProcEventName);
+        mu_tex[PDVSTTRANSFERMUTEX] = OpenMutexA(MUTEX_ALL_ACCESS, 0, pdvstTransferMutexName);
+        mu_tex[VSTPROCEVENT] = OpenEventA(EVENT_ALL_ACCESS, 0, vstProcEventName);
+        mu_tex[PDPROCEVENT] = OpenEventA(EVENT_ALL_ACCESS, 0, pdProcEventName);
         pdvstTransferFileMap = OpenFileMappingA(FILE_MAP_ALL_ACCESS,
                                                0,
                                                pdvstTransferFileMapName);
@@ -886,7 +874,7 @@ void set_resources()
 void clean_resources()
 {
     #ifdef _WIN32
-        CloseHandle(pdvstTransferMutex);
+        CloseHandle(mu_tex[PDVSTTRANSFERMUTEX]);
         UnmapViewOfFile(pdvstTransferFileMap);
         CloseHandle(pdvstTransferFileMap);
     #else
@@ -947,95 +935,75 @@ int pd_extern_sched(char *flags)
 //------------------------------------------------------------------------
 // mutexes events semaphores
 //------------------------------------------------------------------------
-#if _WIN32
-
-int xxWaitForSingleObject(HANDLE mutex, int ms)
-{
-    int ret;
-    ret = WaitForSingleObject(mutex, ms);
-
-    if (ret == WAIT_TIMEOUT)
-        return 0;
-    else if (ret == WAIT_OBJECT_0)
-        return 1;
-    else
-        return(ret);
-}
-
-#else
 
 int xxWaitForSingleObject(int mutex, int ms)
 {
-    if (ms == -1) ms = 30000;
-    float elapsed_time = 0;
-    int wait_time = 10; // Wait time between attempts in microseconds
-    int ret= -1;
-    while (1)
-    {
-        if (sem_trywait(mu_tex[mutex]) == 0)
-            return 1;
-        if (elapsed_time >= ms) {
-            // Timeout has been reached
+    #if _WIN32
+        int ret;
+        ret = WaitForSingleObject(mu_tex[mutex], ms);
+
+        if (ret == WAIT_TIMEOUT)
             return 0;
+        else if (ret == WAIT_OBJECT_0)
+            return 1;
+        else
+            return(ret);
+    #else
+        if (ms == -1) ms = 30000;
+        float elapsed_time = 0;
+        int wait_time = 10; // Wait time between attempts in microseconds
+        int ret= -1;
+        while (1)
+        {
+            if (sem_trywait(mu_tex[mutex]) == 0)
+                return 1;
+            if (elapsed_time >= ms)
+            {
+                // Timeout has been reached
+                return 0;
+            }
+            usleep(wait_time);
+            elapsed_time += (wait_time / 1000.);
         }
-        usleep(wait_time);
-        elapsed_time += (wait_time / 1000.);
-    }
+    #endif
 }
-#endif
-
-#if _WIN32
-
-int xxReleaseMutex(HANDLE mutex)
-{
-    ReleaseMutex(mutex);
-    return 0;
-}
-
-#else
 
 int xxReleaseMutex(int mutex)
 {
-    sem_post(mu_tex[mutex]);
-    return 0;
+    #if _WIN32
+        ReleaseMutex(mu_tex[mutex]);
+        return 0;
+    #else
+        sem_post(mu_tex[mutex]);
+        return 0;
+    #endif
 }
-#endif
-
-#if _WIN32
-
-void xxSetEvent(HANDLE mutex)
-{
-    SetEvent(mutex);
-}
-
-#else
 
 void xxSetEvent(int mutex)
 {
-    int value;
-    sem_getvalue(mu_tex[mutex], &value);
-    if (value == 0) {
-        sem_post(mu_tex[mutex]);  // Increment to 1 (signaled)
-    }
+    #if _WIN32
+        SetEvent(mu_tex[mutex]);
+    #else
+        int value;
+        sem_getvalue(mu_tex[mutex], &value);
+        if (value == 0)
+        {
+            sem_post(mu_tex[mutex]);  // Increment to 1 (signaled)
+        }
+    #endif
 }
-#endif
-
-#if _WIN32
-
-void xxResetEvent(HANDLE mutex)
-{
-    ResetEvent(mutex);
-}
-
-#else
 
 void xxResetEvent(int mutex)
 {
-    int value;
-    sem_getvalue(mu_tex[mutex], &value);
-    while (value > 0) {
-        sem_wait(mu_tex[mutex]);  // Decrement until count is 0
+    #if _WIN32
+        ResetEvent(mu_tex[mutex]);
+    #else
+        int value;
         sem_getvalue(mu_tex[mutex], &value);
-    }
+        while (value > 0)
+        {
+            sem_wait(mu_tex[mutex]);  // Decrement until count is 0
+            sem_getvalue(mu_tex[mutex], &value);
+        }
+    #endif
 }
-#endif

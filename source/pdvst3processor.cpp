@@ -105,9 +105,9 @@ void pdvst3Processor::set_resources()
     sprintf(pdvstTransferFileMapName, "filemap%d%x", GetCurrentProcessId(), this);
     sprintf(vstProcEventName, "vstprocevent%d%x", GetCurrentProcessId(), this);
     sprintf(pdProcEventName, "pdprocevent%d%x", GetCurrentProcessId(), this);
-    pdvstTransferMutex = CreateMutexA(NULL, 0, pdvstTransferMutexName);
-    vstProcEvent = CreateEventA(NULL, TRUE, TRUE, vstProcEventName);
-    pdProcEvent = CreateEventA(NULL, TRUE, FALSE, pdProcEventName);
+    mu_tex[PDVSTTRANSFERMUTEX]  = CreateMutexA(NULL, 0, pdvstTransferMutexName);
+    mu_tex[VSTPROCEVENT] = CreateEventA(NULL, TRUE, TRUE, vstProcEventName);
+    mu_tex[PDPROCEVENT] = CreateEventA(NULL, TRUE, FALSE, pdProcEventName);
     pdvstTransferFileMap = CreateFileMappingA(INVALID_HANDLE_VALUE,
                                              NULL,
                                              PAGE_READWRITE,
@@ -150,7 +150,7 @@ void pdvst3Processor::set_resources()
 void pdvst3Processor::clean_resources()
 {
     #ifdef _WIN32
-        CloseHandle(pdvstTransferMutex);
+        CloseHandle(mu_tex[PDVSTTRANSFERMUTEX]);
         UnmapViewOfFile(pdvstTransferFileMap);
         CloseHandle(pdvstTransferFileMap);
     #else
@@ -162,7 +162,7 @@ void pdvst3Processor::clean_resources()
         sem_unlink(pdvstShared->pdvstTransferMutexName);
         munmap(pdvstTransferFileMap, sizeof(pdvstTransferData));
         munmap(pdvstSharedAddressesMap, sizeof(pdvstSharedAddresses));
-        
+
     #endif
 }
 
@@ -941,98 +941,78 @@ tresult PLUGIN_API pdvst3Processor::getState (IBStream* state)
 // mutexes events semaphores
 //------------------------------------------------------------------------
 
-#if _WIN32
-
-int pdvst3Processor::xxWaitForSingleObject(HANDLE mutex, int ms)
-{
-    int ret;
-    ret = WaitForSingleObject(mutex, ms);
-
-    if (ret == WAIT_TIMEOUT)
-        return 0;
-    else if (ret == WAIT_OBJECT_0)
-        return 1;
-    else
-        return(ret);
-}
-
-#else
-
 int pdvst3Processor::xxWaitForSingleObject(int mutex, int ms)
 {
-    if (ms == -1) ms = 30000;
-    float elapsed_time = 0;
-    int wait_time = 10; // Wait time between attempts in microseconds
-    int ret= -1;
-    while (1)
-    {
-        if (sem_trywait(mu_tex[mutex]) == 0)
-            return 1;
-        if (elapsed_time >= ms) {
-            // Timeout has been reached
+    #if _WIN32
+        int ret;
+        ret = WaitForSingleObject(mu_tex[mutex], ms);
+
+        if (ret == WAIT_TIMEOUT)
             return 0;
+        else if (ret == WAIT_OBJECT_0)
+            return 1;
+        else
+            return(ret);
+    #else
+        if (ms == -1) ms = 30000;
+        float elapsed_time = 0;
+        int wait_time = 10; // Wait time between attempts in microseconds
+        int ret= -1;
+        while (1)
+        {
+            if (sem_trywait(mu_tex[mutex]) == 0)
+                return 1;
+            if (elapsed_time >= ms)
+            {
+                // Timeout has been reached
+                return 0;
+            }
+            usleep(wait_time);
+            elapsed_time += (wait_time / 1000.);
         }
-        usleep(wait_time);
-        elapsed_time += (wait_time / 1000.);
-    }
+    #endif
 }
-#endif
-
-#if _WIN32
-
-int pdvst3Processor::xxReleaseMutex(HANDLE mutex)
-{
-    ReleaseMutex(mutex);
-    return 0;
-}
-
-#else
 
 int pdvst3Processor::xxReleaseMutex(int mutex)
 {
-    sem_post(mu_tex[mutex]);
-    return 0;
+    #if _WIN32
+        ReleaseMutex(mu_tex[mutex]);
+        return 0;
+    #else
+        sem_post(mu_tex[mutex]);
+        return 0;
+    #endif
 }
-#endif
-
-#if _WIN32
-
-void pdvst3Processor::xxSetEvent(HANDLE mutex)
-{
-    SetEvent(mutex);
-}
-
-#else
 
 void pdvst3Processor::xxSetEvent(int mutex)
 {
-    int value;
-    sem_getvalue(mu_tex[mutex], &value);
-    if (value == 0) {
-        sem_post(mu_tex[mutex]);  // Increment to 1 (signaled)
-    }
+    #if _WIN32
+        SetEvent(mu_tex[mutex]);
+    #else
+        int value;
+        sem_getvalue(mu_tex[mutex], &value);
+        if (value == 0)
+        {
+            sem_post(mu_tex[mutex]);  // Increment to 1 (signaled)
+        }
+    #endif
 }
-#endif
-
-#if _WIN32
-
-void pdvst3Processor::xxResetEvent(HANDLE mutex)
-{
-    ResetEvent(mutex);
-}
-
-#else
 
 void pdvst3Processor::xxResetEvent(int mutex)
 {
-    int value;
-    sem_getvalue(mu_tex[mutex], &value);
-    while (value > 0) {
-        sem_wait(mu_tex[mutex]);  // Decrement until count is 0
+    #if _WIN32
+        ResetEvent(mu_tex[mutex]);
+    #else
+        int value;
         sem_getvalue(mu_tex[mutex], &value);
-    }
+        while (value > 0)
+        {
+            sem_wait(mu_tex[mutex]);  // Decrement until count is 0
+            sem_getvalue(mu_tex[mutex], &value);
+        }
+    #endif
 }
-#endif
+
 
 //------------------------------------------------------------------------
 // audio buffer
