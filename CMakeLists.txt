@@ -169,6 +169,18 @@ add_custom_command(
 )
 endif()
 
+# remove Windows folder icon to make clear it's a folder
+if(SMTG_WIN)
+add_custom_command(
+    TARGET pdvst3
+    POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E remove
+            ${FOLDER_MAIN}/PlugIn.ico
+    COMMAND ${CMAKE_COMMAND} -E remove
+            ${FOLDER_MAIN}/desktop.ini
+)
+endif()
+
 smtg_target_configure_version_file(pdvst3)
 
 if(SMTG_MAC)
@@ -198,7 +210,7 @@ endif(SMTG_MAC)
 add_subdirectory(source/scheduler)
 
 # print variables
-if(0)
+if(1)
 get_cmake_property(_variableNames VARIABLES)
 list (SORT _variableNames)
 foreach (_variableName ${_variableNames})
