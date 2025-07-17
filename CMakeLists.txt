@@ -159,7 +159,7 @@ add_custom_command(
 		${CMAKE_CURRENT_BINARY_DIR}/bin/Release/pdvst3scheduler.dll
 		${FOLDER_RESOURCES}
 )
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND NOT DEFINED GITHUB-CI)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND NOT GITHUB-CI)
 add_custom_command(
     TARGET pdvst3
     PRE_LINK
