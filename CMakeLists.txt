@@ -77,9 +77,7 @@ add_subdirectory(public.sdk/samples/vst-utilities)
 
 #------pdvst3------------------------------------------
 
-
 # remove files from build. we replace them in our sources.
-
 file(READ "public.sdk/CMakeLists.txt" FILE_CONTENTS)
 string(REPLACE "source/main/pluginfactory.cpp" "" FILE_CONTENTS ${FILE_CONTENTS})
 string(REPLACE "source/main/pluginfactory.h" "" FILE_CONTENTS ${FILE_CONTENTS})
@@ -101,10 +99,31 @@ smtg_add_vst3plugin(pdvst3
     source/pdvst3cids.h
 )
 
-target_link_libraries(pdvst3
-    PRIVATE
-        sdk
-)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_link_libraries(pdvst3
+        PRIVATE
+            sdk
+            -lpthread
+            -lc
+            -lrt
+    )
+endif()
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    target_link_libraries(pdvst3
+        PRIVATE
+            sdk
+            -lpthread
+            -lc
+    )
+endif()
+
+if(SMTG_WIN)
+    target_link_libraries(pdvst3
+        PRIVATE
+            sdk
+    )
+endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND GITHUB-CI)
     add_compile_definitions(-D_FORTIFY_SOURCE=0)
@@ -115,7 +134,6 @@ add_dependencies(pdvst3 pdvst3scheduler)
 #set folders variables
 set(FOLDER_MAIN ${CMAKE_CURRENT_BINARY_DIR}/VST3/${CMAKE_BUILD_TYPE}/pdvst3.vst3)
 set(FOLDER_RESOURCES ${CMAKE_CURRENT_BINARY_DIR}/VST3/${CMAKE_BUILD_TYPE}/pdvst3.vst3/Contents/Resources)
-
 
 # copy files before linking
 add_custom_command(
@@ -155,17 +173,17 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND GITHUB-CI)
 add_custom_command(
     TARGET pdvst3
     PRE_LINK
-	COMMAND ${CMAKE_COMMAND} -E copy
-		${CMAKE_CURRENT_BINARY_DIR}/bin/Release/pdvst3scheduler.dll
-		${FOLDER_RESOURCES}
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_BINARY_DIR}/bin/Release/pdvst3scheduler.dll
+        ${FOLDER_RESOURCES}
 )
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND NOT GITHUB-CI)
 add_custom_command(
     TARGET pdvst3
     PRE_LINK
-	COMMAND ${CMAKE_COMMAND} -E copy
-		${CMAKE_CURRENT_BINARY_DIR}/bin/pdvst3scheduler.dll
-		${FOLDER_RESOURCES}
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_BINARY_DIR}/bin/pdvst3scheduler.dll
+        ${FOLDER_RESOURCES}
 )
 endif()
 
@@ -174,7 +192,7 @@ if(SMTG_WIN)
 add_custom_command(
     TARGET pdvst3
     POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E remove
+    COMMAND ${CMAKE_COMMAND} -E remove
             ${FOLDER_MAIN}/PlugIn.ico
     COMMAND ${CMAKE_COMMAND} -E remove
             ${FOLDER_MAIN}/desktop.ini
@@ -210,7 +228,7 @@ endif(SMTG_MAC)
 add_subdirectory(source/scheduler)
 
 # print variables
-if(1)
+if(0)
 get_cmake_property(_variableNames VARIABLES)
 list (SORT _variableNames)
 foreach (_variableName ${_variableNames})

@@ -38,7 +38,7 @@
     #include <windows.h>
     #include <io.h>
 #else
-    #include <semaphore.h>
+    #include <pthread.h>
     #include <fcntl.h>
     #include <sys/mman.h>
     #include <unistd.h>
@@ -76,13 +76,11 @@ extern pdvstProgram globalProgram[MAXPROGRAMS];
 extern int globalLatency;
 int Steinberg::pdvst3Processor::referenceCount = 0;
 
-
 extern Steinberg::FUID contUID;
 
 
 using namespace Steinberg;
 namespace Steinberg {
-
 
 void pdvst3Processor::debugLog(char *fmt, ...)
 {
@@ -127,15 +125,10 @@ void pdvst3Processor::set_resources()
     pdvstSharedAddressesMap = (char*)mmap(NULL, sizeof(pdvstSharedAddresses),
                                 PROT_READ | PROT_WRITE, MAP_SHARED,
                                 fd, 0);
+    mlock(pdvstSharedAddressesMap, sizeof(pdvstSharedAddresses));
     ::close(fd);
     pdvstShared = (pdvstSharedAddresses *)pdvstSharedAddressesMap;
-    sprintf(pdvstShared->pdvstTransferMutexName, "/mutex%d%x", getpid(), this);
     sprintf(pdvstShared->pdvstTransferFileMapName, "/filemap%d%x", getpid(), this);
-    sprintf(pdvstShared->vstProcEventName, "/vstprocevent%d%x", getpid(), this);
-    sprintf(pdvstShared->pdProcEventName, "/pdprocevent%d%x", getpid(), this);
-    mu_tex[PDVSTTRANSFERMUTEX] = sem_open(pdvstShared->pdvstTransferMutexName, O_CREAT, 0666, 1);
-    mu_tex[VSTPROCEVENT] = sem_open(pdvstShared->vstProcEventName, O_CREAT, 0666, 1);  // Initial value 1 (TRUE)
-    mu_tex[PDPROCEVENT] = sem_open(pdvstShared->pdProcEventName, O_CREAT, 0666, 0);
     fd = shm_open(pdvstShared->pdvstTransferFileMapName, O_CREAT | O_RDWR, 0666);
     ftruncate(fd, sizeof(pdvstTransferData));
     pdvstTransferFileMap = (char*)mmap(NULL, sizeof(pdvstTransferData),
@@ -144,6 +137,21 @@ void pdvst3Processor::set_resources()
     mlock(pdvstTransferFileMap, sizeof(pdvstTransferData));
     ::close(fd);
     pdvstData = (pdvstTransferData *)pdvstTransferFileMap;
+    pthread_mutexattr_t mutex_attr;
+    pthread_mutexattr_init(&mutex_attr);
+    pthread_mutexattr_setpshared(&mutex_attr, PTHREAD_PROCESS_SHARED);
+    for (int i = 0; i < MAX_TRAFFIC_LIGHTS ; i++)
+    {
+        int ret = pthread_mutex_init(&pdvstShared->thing[i].mutex, &mutex_attr);
+        pdvstShared->thing[i].signaled = 0;
+    }
+    pthread_mutex_lock(&pdvstShared->thing[PDVSTTRANSFERMUTEX].mutex);
+    pdvstShared->thing[PDVSTTRANSFERMUTEX].signaled = 1;
+    pthread_mutex_unlock(&pdvstShared->thing[PDVSTTRANSFERMUTEX].mutex);
+
+    pthread_mutex_lock(&pdvstShared->thing[VSTPROCEVENT].mutex);
+    pdvstShared->thing[VSTPROCEVENT].signaled = 1;
+    pthread_mutex_unlock(&pdvstShared->thing[VSTPROCEVENT].mutex);
 
     #endif
 }
@@ -155,16 +163,15 @@ void pdvst3Processor::clean_resources()
         UnmapViewOfFile(pdvstTransferFileMap);
         CloseHandle(pdvstTransferFileMap);
     #else
-        sem_close(mu_tex[VSTPROCEVENT]);
-        sem_close(mu_tex[PDPROCEVENT]);
-        sem_close(mu_tex[PDVSTTRANSFERMUTEX]);
-        sem_unlink(pdvstShared->vstProcEventName);
-        sem_unlink(pdvstShared->pdProcEventName);
-        sem_unlink(pdvstShared->pdvstTransferMutexName);
+        for (int i = 0; i < MAX_TRAFFIC_LIGHTS ; i++)
+        {
+            pthread_mutex_destroy(&pdvstShared->thing[i].mutex);
+            pdvstShared->thing[i].signaled = 0;
+        }
+        munlock(pdvstSharedAddressesMap, sizeof(pdvstSharedAddresses));
         munlock(pdvstTransferFileMap, sizeof(pdvstTransferData));
         munmap(pdvstTransferFileMap, sizeof(pdvstTransferData));
         munmap(pdvstSharedAddressesMap, sizeof(pdvstSharedAddresses));
-
     #endif
 }
 
@@ -212,7 +219,6 @@ void pdvst3Processor::startPd()
             break;
         }
     }
-
     sprintf(buf,
             "%s %s",
             debugString,
@@ -398,7 +404,6 @@ void pdvst3Processor::pdvst()
     startPd();
     debugLog("done");
     referenceCount++;
-
 }
 
 void pdvst3Processor::pdvstquit()
@@ -542,7 +547,7 @@ void pdvst3Processor::midi_from_pd(Vst::ProcessData& data)
                     midiEvent.polyPressure.noteId = -1;
                     outlist->addEvent(midiEvent);
                 }
-
+                // this seems good,  at least i see cc output on reaper.
                 else if (status == 0xB0) // controller change
                 {
                     midiEvent.type = Vst::Event::kLegacyMIDICCOutEvent;
@@ -550,12 +555,8 @@ void pdvst3Processor::midi_from_pd(Vst::ProcessData& data)
                     midiEvent.midiCCOut.value = b2;
                     midiEvent.midiCCOut.value2 = 0;
                     midiEvent.midiCCOut.controlNumber = b1;
-                    //midiEvent.midiCCOut.controlNumber = Vst::ControllerNumbers::kCtrlGPC5;
-                    // this seems good.
                     outlist->addEvent(midiEvent);
-
                 }
-
             }
             pdvstData->midiOutQueueUpdated=0;
             pdvstData->midiOutQueueSize=0;
@@ -601,7 +602,7 @@ void pdvst3Processor::midi_to_pd(Vst::ProcessData& data)
                         pdvstData->midiQueue[pdvstData->midiQueueSize].messageType = KEY_PRESSURE;
                         break;
 
-                    //--- ------------------- this seems the problem. like if we never get here.
+                    //--- -this seems the problem. like if we never get here.
                     case Vst::Event::kLegacyMIDICCOutEvent:
                         pdvstData->midiQueue[pdvstData->midiQueueSize].channelNumber = 0; //event.midiCCOut.channel;
                         pdvstData->midiQueue[pdvstData->midiQueueSize].dataByte1 = 1;// event.midiCCOut.controlNumber & 0x0F;
@@ -956,20 +957,26 @@ int pdvst3Processor::xxWaitForSingleObject(int mutex, int ms)
         else
             return(ret);
     #else
-        if (ms == -1) ms = 30000;
+        struct timespec ts;
+        ts.tv_sec = 0;
+        ts.tv_nsec = 10000;  // 10 microseconds //10000
+        if (ms < 0) ms = 2000;
         float elapsed_time = 0;
         int wait_time = 10; // Wait time between attempts in microseconds
         int ret= -1;
         while (1)
         {
-            if (sem_trywait(mu_tex[mutex]) == 0)
+            if (pdvstShared->thing[mutex].signaled)
+            {
+                if(pthread_mutex_trylock(&pdvstShared->thing[mutex].mutex) == 0);
                 return 1;
+            }
             if (elapsed_time >= ms)
             {
                 // Timeout has been reached
                 return 0;
             }
-            usleep(wait_time);
+            nanosleep(&ts, NULL);
             elapsed_time += (wait_time / 1000.);
         }
     #endif
@@ -981,7 +988,8 @@ int pdvst3Processor::xxReleaseMutex(int mutex)
         ReleaseMutex(mu_tex[mutex]);
         return 0;
     #else
-        sem_post(mu_tex[mutex]);
+        pdvstShared->thing[mutex].signaled = 1;
+        pthread_mutex_unlock(&pdvstShared->thing[mutex].mutex);
         return 0;
     #endif
 }
@@ -991,12 +999,9 @@ void pdvst3Processor::xxSetEvent(int mutex)
     #if _WIN32
         SetEvent(mu_tex[mutex]);
     #else
-        int value;
-        sem_getvalue(mu_tex[mutex], &value);
-        if (value == 0)
-        {
-            sem_post(mu_tex[mutex]);  // Increment to 1 (signaled)
-        }
+        int ret = pthread_mutex_lock(&pdvstShared->thing[mutex].mutex);
+        pdvstShared->thing[mutex].signaled = 1;
+        pthread_mutex_unlock(&pdvstShared->thing[mutex].mutex);
     #endif
 }
 
@@ -1005,13 +1010,8 @@ void pdvst3Processor::xxResetEvent(int mutex)
     #if _WIN32
         ResetEvent(mu_tex[mutex]);
     #else
-        int value;
-        sem_getvalue(mu_tex[mutex], &value);
-        while (value > 0)
-        {
-            sem_wait(mu_tex[mutex]);  // Decrement until count is 0
-            sem_getvalue(mu_tex[mutex], &value);
-        }
+        pdvstShared->thing[mutex].signaled = 0;
+        pthread_mutex_unlock(&pdvstShared->thing[mutex].mutex);
     #endif
 }
 

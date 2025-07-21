@@ -33,6 +33,7 @@
     #include <windows.h>
 #else
     #include <semaphore.h>
+    #include <pthread.h>
     #include <unistd.h>
 #endif
 
@@ -50,8 +51,6 @@ typedef struct _pdvstProgram
 
 
 namespace Steinberg {
-
-
 class pdVstBuffer
 {
 
@@ -157,11 +156,10 @@ protected:
 #else
     char    *pdvstSharedAddressesMap,
             *pdvstTransferFileMap;
-    sem_t   *mu_tex[3];
     int     fd;
-#endif
     pdvstSharedAddresses *pdvstShared;
     char pdvstSharedAddressesMapName[MAXFILENAMELEN];
+#endif
     pdvstTransferData *pdvstData;
     int GsampleRate;
     int stereoBusesIn;
@@ -179,13 +177,10 @@ protected:
     void midi_to_pd(Vst::ProcessData& data);
     void playhead_to_pd(Vst::ProcessData& data);
     void setSyncToVst(int value);
-
-
     int xxWaitForSingleObject(int mutex, int ms);
     int xxReleaseMutex(int mutex);
     void xxSetEvent(int mutex);
     void xxResetEvent(int mutex);
-
 
 
     // unused

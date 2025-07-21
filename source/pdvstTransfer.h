@@ -24,6 +24,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "pdvst3_base_defines.h"
+#ifndef _WIN32
+    #include <pthread.h>
+#endif
 
 
 typedef enum _pdvstParameterDataType
@@ -84,7 +87,7 @@ typedef struct _dataChunk
 typedef struct _vstTimeInfo
 {
     /*
-	enum StatesAndFlags
+    enum StatesAndFlags
     {
         kPlaying          = 1 << 1,     ///< currently playing
         kCycleActive      = 1 << 2,     ///< cycle is active
@@ -104,7 +107,7 @@ typedef struct _vstTimeInfo
         kSmpteValid       = 1 << 14,    ///< smpteOffset and frameRate contain valid information
         kClockValid       = 1 << 15     ///< samplesToNextClock valid
     };
-	*/
+    */
 //------------------------------------------------------------------------
 
     int updated;
@@ -160,20 +163,34 @@ typedef struct _pdvstTransferData
 
 } pdvstTransferData;
 
-typedef struct _pdvstSharedAddresses
-{
-	char pdvstTransferMutexName[MAXFILENAMELEN];
-    char pdvstTransferFileMapName[MAXFILENAMELEN];
-    char vstProcEventName[MAXFILENAMELEN];
-    char pdProcEventName[MAXFILENAMELEN];
-
-} pdvstSharedAddresses;
-
 typedef enum _traffic
 {
     PDVSTTRANSFERMUTEX,
     VSTPROCEVENT,
-    PDPROCEVENT
+    PDPROCEVENT,
+    MAX_TRAFFIC_LIGHTS
 } traffic;
+
+#ifndef _WIN32
+    typedef struct _thread
+    {
+        pthread_mutex_t mutex;
+        pthread_cond_t cond;
+        char signaled;
+    } thread_t;
+#endif
+
+typedef struct _pdvstSharedAddresses
+{
+    char pdvstTransferMutexName[MAXFILENAMELEN];
+    char pdvstTransferFileMapName[MAXFILENAMELEN];
+    char vstProcEventName[MAXFILENAMELEN];
+    char pdProcEventName[MAXFILENAMELEN];
+#ifndef _WIN32
+    thread_t thing[MAX_TRAFFIC_LIGHTS];
+#endif
+} pdvstSharedAddresses;
+
+
 
 #endif

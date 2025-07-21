@@ -24,12 +24,13 @@
     #include <io.h>
 #else
     #include <unistd.h>
-    #include <semaphore.h>
+    #include <pthread.h>
     #include <fcntl.h>
     #include <sys/stat.h>
     #include <sys/mman.h>
     #include <signal.h>
     #include <stdlib.h>
+    #include <errno.h>
 #endif
 #include <stdio.h>
 #include "m_pd.h"
@@ -106,7 +107,6 @@ t_class *vstChunkReceiver_class;
             *pdvstSharedAddressesMapName;
     pid_t   vstHostProcessId;
     int     fd;
-    sem_t   *mu_tex[3];
     pdvstSharedAddresses *pdvstShared;
 #endif
 
@@ -771,6 +771,7 @@ int scheduler()
     {
         *(get_sys_sleepgrain()) = 5000;
     }
+
     sys_initmidiqueue();
     pdvstData->midiOutQueueSize=0;
     while (active)
@@ -802,6 +803,7 @@ int scheduler()
         if (pdvstData->syncToVst)
         {
             xxReleaseMutex(PDVSTTRANSFERMUTEX);
+
             if (xxWaitForSingleObject(VSTPROCEVENT, 1000) == 0) //WAIT_TIMEOUT
             {
                 // we have probably lost sync by now (1 sec)
@@ -818,7 +820,6 @@ int scheduler()
             xxReleaseMutex(PDVSTTRANSFERMUTEX);
             scheduler_tick();
             pdvst_sleep(blockTime);
-
         }
         #ifdef _WIN32
             GetExitCodeProcess(vstHostProcess, &vstHostProcessStatus);
@@ -857,11 +858,9 @@ void set_resources()
         pdvstSharedAddressesMap = (char*)mmap(NULL, sizeof(pdvstSharedAddresses),
                                     PROT_READ | PROT_WRITE, MAP_SHARED,
                                     fd, 0);
+        mlock(pdvstSharedAddressesMapName, sizeof(pdvstSharedAddresses));
         close(fd);
         pdvstShared = (pdvstSharedAddresses *)pdvstSharedAddressesMap;
-        mu_tex[PDVSTTRANSFERMUTEX] = sem_open(pdvstShared->pdvstTransferMutexName, O_CREAT, 0666, 0);
-        mu_tex[VSTPROCEVENT] = sem_open(pdvstShared->vstProcEventName, O_CREAT, 0666, 1);
-        mu_tex[PDPROCEVENT] = sem_open(pdvstShared->pdProcEventName, O_CREAT, 0666, 0);
         fd = shm_open(pdvstShared->pdvstTransferFileMapName, O_CREAT | O_RDWR, 0666);
         pdvstTransferFileMap = (char*)mmap(NULL, sizeof(pdvstTransferData),
                                     PROT_READ | PROT_WRITE, MAP_SHARED,
@@ -869,6 +868,7 @@ void set_resources()
         mlock(pdvstTransferFileMap, sizeof(pdvstTransferData));
         close(fd);
         pdvstData = (pdvstTransferData *)pdvstTransferFileMap;
+
     #endif
 }
 
@@ -879,12 +879,7 @@ void clean_resources()
         UnmapViewOfFile(pdvstTransferFileMap);
         CloseHandle(pdvstTransferFileMap);
     #else
-        sem_close(mu_tex[VSTPROCEVENT]);
-        sem_close(mu_tex[PDPROCEVENT]);
-        sem_close(mu_tex[PDVSTTRANSFERMUTEX]);
-        sem_unlink(pdvstShared->vstProcEventName);
-        sem_unlink(pdvstShared->pdProcEventName);
-        sem_unlink(pdvstShared->pdvstTransferMutexName);
+        munlock(pdvstSharedAddressesMapName, sizeof(pdvstSharedAddresses));
         munlock(pdvstTransferFileMap, sizeof(pdvstTransferData));
         munmap(pdvstTransferFileMap, sizeof(pdvstTransferData));
         munmap(pdvstSharedAddressesMap, sizeof(pdvstSharedAddresses));
@@ -923,6 +918,7 @@ int pd_extern_sched(char *flags)
     sys_setchsr(pdvstData->nChannelsIn,
                 pdvstData->nChannelsOut,
                 pdvstData->sampleRate);
+
     xxReleaseMutex(PDVSTTRANSFERMUTEX);
     scheduler();
     // on exit
@@ -951,20 +947,26 @@ int xxWaitForSingleObject(int mutex, int ms)
         else
             return(ret);
     #else
-        if (ms == -1) ms = 30000;
+        struct timespec ts;
+        ts.tv_sec = 0;
+        ts.tv_nsec = 10000;  // 10 microseconds
+        if (ms < 0) ms = 2000;
         float elapsed_time = 0;
         int wait_time = 10; // Wait time between attempts in microseconds
         int ret= -1;
         while (1)
         {
-            if (sem_trywait(mu_tex[mutex]) == 0)
+            if (pdvstShared->thing[mutex].signaled)
+            {
+                if(pthread_mutex_trylock(&pdvstShared->thing[mutex].mutex) == 0);
                 return 1;
+            }
             if (elapsed_time >= ms)
             {
                 // Timeout has been reached
                 return 0;
             }
-            usleep(wait_time);
+            nanosleep(&ts, NULL);
             elapsed_time += (wait_time / 1000.);
         }
     #endif
@@ -976,7 +978,8 @@ int xxReleaseMutex(int mutex)
         ReleaseMutex(mu_tex[mutex]);
         return 0;
     #else
-        sem_post(mu_tex[mutex]);
+        pdvstShared->thing[mutex].signaled = 1;
+        pthread_mutex_unlock(&pdvstShared->thing[mutex].mutex);
         return 0;
     #endif
 }
@@ -986,12 +989,9 @@ void xxSetEvent(int mutex)
     #if _WIN32
         SetEvent(mu_tex[mutex]);
     #else
-        int value;
-        sem_getvalue(mu_tex[mutex], &value);
-        if (value == 0)
-        {
-            sem_post(mu_tex[mutex]);  // Increment to 1 (signaled)
-        }
+        int ret = pthread_mutex_lock(&pdvstShared->thing[mutex].mutex);
+        pdvstShared->thing[mutex].signaled = 1;
+        pthread_mutex_unlock(&pdvstShared->thing[mutex].mutex);
     #endif
 }
 
@@ -1000,12 +1000,7 @@ void xxResetEvent(int mutex)
     #if _WIN32
         ResetEvent(mu_tex[mutex]);
     #else
-        int value;
-        sem_getvalue(mu_tex[mutex], &value);
-        while (value > 0)
-        {
-            sem_wait(mu_tex[mutex]);  // Decrement until count is 0
-            sem_getvalue(mu_tex[mutex], &value);
-        }
+        pdvstShared->thing[mutex].signaled = 0;
+        pthread_mutex_unlock(&pdvstShared->thing[mutex].mutex);
     #endif
 }
