@@ -912,7 +912,10 @@ int pd_extern_sched(char *flags)
     set_resources();
     xxWaitForSingleObject(PDVSTTRANSFERMUTEX, -1);
     logpost(NULL, PD_DEBUG,"---");
-    logpost(NULL, PD_DEBUG,"  pdvst3 v%d.%d.%d",PDVST3_VER_MAJ, PDVST3_VER_MIN, PDVST3_VER_PATCH);
+    logpost(NULL, PD_DEBUG,"  pdvst3 v%d.%d.%d %s",PDVST3_VER_MAJ,
+                                                PDVST3_VER_MIN,
+                                                PDVST3_VER_PATCH,
+                                                PDVST3_ADD);
     logpost(NULL, PD_DEBUG,"  %s %s",PDVST3_AUTH, PDVST3_DATE);
     logpost(NULL, PD_DEBUG,"---");
     sys_setchsr(pdvstData->nChannelsIn,
