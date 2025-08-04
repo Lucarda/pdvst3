@@ -363,9 +363,6 @@ void sendPdVstChunk(t_vstChunkReceiver *x, t_symbol *s, int argc, t_atom *argv)
     xxReleaseMutex(PDVSTTRANSFERMUTEX);
 
     freebytes(buf, length+1);
-
-
-
 }
 
 void sendPdVstGuiName(t_vstGuiNameReceiver *x, t_symbol *symbolValue)
@@ -903,6 +900,7 @@ int pd_extern_sched(char *flags)
     sys_get_audio_settings(&as);
     as.a_api = API_NONE;
     sys_set_audio_settings(&as);
+    sys_reopen_midi();
     for (i = 0; i < MAXARGS; i++)
     {
         argv[i] = (char *)malloc(MAXARGSTRLEN * sizeof(char));
@@ -992,7 +990,7 @@ void xxSetEvent(int mutex)
     #if _WIN32
         SetEvent(mu_tex[mutex]);
     #else
-        int ret = pthread_mutex_lock(&pdvstShared->thing[mutex].mutex);
+        pthread_mutex_lock(&pdvstShared->thing[mutex].mutex);
         pdvstShared->thing[mutex].signaled = 1;
         pthread_mutex_unlock(&pdvstShared->thing[mutex].mutex);
     #endif

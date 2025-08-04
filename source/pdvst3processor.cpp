@@ -214,8 +214,8 @@ void pdvst3Processor::startPd()
             break;
         else
         {
-        sprintf(errorMessage,"pd program not found. Check your settings in in file: %s",
-                              globalConfigFile);
+            sprintf(errorMessage,"pd program not found. Check your settings in in file: %s",
+                                  globalConfigFile);
             break;
         }
     }
@@ -467,7 +467,6 @@ void pdvst3Processor::params_to_pd(Vst::ProcessData& data)
             }
         }
     }
-
 }
 
 void pdvst3Processor::params_from_pd(Vst::ProcessData& data)
@@ -999,7 +998,7 @@ void pdvst3Processor::xxSetEvent(int mutex)
     #if _WIN32
         SetEvent(mu_tex[mutex]);
     #else
-        int ret = pthread_mutex_lock(&pdvstShared->thing[mutex].mutex);
+        pthread_mutex_lock(&pdvstShared->thing[mutex].mutex);
         pdvstShared->thing[mutex].signaled = 1;
         pthread_mutex_unlock(&pdvstShared->thing[mutex].mutex);
     #endif

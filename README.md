@@ -140,9 +140,14 @@ pair separated by a carriage return. Comments are demarked with a '#' character.
     # doesn't support custom editors.
 
     PDMOREFLAGS = <string>
-    # Flags to be passed when starting Pd.
+    # Flags to be passed when starting Pd (consult Pd manual for all options).
     # flags we should not put here: -r, -outchannels, -inchannels
     # flag -nogui is set when we set DEBUG = FALSE
+    # Use this to set MIDI configurations (without using the GUI). 
+    #   example for using ALSA midi on Linux:
+    #     PDMOREFLAGS = -alsamidi -midiindev 1 -midioutdev 1
+    #   example for using loopMIDI plus a 2nd soundcard output on Windows:
+    #     PDMOREFLAGS = -midiaddindev "loopMIDI Port 1" -midiaddoutdev "loopMIDI Port 1" -midiaddoutdev "US-4x4"
 
     LATENCY = <integer>
     # Latency of the plug-in. For example, if the plug-in internally
