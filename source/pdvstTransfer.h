@@ -168,6 +168,7 @@ typedef enum _traffic
     PDVSTTRANSFERMUTEX,
     VSTPROCEVENT,
     PDPROCEVENT,
+    PDPROCEVENT2,
     MAX_TRAFFIC_LIGHTS
 } traffic;
 
@@ -186,6 +187,7 @@ typedef struct _pdvstSharedAddresses
     char pdvstTransferFileMapName[MAXFILENAMELEN];
     char vstProcEventName[MAXFILENAMELEN];
     char pdProcEventName[MAXFILENAMELEN];
+    char pdProcEvent2Name[MAXFILENAMELEN];
 #ifndef _WIN32
     thread_t thing[MAX_TRAFFIC_LIGHTS];
 #endif

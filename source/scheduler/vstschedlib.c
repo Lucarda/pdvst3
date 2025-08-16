@@ -97,8 +97,9 @@ t_class *vstChunkReceiver_class;
             *pdvstTransferFileMapName,
             *vstProcEventName,
             *pdProcEventName;
+            *pdProcEvent2Name;
     HANDLE  pdvstTransferFileMap,
-            mu_tex[3],
+            mu_tex[MAX_TRAFFIC_LIGHTS],
             vstHostProcess;
     int     vstHostProcessId;
 #else
@@ -214,6 +215,12 @@ void parseArgs(int argc, char **argv)
             if (strcmp(*argv, "-pdproceventname") == 0)
             {
                 pdProcEventName = argv[1];
+                argc -= 2;
+                argv += 2;
+            }
+            if (strcmp(*argv, "-pdprocevent2name") == 0)
+            {
+                pdProcEvent2Name = argv[1];
                 argc -= 2;
                 argv += 2;
             }
@@ -401,15 +408,13 @@ void makevstChunkReceiver()
     pd_bind(&vstChunkReceiver->x_obj.ob_pd, gensym("svstdata"));
 }
 
-void send_dacs(void)
+void send_adcs(void)
 {
-    int i, j, sampleCount, nChannelsIn, nChannelsOut, blockSize;
-    t_sample *soundin, *soundout;
+    int i, j, sampleCount, nChannelsIn, blockSize;
+    t_sample *soundin;
 
     soundin = get_sys_soundin();
-    soundout = get_sys_soundout();
     nChannelsIn = pdvstData->nChannelsIn;
-    nChannelsOut = pdvstData->nChannelsOut;
     blockSize = pdvstData->blockSize;
     if (blockSize == *(get_sys_schedblocksize()))
     {
@@ -422,6 +427,19 @@ void send_dacs(void)
                 sampleCount++;
             }
         }
+    }
+}
+
+void send_dacs(void)
+{
+    int i, j, sampleCount, nChannelsOut, blockSize;
+    t_sample *soundout;
+
+    soundout = get_sys_soundout();
+    nChannelsOut = pdvstData->nChannelsOut;
+    blockSize = pdvstData->blockSize;
+    if (blockSize == *(get_sys_schedblocksize()))
+    {
         sampleCount = 0;
         for (i = 0; i < nChannelsOut; i++)
         {
@@ -460,11 +478,12 @@ static void pollwatchdog( void)
 
 void scheduler_tick( void)
 {
-    send_dacs();
+    send_adcs();
     sched_tick();
     sys_pollmidiqueue();
     sys_pollgui();
     pollwatchdog();
+    send_dacs();
 }
 
 void sch_general_receivers(void)
@@ -810,6 +829,7 @@ int scheduler()
             }
             xxResetEvent(VSTPROCEVENT);
             scheduler_tick();
+            xxSetEvent(PDPROCEVENT2);
             xxSetEvent(PDPROCEVENT);
         }
         else
@@ -840,6 +860,7 @@ void set_resources()
         mu_tex[PDVSTTRANSFERMUTEX] = OpenMutexA(MUTEX_ALL_ACCESS, 0, pdvstTransferMutexName);
         mu_tex[VSTPROCEVENT] = OpenEventA(EVENT_ALL_ACCESS, 0, vstProcEventName);
         mu_tex[PDPROCEVENT] = OpenEventA(EVENT_ALL_ACCESS, 0, pdProcEventName);
+        mu_tex[PDPROCEVENT2] = OpenEventA(EVENT_ALL_ACCESS, 0, pdProcEvent2Name);
         pdvstTransferFileMap = OpenFileMappingA(FILE_MAP_ALL_ACCESS,
                                                0,
                                                pdvstTransferFileMapName);

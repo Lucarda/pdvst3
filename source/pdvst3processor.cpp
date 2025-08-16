@@ -103,9 +103,11 @@ void pdvst3Processor::set_resources()
     sprintf(pdvstTransferFileMapName, "filemap%d%x", GetCurrentProcessId(), this);
     sprintf(vstProcEventName, "vstprocevent%d%x", GetCurrentProcessId(), this);
     sprintf(pdProcEventName, "pdprocevent%d%x", GetCurrentProcessId(), this);
+    sprintf(pdProcEvent2Name, "pdprocevent2%d%x", GetCurrentProcessId(), this);
     mu_tex[PDVSTTRANSFERMUTEX]  = CreateMutexA(NULL, 0, pdvstTransferMutexName);
     mu_tex[VSTPROCEVENT] = CreateEventA(NULL, TRUE, TRUE, vstProcEventName);
     mu_tex[PDPROCEVENT] = CreateEventA(NULL, TRUE, FALSE, pdProcEventName);
+    mu_tex[PDPROCEVENT2] = CreateEventA(NULL, TRUE, FALSE, pdProcEvent2Name);
     pdvstTransferFileMap = CreateFileMappingA(INVALID_HANDLE_VALUE,
                                              NULL,
                                              PAGE_READWRITE,
@@ -230,9 +232,10 @@ void pdvst3Processor::startPd()
     strcat(commandLineArgs, buf);
     #ifdef _WIN32
         sprintf(buf,
-                " -extraflags \"-vstproceventname %s -pdproceventname %s -vsthostid %d -mutexname %s -filemapname %s\"",
+                " -extraflags \"-vstproceventname %s -pdproceventname %s -pdprocevent2name %s -vsthostid %d -mutexname %s -filemapname %s\"",
                 vstProcEventName,
                 pdProcEventName,
+                pdProcEvent2Name,
                 GetCurrentProcessId(),
                 pdvstTransferMutexName,
                 pdvstTransferFileMapName);
@@ -785,6 +788,19 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
                 xxWaitForSingleObject(PDPROCEVENT, 10);
                 xxResetEvent(PDPROCEVENT);
 
+                // audio to Pd
+                for (k = 0; k < PDBLKSIZE; k++)
+                {
+                    for (l = 0; l < numChannelsIn; l++)
+                    {
+                        pdvstData->samplesIn[l][k] = audioBuffer->in[l][k];
+                    }
+                }
+
+                xxWaitForSingleObject(PDPROCEVENT2, 10);
+                xxResetEvent(PDPROCEVENT2);
+
+                // audio from Pd
                 for (k = 0; k < PDBLKSIZE; k++)
                 {
                     for (l = 0; l < numChannelsOut; l++)
@@ -793,19 +809,11 @@ tresult PLUGIN_API pdvst3Processor::process (Vst::ProcessData& data)
                         {
                             audioBuffer->resize(audioBuffer->size * 2);
                         }
-                        // get pd processed samples
                         audioBuffer->out[l][audioBuffer->outFrameCount] = pdvstData->samplesOut[l][k];
                     }
                     (audioBuffer->outFrameCount)++;
                 }
-                for (k = 0; k < PDBLKSIZE; k++)
-                {
-                    for (l = 0; l < numChannelsIn; l++)
-                    {
-                        // put new samples in for processing
-                        pdvstData->samplesIn[l][k] = audioBuffer->in[l][k];
-                    }
-                }
+
                 pdvstData->sampleRate = (int)GsampleRate;
                 // signal vst process event
                 xxSetEvent(VSTPROCEVENT);

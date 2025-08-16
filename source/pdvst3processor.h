@@ -148,11 +148,12 @@ protected:
     bool dspActive;
 #if _WIN32
     HANDLE  pdvstTransferFileMap,
-            mu_tex[3];
+            mu_tex[MAX_TRAFFIC_LIGHTS];
     char    pdvstTransferMutexName[MAXFILENAMELEN],
             pdvstTransferFileMapName[MAXFILENAMELEN],
             vstProcEventName[MAXFILENAMELEN],
-            pdProcEventName[MAXFILENAMELEN];
+            pdProcEventName[MAXFILENAMELEN],
+            pdProcEvent2Name[MAXFILENAMELEN];
 #else
     char    *pdvstSharedAddressesMap,
             *pdvstTransferFileMap;
