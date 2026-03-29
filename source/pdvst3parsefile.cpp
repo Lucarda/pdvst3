@@ -71,6 +71,8 @@ char globalPureDataPath[MAXFILENAMELEN];
 char globalSchedulerPath[MAXFILENAMELEN];
 char globalContentPath[MAXFILENAMELEN];
 char globalConfigFile[MAXFILENAMELEN];
+char globalMainDebugFile[MAXFILENAMELEN];
+char globalDebugFile[MAXFILENAMELEN];
 bool globalCustomGui = false;
 int globalCustomGuiWidth= 320;
 int globalCustomGuiHeight= 150;
@@ -168,9 +170,27 @@ void set_pd_path(char *buf)
     }
 }
 
+
+void setDebugFilePath ()
+{
+#if _WIN32
+	char *appdata_path = getenv("APPDATA");
+	snprintf(globalMainDebugFile, MAXFILENAMELEN -1, "%s%s", appdata_path, "\\pdvst3MainDebug.txt");
+	snprintf(globalDebugFile, MAXFILENAMELEN -1, "%s%s", appdata_path, "\\pdvst3Debug.txt");	
+#elif __APPLE__
+	char *home_dir = getenv("HOME");
+	snprintf(globalMainDebugFile, MAXFILENAMELEN -1, "%s%s", home_dir, "/Library/Application Support/pdvst3MainDebug.txt");
+	snprintf(globalDebugFile, MAXFILENAMELEN -1, "%s%s", home_dir, "/Library/Application Support/pdvst3Debug.txt");
+#elif __linux__
+    char *home_dir = getenv("HOME");
+	snprintf(globalMainDebugFile, MAXFILENAMELEN -1, "%s%s", home_dir, "/.config/pdvst3MainDebug.txt");
+	snprintf(globalDebugFile, MAXFILENAMELEN -1, "%s%s", home_dir, "/.config/pdvst3Debug.txt");		
+#endif
+}
+
 void parseSetupFile()
 {
-    FILE *setupFile;
+    FILE *setupFile = NULL;
     char tFileName[MAXFILENAMELEN];
     char line[MAXSTRLEN];
     char param[MAXSTRLEN];
@@ -180,7 +200,7 @@ void parseSetupFile()
     char buf[MAXSTRLEN];
     int i, equalPos, progNum = -1, gotfile = -1;
 
-
+    setDebugFilePath();
     #if _WIN32  // find filepaths (Windows)
     if (1)
     {
@@ -483,8 +503,9 @@ void parseSetupFile()
 
 #if 0
     // vstmain debug file
-    FILE *file_pointer;
-    file_pointer = fopen("vstMainDebug.txt", "w");
+    FILE *file_pointer = NULL;
+    file_pointer = fopen(globalMainDebugFile, "wt");
+    fprintf(file_pointer, "globalMainDebugFile: %s\n", globalMainDebugFile);
     fprintf(file_pointer, "globalPluginName: %s\n", globalPluginName);
     fprintf(file_pointer, "vstDataPath: %s\n", vstDataPath);
     fprintf(file_pointer, "globalPluginPath: %s\n", globalPluginPath);
@@ -500,6 +521,8 @@ void parseSetupFile()
     fclose(file_pointer);
 #endif
 }
+
+
 
 void convertVST2UID_To_FUID (Steinberg::FUID& newOne, Steinberg::int32 myVST2UID_4Chars, const char* pluginName, bool forControllerUID)
 {

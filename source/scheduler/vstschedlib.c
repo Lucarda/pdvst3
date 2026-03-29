@@ -41,9 +41,9 @@
 #define MAXARGS 1024
 #define MAXARGSTRLEN 1024
 #define TIMEUNITPERSEC (32.*441000.)
+#include "pdvst3_base_defines.h"
 
-
-FILE *debugFile;
+FILE *debugFile = NULL;
 
 typedef struct _midiqelem
 {
@@ -113,8 +113,23 @@ t_class *vstChunkReceiver_class;
 
 pdvstTransferData *pdvstData;
 pdvstTimeInfo  timeInfo;
+char schedulerDebugFile[MAXARGSTRLEN];
 
+void setSchedulerDebugFilePath()
+{
 
+#if _WIN32
+	char *appdata_path = getenv("APPDATA");
+	snprintf(schedulerDebugFile, MAXARGSTRLEN -1, "%s%s", appdata_path, "\\pdvst3SchedulerDebug.txt");	
+#elif __APPLE__
+	char *home_dir = getenv("HOME");
+	snprintf(schedulerDebugFile, MAXARGSTRLEN -1, "%s%s", home_dir, "/Library/Application Support/pdvst3SchedulerDebug.txt");
+#elif __linux__
+    char *home_dir = getenv("HOME");
+	snprintf(schedulerDebugFile, MAXARGSTRLEN -1, "%s%s", home_dir, "/.config/pdvst3SchedulerDebug.txt");	
+#endif
+
+}
 void debugLog(char *fmt, ...)
 {
     va_list ap;
@@ -915,7 +930,9 @@ int pd_extern_sched(char *flags)
     int i, argc;
     char *argv[MAXARGS];
 
-    debugFile = fopen("pdvstschedulerdebug.txt", "wt");
+    setSchedulerDebugFilePath();
+    debugFile = fopen(schedulerDebugFile, "wt");
+    debugLog("scheduler loaded");
 
     t_audiosettings as;
     sys_get_audio_settings(&as);

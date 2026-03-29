@@ -171,7 +171,7 @@ protected:
     void set_resources();
     void clean_resources();
     void startPd();
-    void parseSetupFile();
+//    void parseSetupFile();
     void params_from_pd(Vst::ProcessData& data);
     void params_to_pd(Vst::ProcessData& data);
     void midi_from_pd(Vst::ProcessData& data);

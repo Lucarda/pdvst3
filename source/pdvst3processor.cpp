@@ -70,6 +70,8 @@ extern char globalPdFile[MAXFILENAMELEN];
 extern char globalPureDataPath[MAXFILENAMELEN];
 extern char globalSchedulerPath[MAXFILENAMELEN];
 extern char globalConfigFile[MAXFILENAMELEN];
+extern char globalMainDebugFile[MAXFILENAMELEN];
+extern char globalDebugFile[MAXFILENAMELEN];
 extern bool globalCustomGui;
 extern bool globalIsASynth;
 extern pdvstProgram globalProgram[MAXPROGRAMS];
@@ -349,7 +351,7 @@ void pdvst3Processor::resume()
 void pdvst3Processor::pdvst()
 {
      // set debug output
-    debugFile = fopen("pdvstdebug.txt", "wt");
+    debugFile = fopen(globalDebugFile, "wt");
 
     // copy global data
     isASynth = globalIsASynth;
