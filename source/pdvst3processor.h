@@ -131,7 +131,7 @@ protected:
 
     static int referenceCount;
     void debugLog(char *fmt, ...);
-    FILE *debugFile;
+    FILE *debugFile = NULL;
     pdVstBuffer *audioBuffer;
     char errorMessage[MAXFILENAMELEN];
     char externalLib[MAXEXTERNS][MAXSTRLEN];
