@@ -69,3 +69,12 @@ VERSION = 0.0.0
 AUTHOR = testing-pdvst3
 URL = https://example.org
 MAIL = info@example.org
+
+# Optional verbose to text files (mainly for debugging).
+# files: 'pdvst3Debug.txt', 'pdvst3MainDebug.txt' and 'pdvst3SchedulerDebug.txt'
+# will be written in the following directories:
+#    Windows: C:\Users\<Username>\AppData\Roaming
+#    macOS: ~/Library/Application Support/
+#    Linux: ~/.config/
+# it is recommended to keep this 'false'.
+VERBOSETOFILES = FALSE

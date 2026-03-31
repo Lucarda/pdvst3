@@ -77,6 +77,7 @@ extern bool globalIsASynth;
 extern pdvstProgram globalProgram[MAXPROGRAMS];
 extern int globalLatency;
 int Steinberg::pdvst3Processor::referenceCount = 0;
+extern bool globalVerboseToFiles;
 
 extern Steinberg::FUID contUID;
 
@@ -234,18 +235,20 @@ void pdvst3Processor::startPd()
     strcat(commandLineArgs, buf);
     #ifdef _WIN32
         sprintf(buf,
-                " -extraflags \"-vstproceventname %s -pdproceventname %s -pdprocevent2name %s -vsthostid %d -mutexname %s -filemapname %s\"",
+                " -extraflags \"-vstproceventname %s -pdproceventname %s -pdprocevent2name %s -vsthostid %d -mutexname %s -filemapname %s -verbosetofile %d\"",
                 vstProcEventName,
                 pdProcEventName,
                 pdProcEvent2Name,
                 GetCurrentProcessId(),
                 pdvstTransferMutexName,
-                pdvstTransferFileMapName);
+                pdvstTransferFileMapName,
+                globalVerboseToFiles);
     #else
         sprintf(buf,
-                " -extraflags \"-vsthostid %d  -sharedmapname %s\"",
+                " -extraflags \"-vsthostid %d  -sharedmapname %s -verbosetofile %d\"",
                getpid(),
-               pdvstSharedAddressesMapName);
+               pdvstSharedAddressesMapName,
+               globalVerboseToFiles);
     #endif
     strcat(commandLineArgs, buf);
     sprintf(buf,
@@ -351,7 +354,8 @@ void pdvst3Processor::resume()
 void pdvst3Processor::pdvst()
 {
      // set debug output
-    debugFile = fopen(globalDebugFile, "wt");
+    if(globalVerboseToFiles)
+		debugFile = fopen(globalDebugFile, "wt");
 
     // copy global data
     isASynth = globalIsASynth;

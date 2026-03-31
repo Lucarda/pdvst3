@@ -114,6 +114,7 @@ t_class *vstChunkReceiver_class;
 pdvstTransferData *pdvstData;
 pdvstTimeInfo  timeInfo;
 char schedulerDebugFile[MAXARGSTRLEN];
+int VerboseToFile = 0;
 
 void setSchedulerDebugFilePath()
 {
@@ -247,6 +248,12 @@ void parseArgs(int argc, char **argv)
                 argv += 2;
             }
         #endif
+        if (strcmp(*argv, "-verbosetofile") == 0)
+            {
+                VerboseToFile = atoi(argv[1]);
+                argc -= 2;
+                argv += 2;
+            }
         else
         {
             argc--;
@@ -930,10 +937,6 @@ int pd_extern_sched(char *flags)
     int i, argc;
     char *argv[MAXARGS];
 
-    setSchedulerDebugFilePath();
-    debugFile = fopen(schedulerDebugFile, "wt");
-    debugLog("scheduler loaded");
-
     t_audiosettings as;
     sys_get_audio_settings(&as);
     as.a_api = API_NONE;
@@ -945,6 +948,12 @@ int pd_extern_sched(char *flags)
     }
     argc = tokenizeCommandLineString(flags, argv);
     parseArgs(argc, argv);
+    setSchedulerDebugFilePath();
+    if(VerboseToFile)
+    {
+		debugFile = fopen(schedulerDebugFile, "wt");
+		debugLog("scheduler loaded");
+	}
     set_resources();
     xxWaitForSingleObject(PDVSTTRANSFERMUTEX, -1);
     logpost(NULL, PD_DEBUG,"---");

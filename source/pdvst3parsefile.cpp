@@ -78,6 +78,7 @@ int globalCustomGuiWidth= 320;
 int globalCustomGuiHeight= 150;
 pdvstProgram globalProgram[MAXPROGRAMS];
 int globalLatency = 0;
+bool globalVerboseToFiles = false;
 
 
 #if SMTG_OS_WINDOWS
@@ -412,6 +413,18 @@ void parseSetupFile()
                 {
                     globalLatency = atoi(value);
                 }
+                // verbose to files
+                if (strcmp(param, "verbosetofiles") == 0)
+                {
+                    if (strcmp(strlowercase(value), "true") == 0)
+                    {
+                        globalVerboseToFiles = true;
+                    }
+                    else if (strcmp(strlowercase(value), "false") == 0)
+                    {
+                        globalVerboseToFiles = false;
+                    }
+                }
             // --------------------------------------------
                 // unused in pdvst3
                 #if 0
@@ -500,26 +513,27 @@ void parseSetupFile()
         }
     }
     if (setupFile) fclose(setupFile);
-
-#if 0
-    // vstmain debug file
-    FILE *file_pointer = NULL;
-    file_pointer = fopen(globalMainDebugFile, "wt");
-    fprintf(file_pointer, "globalMainDebugFile: %s\n", globalMainDebugFile);
-    fprintf(file_pointer, "globalPluginName: %s\n", globalPluginName);
-    fprintf(file_pointer, "vstDataPath: %s\n", vstDataPath);
-    fprintf(file_pointer, "globalPluginPath: %s\n", globalPluginPath);
-    fprintf(file_pointer, "globalPureDataPath: %s\n", globalPureDataPath);
-    fprintf(file_pointer, "globalSchedulerPath: %s\n", globalSchedulerPath);
-    fprintf(file_pointer, "globalContentPath: %s\n", globalContentPath);
-    fprintf(file_pointer, "globalConfigFile: %s\n", globalConfigFile);
-    fprintf(file_pointer, "globalPluginId: %d\n", globalPluginId);
-    fprintf(file_pointer, "globalAuthor: %s\n", globalAuthor);
-    #ifdef __APPLE__
-        fprintf(file_pointer, "mac gPath: %s\n", gPath);
-    #endif
-    fclose(file_pointer);
-#endif
+    
+	// vstmain debug file
+	if(globalVerboseToFiles)
+	{
+		FILE *file_pointer = NULL;
+		file_pointer = fopen(globalMainDebugFile, "wt");
+		fprintf(file_pointer, "globalMainDebugFile: %s\n", globalMainDebugFile);
+		fprintf(file_pointer, "globalPluginName: %s\n", globalPluginName);
+		fprintf(file_pointer, "vstDataPath: %s\n", vstDataPath);
+		fprintf(file_pointer, "globalPluginPath: %s\n", globalPluginPath);
+		fprintf(file_pointer, "globalPureDataPath: %s\n", globalPureDataPath);
+		fprintf(file_pointer, "globalSchedulerPath: %s\n", globalSchedulerPath);
+		fprintf(file_pointer, "globalContentPath: %s\n", globalContentPath);
+		fprintf(file_pointer, "globalConfigFile: %s\n", globalConfigFile);
+		fprintf(file_pointer, "globalPluginId: %d\n", globalPluginId);
+		fprintf(file_pointer, "globalAuthor: %s\n", globalAuthor);
+		#ifdef __APPLE__
+			fprintf(file_pointer, "mac gPath: %s\n", gPath);
+		#endif
+		fclose(file_pointer);
+	}
 }
 
 
