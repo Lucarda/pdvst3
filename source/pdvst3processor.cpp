@@ -896,7 +896,7 @@ tresult PLUGIN_API pdvst3Processor::setState (IBStream* state)
         pdvstData->vstParameters[i].updated = 1;
     }
     // advance until chunk
-    for (i = pdvstData->nParameters; i < MAXPARAMS; i++)
+    for (i = pdvstData->nParameters; i < MAXPARAMETERS; i++)
     {
         double unused = 0;
         streamer.readDouble (unused);
@@ -933,7 +933,7 @@ tresult PLUGIN_API pdvst3Processor::getState (IBStream* state)
         double v = (double)pdvstData->vstParameters[i].value.floatData;
         streamer.writeDouble (v);
     }
-    for (int i = pdvstData->nParameters; i < MAXPARAMS; i++)
+    for (int i = pdvstData->nParameters; i < MAXPARAMETERS; i++)
     {
         double v = 0;
         streamer.writeDouble (v);

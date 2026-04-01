@@ -135,7 +135,7 @@ protected:
     pdVstBuffer *audioBuffer;
     char errorMessage[MAXFILENAMELEN];
     char externalLib[MAXEXTERNS][MAXSTRLEN];
-    float vstParam[MAXPARAMS];
+    float vstParam[MAXPARAMETERS];
     char **vstParamName;
     int nParameters;
     pdvstProgram *program;

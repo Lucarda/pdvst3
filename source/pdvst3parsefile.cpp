@@ -58,7 +58,7 @@ int globalNParams = 0;
 int globalNExternalLibs = 0;
 long globalPluginId = 'pdvp';
 char globalExternalLib[MAXEXTERNS][MAXSTRLEN];
-char globalVstParamName[MAXPARAMS][MAXSTRLEN];
+char globalVstParamName[MAXPARAMETERS][MAXSTRLEN];
 char globalPluginPath[MAXFILENAMELEN];
 char globalPluginName[MAXSTRLEN];
 char globalPluginVersion[MAXSTRLEN];
@@ -281,10 +281,10 @@ void parseSetupFile()
 
     // initialize program info
     strcpy(globalProgram[0].name, "Default");
-    memset(globalProgram[0].paramValue, 0, MAXPARAMS * sizeof(float));
+    memset(globalProgram[0].paramValue, 0, MAXPARAMETERS * sizeof(float));
     // initialize parameter info
     globalNParams = 0;
-    for (i = 0; i < MAXPARAMS; i++)
+    for (i = 0; i < MAXPARAMETERS; i++)
         strcpy(globalVstParamName[i], "<unnamed>");
     globalNPrograms = 1;
 
@@ -366,16 +366,16 @@ void parseSetupFile()
                 {
                     int numParams = atoi(value);
 
-                    if (numParams >= 0 && numParams < MAXPARAMS)
+                    if (numParams >= 0 && numParams < MAXPARAMETERS)
                         globalNParams = numParams;
                 }
                 // parameters names
                 if (strstr(param, "nameparameter") == \
-                        param && globalNPrograms < MAXPARAMS)
+                        param && globalNPrograms < MAXPARAMETERS)
                 {
                     int paramNum = atoi(param + strlen("nameparameter"));
 
-                    if (paramNum < MAXPARAMS && paramNum >= 0)
+                    if (paramNum < MAXPARAMETERS && paramNum >= 0)
                         strcpy(globalVstParamName[paramNum], value);
                 }
                 // plug version
@@ -491,7 +491,7 @@ void parseSetupFile()
                 {
                     int paramNum = atoi(param + strlen("parameter"));
 
-                    if (paramNum < MAXPARAMS && paramNum >= 0)
+                    if (paramNum < MAXPARAMETERS && paramNum >= 0)
                         globalProgram[progNum].paramValue[paramNum] = \
                                                              (float)atof(value);
                 }
