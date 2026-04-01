@@ -245,7 +245,7 @@ void pdvst3Processor::startPd()
                 (int)globalVerboseToFiles);
     #else
         sprintf(buf,
-                " -extraflags \"-vsthostid %d  -sharedmapname %s -verbosetofile %d\"",
+                " -extraflags \"-vsthostid %d -sharedmapname %s -verbosetofile %d\"",
                getpid(),
                pdvstSharedAddressesMapName,
                (int)globalVerboseToFiles);
