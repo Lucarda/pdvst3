@@ -85,7 +85,7 @@ extern Steinberg::FUID contUID;
 using namespace Steinberg;
 namespace Steinberg {
 
-void pdvst3Processor::debugLog(char *fmt, ...)
+void pdvst3Processor::debugLog(const char *fmt, ...)
 {
     va_list ap;
 
@@ -102,11 +102,11 @@ void pdvst3Processor::debugLog(char *fmt, ...)
 void pdvst3Processor::set_resources()
 {
     #ifdef _WIN32
-    sprintf(pdvstTransferMutexName, "mutex%d%x", GetCurrentProcessId(), this);
-    sprintf(pdvstTransferFileMapName, "filemap%d%x", GetCurrentProcessId(), this);
-    sprintf(vstProcEventName, "vstprocevent%d%x", GetCurrentProcessId(), this);
-    sprintf(pdProcEventName, "pdprocevent%d%x", GetCurrentProcessId(), this);
-    sprintf(pdProcEvent2Name, "pdprocevent2%d%x", GetCurrentProcessId(), this);
+    snprintf(pdvstTransferMutexName, MAXFILENAMELEN, "mutex%d%x", GetCurrentProcessId(), this);
+    snprintf(pdvstTransferFileMapName, MAXFILENAMELEN, "filemap%d%x", GetCurrentProcessId(), this);
+    snprintf(vstProcEventName, MAXFILENAMELEN, "vstprocevent%d%x", GetCurrentProcessId(), this);
+    snprintf(pdProcEventName, MAXFILENAMELEN, "pdprocevent%d%x", GetCurrentProcessId(), this);
+    snprintf(pdProcEvent2Name, MAXFILENAMELEN, "pdprocevent2%d%x", GetCurrentProcessId(), this);
     mu_tex[PDVSTTRANSFERMUTEX]  = CreateMutexA(NULL, 0, pdvstTransferMutexName);
     mu_tex[VSTPROCEVENT] = CreateEventA(NULL, TRUE, TRUE, vstProcEventName);
     mu_tex[PDPROCEVENT] = CreateEventA(NULL, TRUE, FALSE, pdProcEventName);
@@ -124,7 +124,7 @@ void pdvst3Processor::set_resources()
                                                    sizeof(pdvstTransferData));
     #else // Unix
 
-    sprintf(pdvstSharedAddressesMapName, "/sharedmap%d%x", getpid(), this);
+    snprintf(pdvstSharedAddressesMapName, MAXFILENAMELEN, "/sharedmap%d%x", getpid(), this);
     fd = shm_open(pdvstSharedAddressesMapName, O_CREAT | O_RDWR, 0666);
     ftruncate(fd, sizeof(pdvstSharedAddresses));
     pdvstSharedAddressesMap = (char*)mmap(NULL, sizeof(pdvstSharedAddresses),
@@ -133,7 +133,7 @@ void pdvst3Processor::set_resources()
     mlock(pdvstSharedAddressesMap, sizeof(pdvstSharedAddresses));
     ::close(fd);
     pdvstShared = (pdvstSharedAddresses *)pdvstSharedAddressesMap;
-    sprintf(pdvstShared->pdvstTransferFileMapName, "/filemap%d%x", getpid(), this);
+    snprintf(pdvstShared->pdvstTransferFileMapName, MAXFILENAMELEN, "/filemap%d%x", getpid(), this);
     fd = shm_open(pdvstShared->pdvstTransferFileMapName, O_CREAT | O_RDWR, 0666);
     ftruncate(fd, sizeof(pdvstTransferData));
     pdvstTransferFileMap = (char*)mmap(NULL, sizeof(pdvstTransferData),
@@ -212,7 +212,7 @@ void pdvst3Processor::startPd()
 
     while(1)
     {
-        sprintf(commandLineArgs, "\"%s\"", globalPureDataPath);
+        snprintf(commandLineArgs, MAXSTRLEN, "\"%s\"", globalPureDataPath);
         FILE *foo;
         foo = fopen(globalPureDataPath, "r");
         if( foo != NULL )
@@ -224,17 +224,17 @@ void pdvst3Processor::startPd()
             break;
         }
     }
-    sprintf(buf,
+    snprintf(buf, MAXSTRLEN,
             "%s %s",
             debugString,
             globalPdMoreFlags);
     strcat(commandLineArgs, buf);
-    sprintf(buf,
+    snprintf(buf, MAXSTRLEN,
             " -schedlib \"%spdvst3scheduler\"",
             globalSchedulerPath);
     strcat(commandLineArgs, buf);
     #ifdef _WIN32
-        sprintf(buf,
+        snprintf(buf, MAXSTRLEN,
                 " -extraflags \"-vstproceventname %s -pdproceventname %s -pdprocevent2name %s -vsthostid %d -mutexname %s -filemapname %s -verbosetofile %d\"",
                 vstProcEventName,
                 pdProcEventName,
@@ -244,40 +244,40 @@ void pdvst3Processor::startPd()
                 pdvstTransferFileMapName,
                 (int)globalVerboseToFiles);
     #else
-        sprintf(buf,
+        snprintf(buf, MAXSTRLEN,
                 " -extraflags \"-vsthostid %d -sharedmapname %s -verbosetofile %d\"",
                getpid(),
                pdvstSharedAddressesMapName,
                (int)globalVerboseToFiles);
     #endif
     strcat(commandLineArgs, buf);
-    sprintf(buf,
+    snprintf(buf, MAXSTRLEN,
             " -outchannels %d -inchannels %d",
             nChannelsOut,
             nChannelsIn);
     strcat(commandLineArgs, buf);
-    sprintf(buf,
+    snprintf(buf, MAXSTRLEN,
             " -r %d",
             48000);
     strcat(commandLineArgs, buf);
-    sprintf(buf,
+    snprintf(buf, MAXSTRLEN,
             " -open \"%s%s\"",
             globalPluginPath,
             globalPdFile);
     strcat(commandLineArgs, buf);
-    sprintf(buf,
+    snprintf(buf, MAXSTRLEN,
             " -path \"%s\"",
             globalPluginPath);
     strcat(commandLineArgs, buf);
     for (i = 0; i < nExternalLibs; i++)
     {
-        sprintf(buf,
+        snprintf(buf, MAXSTRLEN,
                 " -lib %s",
                 externalLib[i]);
         strcat(commandLineArgs, buf);
     }
     #ifndef _WIN32
-        sprintf(buf,
+        snprintf(buf, MAXSTRLEN,
                     " 2>/dev/null &");
         strcat(commandLineArgs, buf);
     #endif
@@ -668,7 +668,7 @@ tresult PLUGIN_API pdvst3Processor::initialize (FUnknown* context)
     {
         char buf[32];
         Vst::TChar buf2[127];
-        sprintf ( buf, "in ch%d ch%d", n, n+1 );
+        snprintf ( buf, 32, "in ch%d ch%d", n, n+1 );
         Vst::StringConvert::convert (buf,  buf2);
         addAudioInput (buf2, Steinberg::Vst::SpeakerArr::kStereo);
         n += 2;
@@ -678,7 +678,7 @@ tresult PLUGIN_API pdvst3Processor::initialize (FUnknown* context)
     {
         char buf[32];
         Vst::TChar buf2[127];
-        sprintf (buf, "out ch%d ch%d", n, n+1 );
+        snprintf (buf, 32, "out ch%d ch%d", n, n+1 );
         Vst::StringConvert::convert (buf, buf2);
         addAudioOutput (buf2, Steinberg::Vst::SpeakerArr::kStereo);
         n += 2;

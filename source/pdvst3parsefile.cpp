@@ -159,15 +159,15 @@ void set_pd_path(char *buf)
 {
     if (strcmp(buf, "@plug_parent") == 0)
     {
-        sprintf(globalPureDataPath, "%s%s%s", globalPluginPath, PARENT_PD, PD_BIN_START);
+        snprintf(globalPureDataPath, MAXFILENAMELEN, "%s%s%s", globalPluginPath, PARENT_PD, PD_BIN_START);
     }
     else if (strcmp(buf, "@resources") == 0)
     {
-        sprintf(globalPureDataPath, "%s%s%s", globalPluginPath, RESOURCES_PD, PD_BIN_START);
+        snprintf(globalPureDataPath, MAXFILENAMELEN, "%s%s%s", globalPluginPath, RESOURCES_PD, PD_BIN_START);
     }
     else
     {
-        sprintf(globalPureDataPath, "%s%s", buf, PD_BIN_START);
+        snprintf(globalPureDataPath, MAXFILENAMELEN, "%s%s", buf, PD_BIN_START);
     }
 }
 
@@ -211,25 +211,25 @@ void parseSetupFile()
 
         strcpy(vstDataPath, bufA);
         *(strrchr(vstDataPath, '\\') + 1) = 0;
-        sprintf(globalSchedulerPath, "%s", vstDataPath);
+        snprintf(globalSchedulerPath, MAXFILENAMELEN, "%s", vstDataPath);
         // contents folder
         snprintf(buf, strlen(vstDataPath)-1, "%s", vstDataPath);
         *(strrchr(buf, '\\') + 1) = 0;
-        sprintf(globalContentPath, "%s", buf);
+        snprintf(globalContentPath, MAXFILENAMELEN, "%s", buf);
         // main folder
         snprintf(buf, strlen(globalContentPath)-1, "%s", globalContentPath);
         *(strrchr(buf, '\\') + 1) = 0;
-        sprintf(globalPluginPath, "%s", buf);
+        snprintf(globalPluginPath, MAXFILENAMELEN, "%s", buf);
         // scheduler path
-        sprintf(globalSchedulerPath, "%sContents\\Resources\\", globalPluginPath);
+        snprintf(globalSchedulerPath, MAXFILENAMELEN, "%sContents\\Resources\\", globalPluginPath);
         // config file
-        sprintf(globalConfigFile, "%s%s", globalPluginPath, CONFIGFILE);
+        snprintf(globalConfigFile, MAXFILENAMELEN, "%s%s", globalPluginPath, CONFIGFILE);
         //name of plug
-        sprintf(globalPluginName, "%s", buf);
+        snprintf(globalPluginName, MAXSTRLEN, "%s", buf);
         // remove extension from name
         if (strstr(strlowercase(globalPluginName), ".vst3"))
             *(strstr(strlowercase(globalPluginName), ".vst3")) = 0;
-        sprintf(buf, "%s", globalPluginName);
+        snprintf(buf, MAXSTRLEN, "%s", globalPluginName);
         strcpy(globalPluginName, strrchr(buf, '\\') + 1);
     }
     #elif __APPLE__
@@ -237,16 +237,16 @@ void parseSetupFile()
     if (1)
     {
         strcpy(vstDataPath, gPath);
-        sprintf(globalSchedulerPath, "%s/Contents/Resources/", vstDataPath);
-        sprintf(globalContentPath, "%s/Contents/", vstDataPath);
-        sprintf(globalPluginPath, "%s/", vstDataPath);
-        sprintf(globalConfigFile, "%s/%s", vstDataPath, CONFIGFILE);
+        snprintf(globalSchedulerPath, MAXFILENAMELEN, "%s/Contents/Resources/", vstDataPath);
+        snprintf(globalContentPath, MAXFILENAMELEN, "%s/Contents/", vstDataPath);
+        snprintf(globalPluginPath, MAXFILENAMELEN, "%s/", vstDataPath);
+        snprintf(globalConfigFile, MAXFILENAMELEN, "%s/%s", vstDataPath, CONFIGFILE);
         //name of plug
-        sprintf(globalPluginName, "%s", vstDataPath);
+        snprintf(globalPluginName, MAXSTRLEN, "%s", vstDataPath);
         // remove extension from name
         if (strstr(globalPluginName, ".vst3"))
             *(strstr(globalPluginName, ".vst3")) = 0;
-        sprintf(buf, "%s", globalPluginName);
+        snprintf(buf, MAXSTRLEN, "%s", globalPluginName);
         strcpy(globalPluginName, strrchr(buf, '/') + 1);
     }
     #else
@@ -258,26 +258,26 @@ void parseSetupFile()
         // contents folder
         snprintf(buf, strlen(vstDataPath)-1, "%s", vstDataPath);
         *(strrchr(buf, '/') + 1) = 0;
-        sprintf(globalContentPath, "%s", buf);
+        snprintf(globalContentPath, MAXFILENAMELEN, "%s", buf);
         // main folder
         snprintf(buf, strlen(globalContentPath)-1, "%s", globalContentPath);
         *(strrchr(buf, '/') + 1) = 0;
-        sprintf(globalPluginPath, "%s", buf);
+        snprintf(globalPluginPath, MAXFILENAMELEN, "%s", buf);
         // scheduler path
-        sprintf(globalSchedulerPath, "%sContents/Resources/", globalPluginPath);
+        snprintf(globalSchedulerPath, MAXFILENAMELEN, "%sContents/Resources/", globalPluginPath);
         // config file
-        sprintf(globalConfigFile, "%s%s", globalPluginPath, CONFIGFILE);
+        snprintf(globalConfigFile, MAXFILENAMELEN, "%s%s", globalPluginPath, CONFIGFILE);
         //name of plug
-        sprintf(globalPluginName, "%s", buf);
+        snprintf(globalPluginName, MAXSTRLEN, "%s", buf);
         // remove extension from name
         if (strstr(globalPluginName, ".vst3"))
             *(strstr(globalPluginName, ".vst3")) = 0;
-        sprintf(buf, "%s", globalPluginName);
+        snprintf(buf, MAXSTRLEN, "%s", globalPluginName);
         strcpy(globalPluginName, strrchr(buf, '/') + 1);
     }
     #endif // unix
 
-    sprintf(globalPluginVersion, "0.0.1", buf);
+    snprintf(globalPluginVersion, MAXSTRLEN, "0.0.1", buf);
 
     // initialize program info
     strcpy(globalProgram[0].name, "Default");

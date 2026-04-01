@@ -339,7 +339,7 @@ int setPdvstFloatParameter(int index, float value)
     t_symbol *tempSym;
     char string[1024];
 
-    sprintf(string, "rvstparameter%d", index);
+    snprintf(string, 1024, "rvstparameter%d", index);
     tempSym = gensym(string);
     if (tempSym->s_thing)
     {
@@ -408,7 +408,7 @@ void makePdvstParameterReceivers()
     for (i = 0; i < MAXPARAMETERS; i++)
     {
         vstParameterReceivers[i] = (t_vstParameterReceiver *)pd_new(vstParameterReceiver_class);
-        sprintf(string, "svstparameter%d", i);
+        snprintf(string, 1024, "svstparameter%d", i);
         vstParameterReceivers[i]->x_sym = gensym(string);
         pd_bind(&vstParameterReceivers[i]->x_obj.ob_pd, gensym(string));
     }

@@ -130,7 +130,7 @@ public:
 protected:
 
     static int referenceCount;
-    void debugLog(char *fmt, ...);
+    void debugLog(const char *fmt, ...);
     FILE *debugFile = NULL;
     pdVstBuffer *audioBuffer;
     char errorMessage[MAXFILENAMELEN];
