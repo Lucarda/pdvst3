@@ -242,13 +242,13 @@ void pdvst3Processor::startPd()
                 GetCurrentProcessId(),
                 pdvstTransferMutexName,
                 pdvstTransferFileMapName,
-                globalVerboseToFiles);
+                (int)globalVerboseToFiles);
     #else
         sprintf(buf,
                 " -extraflags \"-vsthostid %d  -sharedmapname %s -verbosetofile %d\"",
                getpid(),
                pdvstSharedAddressesMapName,
-               globalVerboseToFiles);
+               (int)globalVerboseToFiles);
     #endif
     strcat(commandLineArgs, buf);
     sprintf(buf,

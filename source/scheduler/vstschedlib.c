@@ -114,7 +114,7 @@ t_class *vstChunkReceiver_class;
 pdvstTransferData *pdvstData;
 pdvstTimeInfo  timeInfo;
 char schedulerDebugFile[MAXARGSTRLEN];
-int VerboseToFile = 0;
+int VerboseToFile;
 
 void setSchedulerDebugFilePath()
 {
@@ -187,9 +187,9 @@ void parseArgs(int argc, char **argv)
 {
     while ((argc > 0) && (**argv == '-'))
     {
-        if (strcmp(*argv, "-vsthostid") == 0)
+		if (strcmp(*argv, "-vsthostid") == 0)
         {
-            #ifdef _WIN32
+			#ifdef _WIN32
                 vstHostProcessId = atoi(argv[1]);
                 vstHostProcess = OpenProcess(PROCESS_ALL_ACCESS,
                                              FALSE,
@@ -247,18 +247,14 @@ void parseArgs(int argc, char **argv)
                 argc -= 2;
                 argv += 2;
             }
-        #endif
-        if (strcmp(*argv, "-verbosetofile") == 0)
-            {
-                VerboseToFile = atoi(argv[1]);
-                argc -= 2;
-                argv += 2;
-            }
-        else
-        {
-            argc--;
-            argv++;
-        }
+        #endif	
+
+		if (strcmp(*argv, "-verbosetofile") == 0)
+		{
+			VerboseToFile = atoi(argv[1]);
+			argc -= 2;
+			argv += 2;
+		}
     }
 }
 
@@ -936,7 +932,8 @@ int pd_extern_sched(char *flags)
 {
     int i, argc;
     char *argv[MAXARGS];
-
+	
+	setSchedulerDebugFilePath();
     t_audiosettings as;
     sys_get_audio_settings(&as);
     as.a_api = API_NONE;
@@ -947,8 +944,7 @@ int pd_extern_sched(char *flags)
         argv[i] = (char *)malloc(MAXARGSTRLEN * sizeof(char));
     }
     argc = tokenizeCommandLineString(flags, argv);
-    parseArgs(argc, argv);
-    setSchedulerDebugFilePath();
+    parseArgs(argc, argv);    
     if(VerboseToFile)
     {
 		debugFile = fopen(schedulerDebugFile, "wt");
