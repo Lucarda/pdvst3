@@ -29,7 +29,7 @@ jobs:
       run: make
     
     - name: Upload Zip
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: pdvst3-Linux-x64
         path: ${{github.workspace}}/build/VST3/release/*
@@ -38,7 +38,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Checkout submodules
       run: git submodule update --init --recursive
 
@@ -61,7 +61,7 @@ jobs:
       run: cmake --build . --config Release
 
     - name: Upload Zip
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: pdvst3-MacOS-x64-arm64
         path: ${{github.workspace}}/build/VST3/release/*
@@ -70,7 +70,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Checkout submodules
       run: git submodule update --init --recursive
 
@@ -90,7 +90,7 @@ jobs:
       run: cmake --build . --config Release
 
     - name: Upload Zip
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: pdvst3-Windows-x64
         path: ${{github.workspace}}/build/VST3/release/*
