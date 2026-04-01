@@ -160,8 +160,14 @@ pair separated by a carriage return. Comments are demarked with a '#' character.
     MAIL = <string>
     # Optional info that shows in the vst host.
 
-
-
+    VERBOSETOFILES = <TRUE/FALSE>
+    # Optional verbose to text files (mainly for debugging).
+    # files: 'pdvst3Debug.txt', 'pdvst3MainDebug.txt' and 'pdvst3SchedulerDebug.txt'
+    # will be written in the following directories:
+    #    Windows: C:\Users\<Username>\AppData\Roaming
+    #    macOS: ~/Library/Application Support/
+    #    Linux: ~/.config/
+    # it is recommended to keep this 'false'.
 
 ## Pd/VST audio/midi Communication
 
