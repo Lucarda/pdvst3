@@ -136,8 +136,14 @@ pair separated by a carriage return. Comments are demarked with a '#' character.
     # Number of parameters the plugin uses (up to 128).
 
     NAMEPARAMETER<integer> = <string>
-    # Display name for parameters. Used when CUSTOMGUI is false or the VST host
-    # doesn't support custom editors.
+    # Display name for parameters (shown in the host GUI).
+    
+    PARAMETERGUIWORKAROUND = <TRUE/FALSE>
+    # When recording automation the preferred way is to move the host GUI sliders.
+    # Set this to TRUE if you need to automate via the patch. This tells the plugin
+    # to update any changes from the patch to the host GUI via a timer every 30ms.
+    # it works on Ardour but not on Reaper. Also note that leaving this to FALSE
+    # works with Ableton.
 
     PDMOREFLAGS = <string>
     # Flags to be passed when starting Pd (consult Pd manual for all options).

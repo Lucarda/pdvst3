@@ -5,7 +5,7 @@
 
 #define PDVST3_AUTH "(c) Lucas Cordiviola"
 #define PDVST3_DATE "2026"
-#define PDVST3_ADD "(test 5 release)"
+#define PDVST3_ADD "(test 6 release)"
 
 #define PDBLKSIZE 64
 #define MAXEXTERNS 128
