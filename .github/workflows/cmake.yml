@@ -21,6 +21,9 @@ jobs:
     - name: Configure CMake
       shell: bash
       working-directory: ${{github.workspace}}/build
+      env:
+        CFLAGS: "-O3 -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0"
+        CXXFLAGS: "-O3 -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0"
       run: cmake ../ -DCMAKE_BUILD_TYPE:STRING=release -DSMTG_CREATE_MODULE_INFO=off -DSMTG_RUN_VST_VALIDATOR=off -DGITHUB-CI=ON
 
     - name: Build
