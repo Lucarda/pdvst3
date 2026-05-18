@@ -59,7 +59,12 @@ NAMEPARAMETER0 = Level
 NAMEPARAMETER1 = foo
 NAMEPARAMETER2 = bar
 
-PARAMETERGUIWORKAROUND = TRUE
+# When recording automation the preferred way is to move the host GUI sliders.
+# Set this to TRUE if you need to automate via the patch. This tells the plugin
+# to update any changes from the patch to the host GUI via a timer every 30ms.
+# it works on Ardour but not on Reaper. Also note that leaving this to FALSE
+# works with Ableton.
+PARAMETERGUIWORKAROUND = <TRUE/FALSE>
 
 # Latency of the plug-in. For example, if the plug-in internally
 # needs to look in advance (like compressors) 512 samples then
