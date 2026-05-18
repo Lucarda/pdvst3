@@ -43,7 +43,7 @@ DEBUG = TRUE
 # Flags to be passed when starting Pd (consult Pd manual for all options).
 # flags we should not put here: -r, -outchannels, -inchannels
 # flag -nogui is set when we set DEBUG = FALSE
-# Use this to set MIDI configurations (without using the GUI). 
+# Use this to set MIDI configurations (without using the GUI).
 #   example for using ALSA midi on Linux:
 #     PDMOREFLAGS = -alsamidi -midiindev 1 -midioutdev 1
 #   example for using loopMIDI plus a 2nd soundcard output on Windows:
@@ -59,8 +59,10 @@ NAMEPARAMETER0 = Level
 NAMEPARAMETER1 = foo
 NAMEPARAMETER2 = bar
 
-# Latency of the plug-in. For example, if the plug-in internally 
-# needs to look in advance (like compressors) 512 samples then 
+PARAMETERGUIWORKAROUND = TRUE
+
+# Latency of the plug-in. For example, if the plug-in internally
+# needs to look in advance (like compressors) 512 samples then
 # this plug-in should report 512 as latency.
 LATENCY = 0
 
@@ -77,4 +79,4 @@ MAIL = info@example.org
 #    macOS: ~/Library/Application Support/
 #    Linux: ~/.config/
 # it is recommended to keep this 'false'.
-VERBOSETOFILES = FALSE
+VERBOSETOFILES = TRUE

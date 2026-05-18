@@ -78,6 +78,7 @@ extern pdvstProgram globalProgram[MAXPROGRAMS];
 extern int globalLatency;
 int Steinberg::pdvst3Processor::referenceCount = 0;
 extern bool globalVerboseToFiles;
+extern bool globalParameterGuiWorkAround;
 
 extern Steinberg::FUID contUID;
 
@@ -355,7 +356,7 @@ void pdvst3Processor::pdvst()
 {
      // set debug output
     if(globalVerboseToFiles)
-		debugFile = fopen(globalDebugFile, "wt");
+        debugFile = fopen(globalDebugFile, "wt");
 
     // copy global data
     isASynth = globalIsASynth;
@@ -491,13 +492,22 @@ void pdvst3Processor::params_from_pd(Vst::ProcessData& data)
                 {
                     if (pdvstData->vstParameters[i].type == FLOAT_TYPE)
                     {
-                        Vst::IParamValueQueue* paramQueue2 = \
-                            data.outputParameterChanges->addParameterData (kParamId + i, index);
-                        if (paramQueue2)
+
+                        if (globalParameterGuiWorkAround)
                         {
-                            int32 index2 = 0;
-                            paramQueue2->addPoint (0, \
-                                (Vst::ParamValue)pdvstData->vstParameters[i].value.floatData, index2);
+                            sendToController(controller, kParamId + i, \
+                                (Vst::ParamValue)pdvstData->vstParameters[i].value.floatData);
+                        }
+                        else
+                        {
+                            Vst::IParamValueQueue* paramQueue2 = \
+                                data.outputParameterChanges->addParameterData (kParamId + i, index);
+                            if (paramQueue2)
+                            {
+                                    int32 index2 = 0;
+                                    paramQueue2->addPoint (0, \
+                                        (Vst::ParamValue)pdvstData->vstParameters[i].value.floatData, index2);
+                            }
                         }
                     }
                     pdvstData->vstParameters[i].updated = 0;
@@ -687,6 +697,7 @@ tresult PLUGIN_API pdvst3Processor::initialize (FUnknown* context)
     /* If you don't need an event bus, you can remove the next line */
     addEventInput (STR16 ("Event In"), 1);
     addEventOutput(STR16 ("Event Out"), 1);
+
 
     return kResultOk;
 }
@@ -951,6 +962,46 @@ tresult PLUGIN_API pdvst3Processor::getState (IBStream* state)
     xxReleaseMutex(PDVSTTRANSFERMUTEX);
 
     return kResultOk;
+}
+
+//------------------------------------------------------------------------
+// notify host gui stuff
+//------------------------------------------------------------------------
+tresult PLUGIN_API pdvst3Processor::connect(IConnectionPoint* other)
+{
+    controller = other;
+    return kResultOk;
+}
+
+tresult PLUGIN_API pdvst3Processor::disconnect(IConnectionPoint* other)
+{
+    if (controller == other)
+        controller = nullptr;
+
+    return kResultOk;
+}
+
+tresult PLUGIN_API pdvst3Processor::notify(Vst::IMessage* message)
+{
+    return kResultOk;
+}
+
+void pdvst3Processor::sendToController(Steinberg::Vst::IConnectionPoint* cp, int paramId, double paramValue)
+{
+
+
+    if (!cp) return;
+
+    IPtr<Steinberg::Vst::IMessage> msg = allocateMessage();
+    msg->setMessageID("GUIparam");
+
+    auto* attrs = msg->getAttributes();
+    attrs->setInt("id", paramId);
+    attrs->setFloat("value", paramValue);
+
+    cp->notify(msg);
+
+
 }
 
 //------------------------------------------------------------------------

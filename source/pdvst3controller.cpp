@@ -27,6 +27,7 @@
 
 extern int globalNParams;
 extern char globalVstParamName[MAXPARAMETERS][MAXSTRLEN];
+extern bool globalParameterGuiWorkAround;
 
 using namespace Steinberg;
 
@@ -61,6 +62,11 @@ tresult PLUGIN_API pdvst3Controller::initialize (FUnknown* context)
 
     }
 
+    // Correct Approach: Allocate the timer object via the SDK factory
+    // Arguments: (ITimerCallback* listener, uint32 intervalInMs)
+    if (globalParameterGuiWorkAround)
+        myUiTimer = Steinberg::Timer::create(this, 30);
+
     return result;
 }
 
@@ -68,6 +74,12 @@ tresult PLUGIN_API pdvst3Controller::initialize (FUnknown* context)
 tresult PLUGIN_API pdvst3Controller::terminate ()
 {
     // Here the Plug-in will be de-instantiated, last possibility to remove some memory!
+    // If the timer is allocated, shut it down cleanly before leaving memory
+    if (myUiTimer)
+    {
+        myUiTimer->release();
+        myUiTimer = nullptr;
+    }
 
     //---do not forget to call parent ------
     return EditControllerEx1::terminate ();
@@ -108,10 +120,11 @@ tresult PLUGIN_API pdvst3Controller::getState (IBStream* state)
 
     return kResultTrue;
 }
-/*
+
 //------------------------------------------------------------------------
 IPlugView* PLUGIN_API pdvst3Controller::createView (FIDString name)
 {
+    /*
     // Here the Host wants to open your editor (if you have one)
     if (FIDStringsEqual (name, Vst::ViewType::kEditor))
     {
@@ -119,14 +132,16 @@ IPlugView* PLUGIN_API pdvst3Controller::createView (FIDString name)
         auto* view = new VSTGUI::VST3Editor (this, "view", "helloworldeditor.uidesc");
         return view;
     }
+    */
     return nullptr;
 }
-*/
+
 //------------------------------------------------------------------------
 tresult PLUGIN_API pdvst3Controller::setParamNormalized (Vst::ParamID tag, Vst::ParamValue value)
 {
     // called by host to update your parameters
     tresult result = EditControllerEx1::setParamNormalized (tag, value);
+
     return result;
 }
 
@@ -144,6 +159,69 @@ tresult PLUGIN_API pdvst3Controller::getParamValueByString (Vst::ParamID tag, Vs
     // called by host to get a normalized value from a string representation of a specific parameter
     // (without having to set the value!)
     return EditControllerEx1::getParamValueByString (tag, string, valueNormalized);
+}
+
+void pdvst3Controller::onTimer(Steinberg::Timer* timer)
+{
+
+    for (auto& p : pending)
+    {
+        beginEdit(p.id);
+
+        setParamNormalized(p.id, p.value);
+        //printf("id %d value %f\n", p.id, p.value);
+
+        performEdit(p.id, p.value);
+
+        endEdit(p.id);
+    }
+
+    pending.clear();
+
+/*
+    if (!componentHandler) {
+    printf("CRITICAL: componentHandler is NULL! Edits are blocked by the host.\n");
+    }
+
+    // 2. FORCE the UI Slider View to refresh its position
+    // This broadcasts the change directly to any open editor windows
+    if (componentHandler)
+    {
+        // Some DAWs require this to pass the message back to the UI thread
+        componentHandler->restartComponent(Steinberg::Vst::kParamValuesChanged);
+    }
+*/
+}
+
+tresult PLUGIN_API pdvst3Controller::connect(IConnectionPoint* other)
+{
+    processor = other;
+    return kResultOk;
+}
+
+tresult PLUGIN_API pdvst3Controller::disconnect(IConnectionPoint* other)
+{
+    if (processor == other)
+        processor = nullptr;
+
+    return kResultOk;
+}
+
+tresult PLUGIN_API pdvst3Controller::notify(Vst::IMessage* message)
+{
+    if (!strcmp(message->getMessageID(), "GUIparam"))
+    {
+        int64 id = 0;
+        double value = 0.0;
+
+        message->getAttributes()->getInt("id", id);
+        message->getAttributes()->getFloat("value", value);
+
+        pending.push_back({(int)id, value });
+
+    }
+
+    return kResultOk;
 }
 
 //------------------------------------------------------------------------

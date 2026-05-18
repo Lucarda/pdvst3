@@ -20,8 +20,12 @@
 
 #pragma once
 
+
+#include "pluginterfaces/vst/ivsthostapplication.h"
+
 #include "public.sdk/source/vst/vstaudioeffect.h"
 #include "pdvst3_base_defines.h"
+
 
 #include <stdio.h>
 #include <string.h>
@@ -118,12 +122,22 @@ public:
     /** Inform latency */
     uint32 PLUGIN_API getLatencySamples () SMTG_OVERRIDE;
 
+     // IConnectionPoint
+    Steinberg::tresult PLUGIN_API connect(IConnectionPoint* other) SMTG_OVERRIDE;
+    Steinberg::tresult PLUGIN_API disconnect(IConnectionPoint* other) SMTG_OVERRIDE;
+    Steinberg::tresult PLUGIN_API notify(Vst::IMessage* message) SMTG_OVERRIDE;
+
     ////////////
     virtual void suspend();
     virtual void resume();
     virtual void pdvst();
     virtual void pdvstquit();
 
+
+    void sendToController(Steinberg::Vst::IConnectionPoint* cp, int paramId, double paramValue);
+
+private:
+    IConnectionPoint* controller = nullptr;
 
 
 //------------------------------------------------------------------------
@@ -189,6 +203,7 @@ protected:
     bool guiNameUpdated;  // used to signal to editor that the parameter guiName has changed
     int customGuiHeight;
     int customGuiWidth;
+
 
 };
 

@@ -26,7 +26,8 @@
     #include <unistd.h>
 #endif
 #include <math.h>
-#include "pdvst3processor.h"
+//#include "pdvst3processor.h"
+
 
 #include <stdio.h>
 #include <string.h>
@@ -46,6 +47,19 @@
 // for gpath
 
 #include "public.sdk/source/vst/utility/stringconvert.h"
+
+
+
+// this should be removed
+
+/* program data */
+typedef struct _pdvstProgram
+{
+    char name[MAXSTRLEN];
+    float paramValue[MAXPARAMETERS];
+} pdvstProgram;
+
+
 
 
 bool oome = false;
@@ -79,6 +93,10 @@ int globalCustomGuiHeight= 150;
 pdvstProgram globalProgram[MAXPROGRAMS];
 int globalLatency = 0;
 bool globalVerboseToFiles = false;
+bool globalParameterGuiWorkAround = false;
+
+
+
 
 
 #if SMTG_OS_WINDOWS
@@ -175,17 +193,17 @@ void set_pd_path(char *buf)
 void setDebugFilePath ()
 {
 #if _WIN32
-	char *appdata_path = getenv("APPDATA");
-	snprintf(globalMainDebugFile, MAXFILENAMELEN -1, "%s%s", appdata_path, "\\pdvst3MainDebug.txt");
-	snprintf(globalDebugFile, MAXFILENAMELEN -1, "%s%s", appdata_path, "\\pdvst3Debug.txt");	
+    char *appdata_path = getenv("APPDATA");
+    snprintf(globalMainDebugFile, MAXFILENAMELEN -1, "%s%s", appdata_path, "\\pdvst3MainDebug.txt");
+    snprintf(globalDebugFile, MAXFILENAMELEN -1, "%s%s", appdata_path, "\\pdvst3Debug.txt");
 #elif __APPLE__
-	char *home_dir = getenv("HOME");
-	snprintf(globalMainDebugFile, MAXFILENAMELEN -1, "%s%s", home_dir, "/Library/Application Support/pdvst3MainDebug.txt");
-	snprintf(globalDebugFile, MAXFILENAMELEN -1, "%s%s", home_dir, "/Library/Application Support/pdvst3Debug.txt");
+    char *home_dir = getenv("HOME");
+    snprintf(globalMainDebugFile, MAXFILENAMELEN -1, "%s%s", home_dir, "/Library/Application Support/pdvst3MainDebug.txt");
+    snprintf(globalDebugFile, MAXFILENAMELEN -1, "%s%s", home_dir, "/Library/Application Support/pdvst3Debug.txt");
 #elif __linux__
     char *home_dir = getenv("HOME");
-	snprintf(globalMainDebugFile, MAXFILENAMELEN -1, "%s%s", home_dir, "/.config/pdvst3MainDebug.txt");
-	snprintf(globalDebugFile, MAXFILENAMELEN -1, "%s%s", home_dir, "/.config/pdvst3Debug.txt");		
+    snprintf(globalMainDebugFile, MAXFILENAMELEN -1, "%s%s", home_dir, "/.config/pdvst3MainDebug.txt");
+    snprintf(globalDebugFile, MAXFILENAMELEN -1, "%s%s", home_dir, "/.config/pdvst3Debug.txt");
 #endif
 }
 
@@ -425,9 +443,21 @@ void parseSetupFile()
                         globalVerboseToFiles = false;
                     }
                 }
+                // parameter gui workaround
+                if (strcmp(param, "parameterguiworkaround") == 0)
+                {
+                    if (strcmp(strlowercase(value), "true") == 0)
+                    {
+                        globalParameterGuiWorkAround = true;
+                    }
+                    else if (strcmp(strlowercase(value), "false") == 0)
+                    {
+                        globalParameterGuiWorkAround = false;
+                    }
+                }
             // --------------------------------------------
-                // unused in pdvst3
-                #if 0
+            // unused in pdvst3
+            #if 0
                 // external libraries
                 if (strcmp(param, "lib") == 0)
                 {
@@ -507,33 +537,34 @@ void parseSetupFile()
                         globalProgramsAreChunks = false;
                     }
                 }
-                #endif // unused in pdvst3
+            #endif // unused in pdvst3
             // ------------------------------------
             }
         }
     }
     if (setupFile) fclose(setupFile);
-    
-	// vstmain debug file
-	if(globalVerboseToFiles)
-	{
-		FILE *file_pointer = NULL;
-		file_pointer = fopen(globalMainDebugFile, "wt");
-		fprintf(file_pointer, "globalMainDebugFile: %s\n", globalMainDebugFile);
-		fprintf(file_pointer, "globalPluginName: %s\n", globalPluginName);
-		fprintf(file_pointer, "vstDataPath: %s\n", vstDataPath);
-		fprintf(file_pointer, "globalPluginPath: %s\n", globalPluginPath);
-		fprintf(file_pointer, "globalPureDataPath: %s\n", globalPureDataPath);
-		fprintf(file_pointer, "globalSchedulerPath: %s\n", globalSchedulerPath);
-		fprintf(file_pointer, "globalContentPath: %s\n", globalContentPath);
-		fprintf(file_pointer, "globalConfigFile: %s\n", globalConfigFile);
-		fprintf(file_pointer, "globalPluginId: %d\n", globalPluginId);
-		fprintf(file_pointer, "globalAuthor: %s\n", globalAuthor);
-		#ifdef __APPLE__
-			fprintf(file_pointer, "mac gPath: %s\n", gPath);
-		#endif
-		fclose(file_pointer);
-	}
+
+    // vstmain debug file
+    if(globalVerboseToFiles)
+    {
+        FILE *file_pointer = NULL;
+        file_pointer = fopen(globalMainDebugFile, "wt");
+        fprintf(file_pointer, "globalMainDebugFile: %s\n", globalMainDebugFile);
+        fprintf(file_pointer, "globalPluginName: %s\n", globalPluginName);
+        fprintf(file_pointer, "vstDataPath: %s\n", vstDataPath);
+        fprintf(file_pointer, "globalPluginPath: %s\n", globalPluginPath);
+        fprintf(file_pointer, "globalPureDataPath: %s\n", globalPureDataPath);
+        fprintf(file_pointer, "globalSchedulerPath: %s\n", globalSchedulerPath);
+        fprintf(file_pointer, "globalContentPath: %s\n", globalContentPath);
+        fprintf(file_pointer, "globalConfigFile: %s\n", globalConfigFile);
+        fprintf(file_pointer, "globalPluginId: %d\n", globalPluginId);
+        fprintf(file_pointer, "globalAuthor: %s\n", globalAuthor);
+        #ifdef __APPLE__
+            fprintf(file_pointer, "mac gPath: %s\n", gPath);
+        #endif
+        fprintf(file_pointer, "globalParameterGuiWorkAround: %d\n", globalParameterGuiWorkAround);
+        fclose(file_pointer);
+    }
 }
 
 
