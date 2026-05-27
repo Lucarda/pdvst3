@@ -131,8 +131,8 @@ endif()
 
 # remove files from build. we replace them in our sources.
 file(READ "cmake/modules/SMTG_VST3_SDK.cmake" FILE_CONTENTS)
-string(REPLACE "${SDK_ROOT}/public.sdk/source/main/pluginfactory.cpp" "" FILE_CONTENTS ${FILE_CONTENTS})
-string(REPLACE "${SDK_ROOT}/public.sdk/source/main/pluginfactory.h" "" FILE_CONTENTS ${FILE_CONTENTS})
+string(REPLACE "\${SDK_ROOT}/public.sdk/source/main/pluginfactory.cpp" "" FILE_CONTENTS ${FILE_CONTENTS})
+string(REPLACE "\${SDK_ROOT}/public.sdk/source/main/pluginfactory.h" "" FILE_CONTENTS ${FILE_CONTENTS})
 file(WRITE "cmake/modules/SMTG_VST3_SDK.cmake" ${FILE_CONTENTS})
 
 project(pdvst3
