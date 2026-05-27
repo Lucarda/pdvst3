@@ -215,10 +215,10 @@ add_custom_command(
     TARGET pdvst3
     PRE_LINK
     COMMAND ${CMAKE_COMMAND} -E rename
-        ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/libpdvst3scheduler.dylib
-        ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/pdvst3scheduler.pd_darwin
+        ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/${CMAKE_BUILD_TYPE}/libpdvst3scheduler.dylib
+        ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/${CMAKE_BUILD_TYPE}/pdvst3scheduler.pd_darwin
     COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/pdvst3scheduler.pd_darwin
+        ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/${CMAKE_BUILD_TYPE}/pdvst3scheduler.pd_darwin
         ${FOLDER_RESOURCES}
 )
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND GITHUB-CI)

@@ -56,7 +56,13 @@ jobs:
     - name: Configure CMake
       shell: bash
       working-directory: ${{github.workspace}}/build
-      run: cmake -GXcode -DCMAKE_BUILD_TYPE:STRING=release -DSMTG_CREATE_MODULE_INFO=OFF -DSMTG_DISABLE_CODE_SIGNING=ON -DSMTG_RUN_VST_VALIDATOR=OFF ../
+      run: |
+        cmake -GXcode -DCMAKE_BUILD_TYPE:STRING=release -DSMTG_CREATE_MODULE_INFO=OFF  \
+        -DSMTG_DISABLE_CODE_SIGNING=ON -DSMTG_RUN_VST_VALIDATOR=OFF ../ \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
+        -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO \
+        -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY=""
 
     - name: Build
       working-directory: ${{github.workspace}}/build
