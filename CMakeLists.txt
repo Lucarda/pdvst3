@@ -6,6 +6,7 @@ option(GITHUB-CI "If we are running the github builds" OFF)
 set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
 set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO")
 
+##### begin sdk
 
 # Specify the minimum version of the target platform
 if(NOT DEFINED ENV{MACOSX_DEPLOYMENT_TARGET})
@@ -14,24 +15,23 @@ endif()
 
 # Global options which can bet set on command line e.g.: cmake -DSMTG_ENABLE_VST3_PLUGIN_EXAMPLES=OFF ...
 option(SMTG_ENABLE_VST3_PLUGIN_EXAMPLES "Enable VST 3 Plug-in Examples" OFF)
-option(SMTG_ENABLE_VST3_HOSTING_EXAMPLES "Enable VST 3 Hosting Examples" OFF)
+option(SMTG_ENABLE_VST3_HOSTING_EXAMPLES "Enable VST 3 Hosting Examples" ON)
 option(SMTG_ENABLE_VSTGUI_SUPPORT "Enable VSTGUI Support" OFF)
-option(SMTG_CREATE_MODULE_INFO "Create the moduleinfo.json file" OFF)
+option(SMTG_ENABLE_WAYLAND_SUPPORT "Enable Wayland Support (Linux only)" OFF)
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Includes
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
 include(SMTG_VST3_SDK)
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # SDK Project
-#-------------------------------------------------------------------------------
-
+# -------------------------------------------------------------------------------
 project(vstsdk
-    VERSION 3.7.13
+    VERSION 3.8.0
     DESCRIPTION "Steinberg VST 3 Software Development Kit"
     HOMEPAGE_URL "https://www.steinberg.net"
 )
@@ -47,23 +47,36 @@ set(public_sdk_SOURCE_DIR ${SDK_ROOT}/public.sdk)
 set(pluginterfaces_SOURCE_DIR ${SDK_ROOT}/pluginterfaces)
 
 if(SMTG_ENABLE_VSTGUI_SUPPORT)
+    set(VSTGUI_ENABLE_WAYLAND_SUPPORT ${SMTG_ENABLE_WAYLAND_SUPPORT})
     smtg_enable_vstgui_support(VSTGUI_SOURCE_DIR "${ROOT}/vstgui4")
 endif()
 
 include_directories(${ROOT} ${SDK_ROOT})
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
+# From Here this is optional...
+
+# -------------------------------------------------------------------------------
+# CORE AUDIO SDK, AAX SDK
+# -------------------------------------------------------------------------------
+setupCoreAudioSupport()
+setupAaxSupport()
+include(SMTG_FindJack)
+
+# -------------------------------------------------------------------------------
 # Projects
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 set(SDK_IDE_LIBS_FOLDER FOLDER "Libraries")
 
 #---Add base libraries---------------------------
-set(VST_SDK TRUE) # used for pluginterfaces and public.sdk modules which provides only a subset of them for VST-SDK
-add_subdirectory(pluginterfaces)
-add_subdirectory(base)
-add_subdirectory(public.sdk)
-add_subdirectory(public.sdk/source/vst/interappaudio)
+smtg_create_lib_base_target()
+smtg_create_pluginterfaces_target()
+smtg_create_public_sdk_common_target()
+smtg_create_public_sdk_target()
+smtg_create_public_sdk_hosting_target()
 
+set(VST_SDK TRUE) # used for pluginterfaces and public.sdk modules which provides only a subset of them for VST-SDK
+add_subdirectory(public.sdk/source/vst/interappaudio)
 
 # Add hosting examples, it includes the validator (must be done before any plug-ins to support running the validator after building)
 set(SDK_IDE_HOSTING_EXAMPLES_FOLDER FOLDER "Hosting-Examples")
@@ -73,15 +86,54 @@ add_subdirectory(public.sdk/samples/vst-hosting)
 set(SDK_IDE_UTILITIES_FOLDER FOLDER "Utilities")
 add_subdirectory(public.sdk/samples/vst-utilities)
 
+# -------------------------------------------------------------------------------
+# IDE sorting
+# -------------------------------------------------------------------------------
+include(SMTG_CustomModuleTarget)
 
+set_property(
+    TARGET
+        sdk
+        sdk_common
+        sdk_hosting
+        base
+        pluginterfaces
+        cmake_modules
+        cmake_VST_modules
+    PROPERTY 
+        ${SDK_IDE_LIBS_FOLDER}
+)
+
+
+if(SMTG_ENABLE_VSTGUI_SUPPORT)
+    set_property(
+        TARGET
+            vstgui
+            vstgui_support
+            vstgui_uidescription
+        PROPERTY 
+            ${SDK_IDE_LIBS_FOLDER}
+    )
+ 
+    if(TARGET vstgui_standalone)
+        set_target_properties(vstgui_standalone
+            PROPERTIES
+                ${SDK_IDE_LIBS_FOLDER}
+        )
+    endif()
+endif()
+
+
+
+##### end sdk
 
 #------pdvst3------------------------------------------
 
 # remove files from build. we replace them in our sources.
-file(READ "public.sdk/CMakeLists.txt" FILE_CONTENTS)
-string(REPLACE "source/main/pluginfactory.cpp" "" FILE_CONTENTS ${FILE_CONTENTS})
-string(REPLACE "source/main/pluginfactory.h" "" FILE_CONTENTS ${FILE_CONTENTS})
-file(WRITE "public.sdk/CMakeLists.txt" ${FILE_CONTENTS})
+file(READ "cmake/modules/SMTG_VST3_SDK.cmake" FILE_CONTENTS)
+string(REPLACE "${SDK_ROOT}/public.sdk/source/main/pluginfactory.cpp" "" FILE_CONTENTS ${FILE_CONTENTS})
+string(REPLACE "${SDK_ROOT}/public.sdk/source/main/pluginfactory.h" "" FILE_CONTENTS ${FILE_CONTENTS})
+file(WRITE "cmake/modules/SMTG_VST3_SDK.cmake" ${FILE_CONTENTS})
 
 project(pdvst3
     VERSION 1.0.0.0

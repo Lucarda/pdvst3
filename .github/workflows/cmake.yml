@@ -48,15 +48,15 @@ jobs:
     - name: Create Build Environment
       run: cmake -E make_directory ${{github.workspace}}/build
 
-    - name: Replace file in submodule
-      shell: bash
-      working-directory: ${{github.workspace}}
-      run: cp xcodehack.txt cmake/modules/SMTG_AddVST3Library.cmake
+#    - name: Replace file in submodule
+#      shell: bash
+#      working-directory: ${{github.workspace}}
+#      run: cp xcodehack.txt cmake/modules/SMTG_AddVST3Library.cmake
     
     - name: Configure CMake
       shell: bash
       working-directory: ${{github.workspace}}/build
-      run: cmake -DCMAKE_BUILD_TYPE:STRING=release -DSMTG_CREATE_MODULE_INFO=off -DSMTG_DISABLE_CODE_SIGNING=on -DSMTG_RUN_VST_VALIDATOR=off ../
+      run: cmake -GXcode -DCMAKE_BUILD_TYPE:STRING=release -DSMTG_CREATE_MODULE_INFO=OFF -DSMTG_DISABLE_CODE_SIGNING=ON -DSMTG_RUN_VST_VALIDATOR=OFF ../
 
     - name: Build
       working-directory: ${{github.workspace}}/build
