@@ -10,3 +10,6 @@
 [submodule "cmake"]
 	path = cmake
 	url = https://github.com/steinbergmedia/vst3_cmake
+[submodule "vstgui4"]
+	path = vstgui4
+	url = https://github.com/steinbergmedia/vstgui.git
