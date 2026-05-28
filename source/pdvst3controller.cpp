@@ -19,15 +19,18 @@
 
 #include "pdvst3controller.h"
 #include "pdvst3cids.h"
-// #include "vstgui/plugin-bindings/vst3editor.h"
 #include "base/source/fstreamer.h"
 #include "pluginterfaces/base/ibstream.h"
 #include "pdvst3_base_defines.h"
 #include "public.sdk/source/vst/utility/stringconvert.h"
 
+#include "vstgui/plugin-bindings/vst3editor.h"
+#include "vstgui/uidescription/uidescription.h"
+
 extern int globalNParams;
 extern char globalVstParamName[MAXPARAMETERS][MAXSTRLEN];
 extern bool globalParameterGuiWorkAround;
+extern char globalUidescFile[MAXFILENAMELEN];
 
 using namespace Steinberg;
 
@@ -133,7 +136,54 @@ IPlugView* PLUGIN_API pdvst3Controller::createView (FIDString name)
         return view;
     }
     */
+    
+ /*  
+    VSTGUI::UIDescription description (globalUidescFile);
+	if (description.parse ())
+	{
+	  
+	  printf("xml loaded succesfully");
+	  //VSTGUI::CView* view = description.createView ("view", 0);
+	  //return view;
+	}
+	
+*/
+
+	if (strcmp (name, Steinberg::Vst::ViewType::kEditor) == 0)
+    {
+        // 1. Point to your external file (Note: modern VSTGUI 4 natively expects .uidesc as JSON)
+
+        std::string filePath = globalUidescFile;
+
+        // 2. Wrap the OS path using VSTGUI's CResourceDescription
+        // This ensures the framework treats it as a raw filesystem path rather than a bundled resource.
+        //VSTGUI::CResourceDescription desc(filePath.c_str());
+        //desc.type = VSTGUI::CResourceDescription::kFileDescriptor;
+        //auto* description = new VSTGUI::UIDescription(VSTGUI::UIDescription::FSPath(filePath.c_str())) 
+
+        // 3. Create the UIDescription instance
+        //auto* description = new VSTGUI::UIDescription(desc);
+        auto* description = new VSTGUI::UIDescription(filePath.c_str());
+
+        // 4. Force parse the document and validate
+        if (description->parse())
+        {
+            // 5. Build and return the modern VST3Editor wrapper
+            // "view" corresponds to the name of your main template inside the JSON data.
+            return new VSTGUI::VST3Editor (description, this, "view");
+
+            
+        }
+        
+        // Safety cleanup if the file was missing or syntax was broken
+        description->forget();
+printf("xml failed\n");
+    }
+
     return nullptr;
+	
+    
+    //return nullptr;
 }
 
 //------------------------------------------------------------------------

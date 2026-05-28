@@ -16,7 +16,7 @@ endif()
 # Global options which can bet set on command line e.g.: cmake -DSMTG_ENABLE_VST3_PLUGIN_EXAMPLES=OFF ...
 option(SMTG_ENABLE_VST3_PLUGIN_EXAMPLES "Enable VST 3 Plug-in Examples" OFF)
 option(SMTG_ENABLE_VST3_HOSTING_EXAMPLES "Enable VST 3 Hosting Examples" ON)
-option(SMTG_ENABLE_VSTGUI_SUPPORT "Enable VSTGUI Support" OFF)
+option(SMTG_ENABLE_VSTGUI_SUPPORT "Enable VSTGUI Support" ON)
 option(SMTG_ENABLE_WAYLAND_SUPPORT "Enable Wayland Support (Linux only)" OFF)
 
 # -------------------------------------------------------------------------------
@@ -105,6 +105,8 @@ set_property(
 )
 
 
+add_compile_definitions(VSTGUI_ENABLE_XML_PARSER=1)
+
 if(SMTG_ENABLE_VSTGUI_SUPPORT)
     set_property(
         TARGET
@@ -155,6 +157,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_link_libraries(pdvst3
         PRIVATE
             sdk
+            vstgui_support
             -lpthread
             -lc
             -lrt
@@ -165,6 +168,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     target_link_libraries(pdvst3
         PRIVATE
             sdk
+            vstgui_support
             -lpthread
             -lc
     )
@@ -174,6 +178,7 @@ if(SMTG_WIN)
     target_link_libraries(pdvst3
         PRIVATE
             sdk
+            vstgui_support
     )
 endif()
 
