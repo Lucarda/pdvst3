@@ -20,10 +20,13 @@
 #if _WIN32
     #include <windows.h>
     #include <io.h>
+    #include <direct.h>
 #else
     #include <dlfcn.h>
     #include <fstream>
     #include <unistd.h>
+    #include <sys/stat.h>
+	#include <sys/types.h>
 #endif
 #include <math.h>
 //#include "pdvst3processor.h"
@@ -87,6 +90,7 @@ char globalContentPath[MAXFILENAMELEN];
 char globalConfigFile[MAXFILENAMELEN];
 char globalMainDebugFile[MAXFILENAMELEN];
 char globalDebugFile[MAXFILENAMELEN];
+char globalUidescFile[MAXFILENAMELEN];
 bool globalCustomGui = false;
 int globalCustomGuiWidth= 320;
 int globalCustomGuiHeight= 150;
@@ -207,6 +211,31 @@ void setDebugFilePath ()
 #endif
 }
 
+void makeUserPlugFolder()
+{
+	char buf[MAXFILENAMELEN];
+	
+#if _WIN32
+    char *appdata_path = getenv("APPDATA");
+    snprintf(buf, MAXFILENAMELEN -1, "%s\\%s-plugin", appdata_path, globalPluginName);
+    _mkdir(buf);
+#elif __APPLE__
+    char *home_dir = getenv("HOME");
+	snprintf(buf, MAXFILENAMELEN -1, "%s/Library/Application Support/%s-plugin", home_dir, globalPluginName);
+	mkdir(buf, 0777);
+#elif __linux__
+    char *home_dir = getenv("HOME");
+	snprintf(buf, MAXFILENAMELEN -1, "%s/.config/%s-plugin", home_dir, globalPluginName);
+	mkdir(buf, 0777);
+#endif
+
+#if _WIN32
+    snprintf(globalUidescFile, MAXFILENAMELEN -1, "%s\\uidesc.xml", buf);
+#else
+	snprintf(globalUidescFile, MAXFILENAMELEN -1, "%s/uidesc.xml", buf);  
+#endif
+}
+
 void parseSetupFile()
 {
     FILE *setupFile = NULL;
@@ -294,6 +323,9 @@ void parseSetupFile()
         strcpy(globalPluginName, strrchr(buf, '/') + 1);
     }
     #endif // unix
+    
+    
+    makeUserPlugFolder();
 
     snprintf(globalPluginVersion, MAXSTRLEN, "0.0.1", buf);
 
@@ -563,6 +595,7 @@ void parseSetupFile()
             fprintf(file_pointer, "mac gPath: %s\n", gPath);
         #endif
         fprintf(file_pointer, "globalParameterGuiWorkAround: %d\n", globalParameterGuiWorkAround);
+        fprintf(file_pointer, "globalUidescFile: %s\n", globalUidescFile);
         fclose(file_pointer);
     }
 }
