@@ -129,22 +129,6 @@ pair separated by a carriage return. Comments are demarked with a '#' character.
     #   Linux: pd
     # Note: omit the final slash in path
 
-    DEBUG = <TRUE/FALSE>
-    # Boolean value stating whether to display the Pd GUI when the plugin is opened.
-
-    PARAMETERS = <integer>
-    # Number of parameters the plugin uses (up to 128).
-
-    NAMEPARAMETER<integer> = <string>
-    # Display name for parameters (shown in the host GUI).
-    
-    PARAMETERGUIWORKAROUND = <TRUE/FALSE>
-    # When recording automation the preferred way is to move the host GUI sliders.
-    # Set this to TRUE if you need to automate via the patch. This tells the plugin
-    # to update any changes from the patch to the host GUI via a timer every 30ms.
-    # it works on Ardour but not on Reaper. Also note that leaving this to FALSE
-    # works with Ableton.
-
     PDMOREFLAGS = <string>
     # Flags to be passed when starting Pd (consult Pd manual for all options).
     # flags we should not put here: -r, -outchannels, -inchannels
@@ -154,6 +138,29 @@ pair separated by a carriage return. Comments are demarked with a '#' character.
     #     PDMOREFLAGS = -alsamidi -midiindev 1 -midioutdev 1
     #   example for using loopMIDI plus a 2nd soundcard output on Windows:
     #     PDMOREFLAGS = -midiaddindev "loopMIDI Port 1" -midiaddoutdev "loopMIDI Port 1" -midiaddoutdev "US-4x4"
+
+    DEBUG = <TRUE/FALSE>
+    # Boolean value stating whether to display the Pd GUI when the plugin is opened.
+
+    PARAMETERS = <integer>
+    # Number of parameters the plugin uses (up to 128).
+
+    NAMEPARAMETER<integer> = <string>
+    # Display name for parameters (shown in the host GUI).
+
+	VSTGUI = <TRUE/FALSE>
+	# Draw a VST(4) GUI that contains the parameter sliders.
+	# This somehow fixes what PARAMETERGUIWORKAROUND tried.
+	# When this is TRUE you can record automation from the patch or the GUI.
+	# In most cases set this to TRUE. (Warning: this crashes Linux Carla)
+	# If this is set to FALSE the host will draw a GUI. 
+	
+    PARAMETERGUIWORKAROUND = <TRUE/FALSE> 
+	# There are few cases when this should be enabled as there is a new VSTGUI.
+	# Set this to TRUE if you need to automate via the patch. This tells the plugin
+	# to update any changes from the patch to the host GUI via a timer every 30ms.
+	# it works on Ardour but not on Reaper. Also note that leaving this to FALSE
+	# works with Ableton.
 
     LATENCY = <integer>
     # Latency of the plug-in. For example, if the plug-in internally

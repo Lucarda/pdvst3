@@ -31,6 +31,7 @@ extern int globalNParams;
 extern char globalVstParamName[MAXPARAMETERS][MAXSTRLEN];
 extern bool globalParameterGuiWorkAround;
 extern char globalUidescFile[MAXFILENAMELEN];
+extern bool globalVSTGUI;
 
 using namespace Steinberg;
 
@@ -136,18 +137,8 @@ IPlugView* PLUGIN_API pdvst3Controller::createView (FIDString name)
         return view;
     }
     */
-    
- /*  
-    VSTGUI::UIDescription description (globalUidescFile);
-	if (description.parse ())
-	{
-	  
-	  printf("xml loaded succesfully");
-	  //VSTGUI::CView* view = description.createView ("view", 0);
-	  //return view;
-	}
-	
-*/
+    if(!globalVSTGUI) 
+		return nullptr;
 
 	if (strcmp (name, Steinberg::Vst::ViewType::kEditor) == 0)
     {
@@ -155,14 +146,7 @@ IPlugView* PLUGIN_API pdvst3Controller::createView (FIDString name)
 
         std::string filePath = globalUidescFile;
 
-        // 2. Wrap the OS path using VSTGUI's CResourceDescription
-        // This ensures the framework treats it as a raw filesystem path rather than a bundled resource.
-        //VSTGUI::CResourceDescription desc(filePath.c_str());
-        //desc.type = VSTGUI::CResourceDescription::kFileDescriptor;
-        //auto* description = new VSTGUI::UIDescription(VSTGUI::UIDescription::FSPath(filePath.c_str())) 
-
         // 3. Create the UIDescription instance
-        //auto* description = new VSTGUI::UIDescription(desc);
         auto* description = new VSTGUI::UIDescription(filePath.c_str());
 
         // 4. Force parse the document and validate
@@ -177,7 +161,6 @@ IPlugView* PLUGIN_API pdvst3Controller::createView (FIDString name)
         
         // Safety cleanup if the file was missing or syntax was broken
         description->forget();
-printf("xml failed\n");
     }
 
     return nullptr;

@@ -98,6 +98,7 @@ pdvstProgram globalProgram[MAXPROGRAMS];
 int globalLatency = 0;
 bool globalVerboseToFiles = false;
 bool globalParameterGuiWorkAround = false;
+bool globalVSTGUI = true;
 
 
 
@@ -607,6 +608,18 @@ void parseSetupFile()
                     else if (strcmp(strlowercase(value), "false") == 0)
                     {
                         globalParameterGuiWorkAround = false;
+                    }
+                }
+                // VSTGUI
+                if (strcmp(param, "vstgui") == 0)
+                {
+                    if (strcmp(strlowercase(value), "true") == 0)
+                    {
+                        globalVSTGUI = true;
+                    }
+                    else if (strcmp(strlowercase(value), "false") == 0)
+                    {
+                        globalVSTGUI = false;
                     }
                 }
             // --------------------------------------------

@@ -58,7 +58,14 @@ NAMEPARAMETER0 = Level
 NAMEPARAMETER1 = foo
 NAMEPARAMETER2 = bar
 
-# When recording automation the preferred way is to move the host GUI sliders.
+# Draw a VST(4) GUI that contains the parameter sliders.
+# This somehow fixes what PARAMETERGUIWORKAROUND tried.
+# When this is TRUE you can record automation from the patch or the GUI.
+# In most cases set this to TRUE. (Warning: this crashes Linux Carla)
+# If this is set to FALSE the host will draw a GUI. 
+VSTGUI = TRUE
+
+# There are few cases when this should be enabled as there is a new VSTGUI.
 # Set this to TRUE if you need to automate via the patch. This tells the plugin
 # to update any changes from the patch to the host GUI via a timer every 30ms.
 # it works on Ardour but not on Reaper. Also note that leaving this to FALSE
