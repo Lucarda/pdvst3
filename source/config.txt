@@ -83,4 +83,4 @@ MAIL = info@example.org
 #    macOS: ~/Library/Application Support/
 #    Linux: ~/.config/
 # it is recommended to keep this 'false'.
-VERBOSETOFILES = TRUE
+VERBOSETOFILES = FALSE

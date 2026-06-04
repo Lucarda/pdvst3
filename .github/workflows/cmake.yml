@@ -51,7 +51,7 @@ jobs:
     - name: Replace file in submodule
       shell: bash
       working-directory: ${{github.workspace}}
-      run: cp xcodehack2.txt cmake/modules/SMTG_AddVST3Library.cmake
+      run: cp xcodehack.txt cmake/modules/SMTG_AddVST3Library.cmake
           
     
     - name: Configure CMake

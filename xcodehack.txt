@@ -1,9 +1,5 @@
 
-# this file is a replace for cmake/modules/SMTG_AddVST3Library.cmake that is 
-# used in the github builds. it comments out some xcode15 or grater code-sign stuff.
-
-
-
+# this file replaces the original with commenting out code signing stuff on line 178 
 
 
 #------------------------------------------------------------------------
@@ -168,7 +164,7 @@ function(smtg_add_vst3plugin_with_pkgname target pkg_name)
     endif()
     #message(STATUS "[SMTG] SMTG_PACKAGE_ICON_PATH is ${SMTG_PACKAGE_ICON_PATH}")
 
-    if(DEFINED PARAMS_MODULEINFO_COMPATIBILITY)
+    if(DEFINED PARAMS_SOURCES_LIST)
         set(SOURCES "${PARAMS_SOURCES_LIST}")
     else()
         set(SOURCES "${PARAMS_UNPARSED_ARGUMENTS}")
@@ -179,10 +175,9 @@ function(smtg_add_vst3plugin_with_pkgname target pkg_name)
     smtg_target_set_vst_win_architecture_name(${target})
     smtg_target_make_plugin_package(${target} ${pkg_name} vst3)
 
-# comment out all this    
-#    ####################
-#    # Workaround for Xcode 15 not allowing to add adhoc_codesign linker setting
-#    ####################
+    ####################
+    # Workaround for Xcode 15 not allowing to add adhoc_codesign linker setting
+    ####################
 #    if(SMTG_MAC AND XCODE_VERSION VERSION_GREATER_EQUAL 15)
 #	    get_target_property(PLUGIN_PACKAGE_PATH ${target} SMTG_PLUGIN_PACKAGE_PATH)
 #        add_custom_command(
