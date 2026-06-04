@@ -26,7 +26,7 @@
     #include <fstream>
     #include <unistd.h>
     #include <sys/stat.h>
-	#include <sys/types.h>
+    #include <sys/types.h>
 #endif
 #include <math.h>
 //#include "pdvst3processor.h"
@@ -213,38 +213,38 @@ void setDebugFilePath ()
 
 void makeUserPlugFolder()
 {
-	char buf[MAXFILENAMELEN];
-	
+    char buf[MAXFILENAMELEN];
+
 #if _WIN32
     char *appdata_path = getenv("APPDATA");
     snprintf(buf, MAXFILENAMELEN -1, "%s\\%s-plugin", appdata_path, globalPluginName);
     _mkdir(buf);
 #elif __APPLE__
     char *home_dir = getenv("HOME");
-	snprintf(buf, MAXFILENAMELEN -1, "%s/Library/Application Support/%s-plugin", home_dir, globalPluginName);
-	mkdir(buf, 0777);
+    snprintf(buf, MAXFILENAMELEN -1, "%s/Library/Application Support/%s-plugin", home_dir, globalPluginName);
+    mkdir(buf, 0777);
 #elif __linux__
     char *home_dir = getenv("HOME");
-	snprintf(buf, MAXFILENAMELEN -1, "%s/.config/%s-plugin", home_dir, globalPluginName);
-	mkdir(buf, 0777);
+    snprintf(buf, MAXFILENAMELEN -1, "%s/.config/%s-plugin", home_dir, globalPluginName);
+    mkdir(buf, 0777);
 #endif
 
 #if _WIN32
     snprintf(globalUidescFile, MAXFILENAMELEN -1, "%s\\uidesc.xml", buf);
 #else
-	snprintf(globalUidescFile, MAXFILENAMELEN -1, "%s/uidesc.xml", buf);  
+    snprintf(globalUidescFile, MAXFILENAMELEN -1, "%s/uidesc.xml", buf);
 #endif
 }
 
 int computHeight()
 {
-	int pblock=0;
-	for (int i=0; i < globalNParams+2; i++)
+    int pblock=0;
+    for (int i=0; i < globalNParams+2; i++)
     {
-		pblock = pblock + 20;
-	}
-	return pblock + 60;
-	
+        pblock = pblock + 20;
+    }
+    return pblock + 60;
+
 }
 
 void makeUidesc (char *filename)
@@ -265,7 +265,7 @@ void makeUidesc (char *filename)
     fprintf(file, "        <color name=\"SliderHandle\" rgba=\"#007accff\"/>\n");
     fprintf(file, "        <color name=\"SliderTrack\" rgba=\"#3a3a3aff\"/>\n");
     fprintf(file, "    </colors>\n");
-    
+
     fprintf(file, "    <fonts>\n");
     fprintf(file, "        <font name=\"fontbig\" font-name=\"~ SystemFont\" size=\"20\" />\n");
     fprintf(file, "        <font name=\"fontdef\" font-name=\"~ SystemFont\" size=\"14\" />\n");
@@ -275,8 +275,8 @@ void makeUidesc (char *filename)
     fprintf(file, "    <control-tags>\n");
     for (int i=0; i < globalNParams; i++)
     {
-		fprintf(file, "        <control-tag name=\"Param%d\" tag=\"%d\"/>\n", i, i+100);
-	}
+        fprintf(file, "        <control-tag name=\"Param%d\" tag=\"%d\"/>\n", i, i+100);
+    }
     fprintf(file, "    </control-tags>\n");
     int alt = computHeight();
     int maxalt = 0;
@@ -285,72 +285,71 @@ void makeUidesc (char *filename)
 
     // Define Templates (The actual UI Layout)
     fprintf(file, "    <template name=\"view\" size=\"500, %d\" background-color=\"Background\" class=\"CViewContainer\" mouse-enabled=\"true\" transparent=\"false\">\n", maxalt);
-    
+
     // 1. Add the Scroll View container (matches master size, enables vertical scroll)
-	fprintf(file, "     <view class=\"CScrollView\" origin=\"0, 0\" size=\"500, %d\" ", maxalt);
-	fprintf(file, "scroll-size=\"480, %d\" container-size=\"480, %d\" flags=\"v-scrollbar-on\">\n", alt-20, alt-20);
-    
-    
+    fprintf(file, "     <view class=\"CScrollView\" origin=\"0, 0\" size=\"500, %d\" ", maxalt);
+    fprintf(file, "scroll-size=\"480, %d\" container-size=\"480, %d\" flags=\"v-scrollbar-on\">\n", alt-20, alt-20);
+
+
     fprintf(file, "     <view class=\"CTextLabel\"\n");
-    fprintf(file, "           origin=\"10, 10\"\n");
-    fprintf(file, "           size=\"480, 30\"\n");
-    fprintf(file, "           title=\"%s\"\n", globalPluginName);
-    fprintf(file, "           text-alignment=\"left\"\n");
-    fprintf(file, "           font=\"fontbig\"\n");
-    fprintf(file, "           round-rect-radius=\"4\"\n");
-    fprintf(file, "           draw-frame=\"true\"\n");
-    fprintf(file, "           transparent=\"false\"\n");
-    fprintf(file, "           mouse-enabled=\"false\"/>\n");
-      
+    fprintf(file, "         origin=\"10, 10\"\n");
+    fprintf(file, "         size=\"480, 30\"\n");
+    fprintf(file, "         title=\"%s\"\n", globalPluginName);
+    fprintf(file, "         text-alignment=\"left\"\n");
+    fprintf(file, "         font=\"fontbig\"\n");
+    fprintf(file, "         round-rect-radius=\"4\"\n");
+    fprintf(file, "         draw-frame=\"true\"\n");
+    fprintf(file, "         transparent=\"false\"\n");
+    fprintf(file, "         mouse-enabled=\"false\"/>\n");
+
     for (int i=0; i < globalNParams; i++)
     {
-				
-    fprintf(file, "     <view class=\"CTextLabel\"\n");
-    fprintf(file, "           origin=\"10, %d\"\n", block+53);
-    fprintf(file, "           size=\"70, 20\"\n");
-    fprintf(file, "           title=\"%s\"\n", globalVstParamName[i]);
-    fprintf(file, "           text-alignment=\"center\"\n");
-    fprintf(file, "           font=\"fontdef\"\n");
-    fprintf(file, "           round-rect-radius=\"4\"\n");
-    fprintf(file, "           draw-frame=\"true\"\n");
-    fprintf(file, "           ransparent=\"false\"\n");
-    fprintf(file, "           mouse-enabled=\"false\"/>\n");
-    
-    
-    fprintf(file, "     <view class=\"CParamDisplay\"\n");
-    fprintf(file, "           origin=\"390, %d\"\n", block+53); 
-    fprintf(file, "           size=\"70, 20\"\n");
-    fprintf(file, "           control-tag=\"Param%d\"\n", i);
-    fprintf(file, "           font=\"fontdef\"\n");
-    fprintf(file, "           text-alignment=\"center\"\n");
-    fprintf(file, "           style=\"3D-In\"/>\n");
-    
-    
-    fprintf(file, "    <view class=\"CSlider\"\n");
-    fprintf(file, "        origin=\"90, %d\"\n", block+60);
-    fprintf(file, "        size=\"300, 10\"\n");
-    fprintf(file, "        control-tag=\"Param%d\"\n", i);
-    fprintf(file, "        default-value=\"0.5\"\n");
-    fprintf(file, "        free-click=\"true\"\n");    
-    fprintf(file, "        transparent=\"false\"\n");
-    fprintf(file, "        mouse-enabled=\"true\"\n");            
-    fprintf(file, "        draw-back=\"true\"\n");    
-    fprintf(file, "        draw-back-color=\"SliderTrack\"\n");
-    fprintf(file, "        draw-frame=\"true\"\n");
-    fprintf(file, "        frame-color=\"SliderHandle\"\n");
-    fprintf(file, "        draw-value=\"true\"\n");
-    fprintf(file, "        draw-value-color=\"SliderHandle\"\n");
-    fprintf(file, "        handle-size=\"12\"\n");
-    fprintf(file, "        bitmap=\"\"\n");
-    fprintf(file, "        handle-bitmap=\"\"\n");
-    fprintf(file, "        style=\"horizontal\"/>\n");
-    
-    block = block + 20;
- 
-	}
-  
+
+        fprintf(file, "     <view class=\"CTextLabel\"\n");
+        fprintf(file, "         origin=\"10, %d\"\n", block+53);
+        fprintf(file, "         size=\"70, 20\"\n");
+        fprintf(file, "         title=\"%s\"\n", globalVstParamName[i]);
+        fprintf(file, "         text-alignment=\"center\"\n");
+        fprintf(file, "         font=\"fontdef\"\n");
+        fprintf(file, "         round-rect-radius=\"4\"\n");
+        fprintf(file, "         draw-frame=\"true\"\n");
+        fprintf(file, "         ransparent=\"false\"\n");
+        fprintf(file, "         mouse-enabled=\"false\"/>\n");
+
+
+        fprintf(file, "     <view class=\"CParamDisplay\"\n");
+        fprintf(file, "         origin=\"390, %d\"\n", block+53);
+        fprintf(file, "         size=\"70, 20\"\n");
+        fprintf(file, "         control-tag=\"Param%d\"\n", i);
+        fprintf(file, "         font=\"fontdef\"\n");
+        fprintf(file, "         text-alignment=\"center\"\n");
+        fprintf(file, "         style=\"3D-In\"/>\n");
+
+
+        fprintf(file, "     <view class=\"CSlider\"\n");
+        fprintf(file, "         origin=\"90, %d\"\n", block+60);
+        fprintf(file, "         size=\"300, 10\"\n");
+        fprintf(file, "         control-tag=\"Param%d\"\n", i);
+        fprintf(file, "         default-value=\"0.5\"\n");
+        fprintf(file, "         free-click=\"true\"\n");
+        fprintf(file, "         transparent=\"false\"\n");
+        fprintf(file, "         mouse-enabled=\"true\"\n");
+        fprintf(file, "         draw-back=\"true\"\n");
+        fprintf(file, "         draw-back-color=\"SliderTrack\"\n");
+        fprintf(file, "         draw-frame=\"true\"\n");
+        fprintf(file, "         frame-color=\"SliderHandle\"\n");
+        fprintf(file, "         draw-value=\"true\"\n");
+        fprintf(file, "         draw-value-color=\"SliderHandle\"\n");
+        fprintf(file, "         handle-size=\"12\"\n");
+        fprintf(file, "         bitmap=\"\"\n");
+        fprintf(file, "         handle-bitmap=\"\"\n");
+        fprintf(file, "         style=\"horizontal\"/>\n");
+
+        block = block + 20;
+    }
+
     fprintf(file, "    </view>\n");
-    
+
     // Close Templates and Root Tag
     fprintf(file, "    </template>\n");
     fprintf(file, "</vstgui-ui-description>\n");
@@ -446,9 +445,9 @@ void parseSetupFile()
         strcpy(globalPluginName, strrchr(buf, '/') + 1);
     }
     #endif // unix
-    
-    
-    
+
+
+
 
     snprintf(globalPluginVersion, MAXSTRLEN, "0.0.1", buf);
 
@@ -698,7 +697,7 @@ void parseSetupFile()
         }
     }
     if (setupFile) fclose(setupFile);
-    
+
     makeUserPlugFolder();
     makeUidesc (globalUidescFile);
 
@@ -769,7 +768,7 @@ void convertVST2UID_To_FUID (Steinberg::FUID& newOne, Steinberg::int32 myVST2UID
 
 void doFUIDs()
 {
-convertVST2UID_To_FUID (procUID, globalPluginId, globalPluginName, false);
-convertVST2UID_To_FUID (contUID, globalPluginId, globalPluginName, true);
+    convertVST2UID_To_FUID (procUID, globalPluginId, globalPluginName, false);
+    convertVST2UID_To_FUID (contUID, globalPluginId, globalPluginName, true);
 }
 
