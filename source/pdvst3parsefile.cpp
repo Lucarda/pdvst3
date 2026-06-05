@@ -91,6 +91,7 @@ char globalUrl[MAXSTRLEN];
 char globalMail[MAXSTRLEN];
 char globalPdMoreFlags[MAXSTRLEN];
 char globalPdFile[MAXFILENAMELEN];
+char globalPdFilePath[MAXFILENAMELEN];
 char globalPureDataPath[MAXFILENAMELEN];
 char globalSchedulerPath[MAXFILENAMELEN];
 char globalContentPath[MAXFILENAMELEN];
@@ -364,6 +365,33 @@ void makeUidesc (char *filename)
 
     fclose(file);
     //printf("Successfully generated plugin.uidesc\n");
+}
+
+void pdPatchFile()
+{
+
+	char buf[MAXFILENAMELEN];
+	int len = strlen(globalPdFile);
+	int lastslash = 0;
+
+    for (int i=0; i < len; i++)
+    {
+		if (globalPdFile[i] == '/' || globalPdFile[i] == '\\')
+		lastslash = i+1;
+	}
+	
+	if (!lastslash)
+	{
+		strcpy(globalPdFilePath, globalPluginPath);
+	}
+	else
+	{
+		memcpy(globalPdFilePath, globalPdFile, lastslash);
+		globalPdFilePath[lastslash+1] = '\0';
+		memcpy(buf, globalPdFile + lastslash, 100);
+		strcpy(globalPdFile, buf);
+	}	
+
 }
 
 void parseSetupFile()
@@ -720,6 +748,7 @@ void parseSetupFile()
 
     makeUserPlugFolder();
     makeUidesc (globalUidescFile);
+    pdPatchFile();
 
     // vstmain debug file
     if(globalVerboseToFiles)
@@ -730,6 +759,8 @@ void parseSetupFile()
         fprintf(file_pointer, "globalPluginName: %s\n", globalPluginName);
         fprintf(file_pointer, "vstDataPath: %s\n", vstDataPath);
         fprintf(file_pointer, "globalPluginPath: %s\n", globalPluginPath);
+        fprintf(file_pointer, "globalPdFile: %s\n", globalPdFile);
+        fprintf(file_pointer, "globalPdFilePath: %s\n", globalPdFilePath);
         fprintf(file_pointer, "globalPureDataPath: %s\n", globalPureDataPath);
         fprintf(file_pointer, "globalSchedulerPath: %s\n", globalSchedulerPath);
         fprintf(file_pointer, "globalContentPath: %s\n", globalContentPath);
@@ -740,7 +771,7 @@ void parseSetupFile()
             fprintf(file_pointer, "mac gPath: %s\n", gPath);
         #endif
         fprintf(file_pointer, "globalParameterGuiWorkAround: %d\n", globalParameterGuiWorkAround);
-        fprintf(file_pointer, "globalUidescFile: %s\n", globalUidescFile);
+        fprintf(file_pointer, "globalUidescFile: %s\n", globalUidescFile);    
         fclose(file_pointer);
     }
 }

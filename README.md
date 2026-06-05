@@ -97,6 +97,10 @@ pair separated by a carriage return. Comments are demarked with a '#' character.
 
     MAIN = <string>
     # The .pd file for Pd to open when the plugin is opened.
+	# two options here:
+	# 1) name of the .pd patch which lives in the main plugin folder.
+	# 2) full path to a .pd patch. (useful because on some OSs the default VST3
+	#    folder is not writable and you can't edit and save the patch.
 
     ID = <string[4]>
     # The 4-character unique ID for the VST plugin. This is required by VST and

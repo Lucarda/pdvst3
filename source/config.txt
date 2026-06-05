@@ -14,6 +14,10 @@ IN-CHANNELS = 2
 OUT-CHANNELS = 2
 
 # Main Pd patch of the plugin
+# two options here:
+# 1) name of the .pd patch which lives in the main plugin folder.
+# 2) full path to a .pd patch. (useful because on some OSs the default VST3
+#    folder is not writable and you can't edit and save the patch.
 MAIN = Pd_example.pd
 
 # Where to find Pd:
@@ -90,4 +94,4 @@ MAIL = info@example.org
 #    macOS: ~/Library/Application Support/
 #    Linux: ~/.config/
 # it is recommended to keep this 'false'.
-VERBOSETOFILES = FALSE
+VERBOSETOFILES = TRUE

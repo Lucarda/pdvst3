@@ -74,6 +74,7 @@ extern char globalPluginPath[MAXFILENAMELEN];
 extern char globalPluginName[MAXSTRLEN];
 extern char globalPdMoreFlags[MAXSTRLEN];
 extern char globalPdFile[MAXFILENAMELEN];
+extern char globalPdFilePath[MAXFILENAMELEN];
 extern char globalPureDataPath[MAXFILENAMELEN];
 extern char globalSchedulerPath[MAXFILENAMELEN];
 extern char globalConfigFile[MAXFILENAMELEN];
@@ -270,12 +271,12 @@ void pdvst3Processor::startPd()
     strcat(commandLineArgs, buf);
     snprintf(buf, MAXSTRLEN,
             " -open \"%s%s\"",
-            globalPluginPath,
+            globalPdFilePath,
             globalPdFile);
     strcat(commandLineArgs, buf);
     snprintf(buf, MAXSTRLEN,
             " -path \"%s\"",
-            globalPluginPath);
+            globalPdFilePath);
     strcat(commandLineArgs, buf);
     for (i = 0; i < nExternalLibs; i++)
     {
