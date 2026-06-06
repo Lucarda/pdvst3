@@ -1,0 +1,19 @@
+Changelog for pdvst3
+
+v0.1.0test7, dated 6-6-2026
+- bump vst3sdk to 3.8.
+- change license.
+- add optional VSTGUI4 to display parameters.
+- add option to open patches patches outside the main folder bundle.
+
+v0.1.0test6
+- add an optional workaround to update host gui from the processor via 
+  a timer.
+
+v0.1.0test5
+- writing debug files to writable places so that Windows loading does 
+  not freeze. also include an option to opt out writing those files.
+
+v0.1.0test4
+- better scheduler synchronization.
+
