@@ -23,18 +23,18 @@ MAIN = Pd_example.pd
 # Where to find Pd:
 # you can supply the path of your Pd installation or specify what Pd to use.
 # Note: the following lines are appended to path:
-# 	Windows: "\bin\pd.exe"
-# 	macOS: "/Contents/Resources/bin/pd"
-# 	Linux: "/bin/pd"
+#   Windows: "\bin\pd.exe"
+#   macOS: "/Contents/Resources/bin/pd"
+#   Linux: "/bin/pd"
 # special wildcards:
-#	@plug_parent : find Pd in the parent dir of the plugin
-#	@resources   : find Pd inside the plugin's folder "Contents/Resources"
+#   @plug_parent : find Pd in the parent dir of the plugin
+#   @resources   : find Pd inside the plugin's folder "Contents/Resources"
 #   example:
-#		PDPATH_LINUX = @resources
+#       PDPATH_LINUX = @resources
 # when using the wildcards the main Pd folder must be renamed per OS like:
-#	Windows: Pd-win
-#	macOS: Pd.app
-#	Linux: pd
+#   Windows: Pd-win
+#   macOS: Pd.app
+#   Linux: pd
 # Note: omit the final slash in path
 
 PDPATH_LINUX = /home/lucarda/Downloads/pure-data
@@ -66,7 +66,8 @@ NAMEPARAMETER2 = bar
 # This somehow fixes what PARAMETERGUIWORKAROUND tried.
 # When this is TRUE you can record automation from the patch or the GUI.
 # In most cases set this to TRUE. (Warning: this crashes Linux Carla)
-# If this is set to FALSE the host will draw a GUI. 
+# If this is set to FALSE the host will draw a GUI.
+# Note: This is useless if the plugin was compiled without VSTGUI support.
 VSTGUI = TRUE
 
 # There are few cases when this should be enabled as there is a new VSTGUI.
@@ -94,4 +95,4 @@ MAIL = info@example.org
 #    macOS: ~/Library/Application Support/
 #    Linux: ~/.config/
 # it is recommended to keep this 'false'.
-VERBOSETOFILES = TRUE
+VERBOSETOFILES = FALSE

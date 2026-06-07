@@ -157,7 +157,8 @@ pair separated by a carriage return. Comments are demarked with a '#' character.
 	# This somehow fixes what PARAMETERGUIWORKAROUND tried.
 	# When this is TRUE you can record automation from the patch or the GUI.
 	# In most cases set this to TRUE. (Warning: this crashes Linux Carla)
-	# If this is set to FALSE the host will draw a GUI. 
+	# If this is set to FALSE the host will draw a GUI.
+	# Note: This is useless if the plugin was compiled without VSTGUI support. 
 	
     PARAMETERGUIWORKAROUND = <TRUE/FALSE> 
 	# There are few cases when this should be enabled as there is a new VSTGUI.

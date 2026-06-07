@@ -40,10 +40,10 @@ mac:
     cmake -DCMAKE_BUILD_TYPE:STRING=release -DSMTG_CREATE_MODULE_INFO=off -DSMTG_DISABLE_CODE_SIGNING=on ../
 
     cmake --build . --config Release
-    
+
 Notes: for the github's CI builds i have to replace the content of
 "cmake\modules\SMTG_AddVST3Library.cmake" with "xcodehack.txt". you might
-need to do this if compiling with xcode >= 15. 
+need to do this if compiling with xcode >= 15.
 
 
 ### vst3 validator
@@ -54,3 +54,9 @@ whatever reason you need to just build the plugin without running its test
 add this command at the end of the cmake command:
 
     -DSMTG_RUN_VST_VALIDATOR=off
+
+### vstgui4
+
+you can disable building and using the VSTGUI4 passing at the end of the cmake command::
+
+    -DSMTG_ENABLE_VSTGUI_SUPPORT=off

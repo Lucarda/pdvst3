@@ -1,11 +1,12 @@
 
+
 #define PDVST3_VER_MAJ 0
 #define PDVST3_VER_MIN 1
-#define PDVST3_VER_PATCH 0
+#define PDVST3_VER_PATCH 1
 
 #define PDVST3_AUTH "(c) Lucas Cordiviola"
 #define PDVST3_DATE "2026"
-#define PDVST3_ADD "(test 7 release)"
+#define PDVST3_ADD "(test version)"
 
 #define PDBLKSIZE 64
 #define MAXEXTERNS 128
@@ -23,3 +24,4 @@
 #define MAXSTRINGSIZE 4096
 #define MAXMIDIQUEUESIZE 1024
 #define MAXMIDIOUTQUEUESIZE 1024
+//#define HASVSTGUI 0

@@ -4,17 +4,17 @@
  * Copyright (C) 2025 Lucas Cordiviola
  *
  * MIT License
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,8 +31,10 @@
 #include "pdvst3_base_defines.h"
 #include "public.sdk/source/vst/utility/stringconvert.h"
 
-#include "vstgui/plugin-bindings/vst3editor.h"
-#include "vstgui/uidescription/uidescription.h"
+#if HASVSTGUI
+    #include "vstgui/plugin-bindings/vst3editor.h"
+    #include "vstgui/uidescription/uidescription.h"
+#endif
 
 extern int globalNParams;
 extern char globalVstParamName[MAXPARAMETERS][MAXSTRLEN];
@@ -144,36 +146,33 @@ IPlugView* PLUGIN_API pdvst3Controller::createView (FIDString name)
         return view;
     }
     */
-    if(!globalVSTGUI) 
-		return nullptr;
+    #if HASVSTGUI
+        if(!globalVSTGUI)
+            return nullptr;
 
-	if (strcmp (name, Steinberg::Vst::ViewType::kEditor) == 0)
-    {
-        // 1. Point to your external file (Note: modern VSTGUI 4 natively expects .uidesc as JSON)
-
-        std::string filePath = globalUidescFile;
-
-        // 3. Create the UIDescription instance
-        auto* description = new VSTGUI::UIDescription(filePath.c_str());
-
-        // 4. Force parse the document and validate
-        if (description->parse())
+        if (strcmp (name, Steinberg::Vst::ViewType::kEditor) == 0)
         {
-            // 5. Build and return the modern VST3Editor wrapper
-            // "view" corresponds to the name of your main template inside the JSON data.
-            return new VSTGUI::VST3Editor (description, this, "view");
+            // 1. Point to your external file (Note: modern VSTGUI 4 natively expects .uidesc as JSON)
+            std::string filePath = globalUidescFile;
 
-            
+            // 3. Create the UIDescription instance
+            auto* description = new VSTGUI::UIDescription(filePath.c_str());
+
+            // 4. Force parse the document and validate
+            if (description->parse())
+            {
+                // 5. Build and return the modern VST3Editor wrapper
+                // "view" corresponds to the name of your main template inside the JSON data.
+                return new VSTGUI::VST3Editor (description, this, "view");
+
+            }
+            // Safety cleanup if the file was missing or syntax was broken
+            description->forget();
         }
-        
-        // Safety cleanup if the file was missing or syntax was broken
-        description->forget();
-    }
+    #endif //HASVSTGUI
 
     return nullptr;
-	
-    
-    //return nullptr;
+
 }
 
 //------------------------------------------------------------------------

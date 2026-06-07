@@ -5,17 +5,17 @@
  * based on original work from 2004 by Joseph A. Sarlo and 2018 by Jean-Yves Gratius
  *
  * MIT License
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -244,20 +244,23 @@ void pdvst3Processor::startPd()
     strcat(commandLineArgs, buf);
     #ifdef _WIN32
         snprintf(buf, MAXSTRLEN,
-                " -extraflags \"-vstproceventname %s -pdproceventname %s -pdprocevent2name %s -vsthostid %d -mutexname %s -filemapname %s -verbosetofile %d\"",
-                vstProcEventName,
-                pdProcEventName,
-                pdProcEvent2Name,
-                GetCurrentProcessId(),
-                pdvstTransferMutexName,
-                pdvstTransferFileMapName,
-                (int)globalVerboseToFiles);
+                " -extraflags \"-vstproceventname %s -pdproceventname %s -pdprocevent2name %s -vsthostid %d -mutexname %s -filemapname %s -verbosetofile %d -vstgui4compiled %d\"",
+            vstProcEventName,
+            pdProcEventName,
+            pdProcEvent2Name,
+            GetCurrentProcessId(),
+            pdvstTransferMutexName,
+            pdvstTransferFileMapName,
+            (int)globalVerboseToFiles,
+            HASVSTGUI);
     #else
         snprintf(buf, MAXSTRLEN,
-                " -extraflags \"-vsthostid %d -sharedmapname %s -verbosetofile %d\"",
-               getpid(),
-               pdvstSharedAddressesMapName,
-               (int)globalVerboseToFiles);
+                " -extraflags \"-vsthostid %d -sharedmapname %s -verbosetofile %d -vstgui4compiled %d\"",
+            getpid(),
+            pdvstSharedAddressesMapName,
+            (int)globalVerboseToFiles,
+            HASVSTGUI);
+
     #endif
     strcat(commandLineArgs, buf);
     snprintf(buf, MAXSTRLEN,

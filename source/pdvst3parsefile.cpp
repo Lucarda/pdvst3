@@ -5,17 +5,17 @@
  * based on original work from 2004 by Joseph A. Sarlo and 2018 by Jean-Yves Gratius
  *
  * MIT License
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -370,27 +370,27 @@ void makeUidesc (char *filename)
 void pdPatchFile()
 {
 
-	char buf[MAXFILENAMELEN];
-	int len = strlen(globalPdFile);
-	int lastslash = 0;
+    char buf[MAXFILENAMELEN];
+    int len = strlen(globalPdFile);
+    int lastslash = 0;
 
     for (int i=0; i < len; i++)
     {
-		if (globalPdFile[i] == '/' || globalPdFile[i] == '\\')
-		lastslash = i+1;
-	}
-	
-	if (!lastslash)
-	{
-		strcpy(globalPdFilePath, globalPluginPath);
-	}
-	else
-	{
-		memcpy(globalPdFilePath, globalPdFile, lastslash);
-		globalPdFilePath[lastslash+1] = '\0';
-		memcpy(buf, globalPdFile + lastslash, 100);
-		strcpy(globalPdFile, buf);
-	}	
+        if (globalPdFile[i] == '/' || globalPdFile[i] == '\\')
+        lastslash = i+1;
+    }
+
+    if (!lastslash)
+    {
+        strcpy(globalPdFilePath, globalPluginPath);
+    }
+    else
+    {
+        memcpy(globalPdFilePath, globalPdFile, lastslash);
+        globalPdFilePath[lastslash+1] = '\0';
+        memcpy(buf, globalPdFile + lastslash, 100);
+        strcpy(globalPdFile, buf);
+    }
 
 }
 
@@ -745,9 +745,10 @@ void parseSetupFile()
         }
     }
     if (setupFile) fclose(setupFile);
-
-    makeUserPlugFolder();
-    makeUidesc (globalUidescFile);
+    #if HASVSTGUI
+        makeUserPlugFolder();
+        makeUidesc (globalUidescFile);
+    #endif
     pdPatchFile();
 
     // vstmain debug file
@@ -771,7 +772,9 @@ void parseSetupFile()
             fprintf(file_pointer, "mac gPath: %s\n", gPath);
         #endif
         fprintf(file_pointer, "globalParameterGuiWorkAround: %d\n", globalParameterGuiWorkAround);
-        fprintf(file_pointer, "globalUidescFile: %s\n", globalUidescFile);    
+        fprintf(file_pointer, "globalUidescFile: %s\n", globalUidescFile);
+        fprintf(file_pointer, "HASVSTGUI: %d\n", HASVSTGUI);
+
         fclose(file_pointer);
     }
 }

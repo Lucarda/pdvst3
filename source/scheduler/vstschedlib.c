@@ -5,17 +5,17 @@
  * based on original work from 2004 by Joseph A. Sarlo and 2018 by Jean-Yves Gratius
  *
  * MIT License
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -122,19 +122,20 @@ pdvstTransferData *pdvstData;
 pdvstTimeInfo  timeInfo;
 char schedulerDebugFile[MAXARGSTRLEN];
 int VerboseToFile;
+int Vstgui;
 
 void setSchedulerDebugFilePath()
 {
 
 #if _WIN32
-	char *appdata_path = getenv("APPDATA");
-	snprintf(schedulerDebugFile, MAXARGSTRLEN -1, "%s%s", appdata_path, "\\pdvst3SchedulerDebug.txt");	
+    char *appdata_path = getenv("APPDATA");
+    snprintf(schedulerDebugFile, MAXARGSTRLEN -1, "%s%s", appdata_path, "\\pdvst3SchedulerDebug.txt");
 #elif __APPLE__
-	char *home_dir = getenv("HOME");
-	snprintf(schedulerDebugFile, MAXARGSTRLEN -1, "%s%s", home_dir, "/Library/Application Support/pdvst3SchedulerDebug.txt");
+    char *home_dir = getenv("HOME");
+    snprintf(schedulerDebugFile, MAXARGSTRLEN -1, "%s%s", home_dir, "/Library/Application Support/pdvst3SchedulerDebug.txt");
 #elif __linux__
     char *home_dir = getenv("HOME");
-	snprintf(schedulerDebugFile, MAXARGSTRLEN -1, "%s%s", home_dir, "/.config/pdvst3SchedulerDebug.txt");	
+    snprintf(schedulerDebugFile, MAXARGSTRLEN -1, "%s%s", home_dir, "/.config/pdvst3SchedulerDebug.txt");
 #endif
 
 }
@@ -194,9 +195,9 @@ void parseArgs(int argc, char **argv)
 {
     while ((argc > 0) && (**argv == '-'))
     {
-		if (strcmp(*argv, "-vsthostid") == 0)
+        if (strcmp(*argv, "-vsthostid") == 0)
         {
-			#ifdef _WIN32
+            #ifdef _WIN32
                 vstHostProcessId = atoi(argv[1]);
                 vstHostProcess = OpenProcess(PROCESS_ALL_ACCESS,
                                              FALSE,
@@ -254,14 +255,20 @@ void parseArgs(int argc, char **argv)
                 argc -= 2;
                 argv += 2;
             }
-        #endif	
+        #endif
 
-		if (strcmp(*argv, "-verbosetofile") == 0)
-		{
-			VerboseToFile = atoi(argv[1]);
-			argc -= 2;
-			argv += 2;
-		}
+        if (strcmp(*argv, "-verbosetofile") == 0)
+        {
+            VerboseToFile = atoi(argv[1]);
+            argc -= 2;
+            argv += 2;
+        }
+        if (strcmp(*argv, "-vstgui4compiled") == 0)
+        {
+            Vstgui = atoi(argv[1]);
+            argc -= 2;
+            argv += 2;
+        }
     }
 }
 
@@ -939,8 +946,8 @@ int pd_extern_sched(char *flags)
 {
     int i, argc;
     char *argv[MAXARGS];
-	
-	setSchedulerDebugFilePath();
+
+    setSchedulerDebugFilePath();
     t_audiosettings as;
     sys_get_audio_settings(&as);
     as.a_api = API_NONE;
@@ -951,12 +958,12 @@ int pd_extern_sched(char *flags)
         argv[i] = (char *)malloc(MAXARGSTRLEN * sizeof(char));
     }
     argc = tokenizeCommandLineString(flags, argv);
-    parseArgs(argc, argv);    
+    parseArgs(argc, argv);
     if(VerboseToFile)
     {
-		debugFile = fopen(schedulerDebugFile, "wt");
-		debugLog("scheduler loaded");
-	}
+        debugFile = fopen(schedulerDebugFile, "wt");
+        debugLog("scheduler loaded");
+    }
     set_resources();
     xxWaitForSingleObject(PDVSTTRANSFERMUTEX, -1);
     logpost(NULL, PD_DEBUG,"---");
@@ -965,6 +972,8 @@ int pd_extern_sched(char *flags)
                                                 PDVST3_VER_PATCH,
                                                 PDVST3_ADD);
     logpost(NULL, PD_DEBUG,"  %s %s",PDVST3_AUTH, PDVST3_DATE);
+    if (!Vstgui)
+        logpost(NULL, PD_DEBUG,"  (compiled without vstgui4 support)");
     logpost(NULL, PD_DEBUG,"---");
     sys_setchsr(pdvstData->nChannelsIn,
                 pdvstData->nChannelsOut,

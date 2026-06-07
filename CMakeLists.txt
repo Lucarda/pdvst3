@@ -100,7 +100,7 @@ set_property(
         pluginterfaces
         cmake_modules
         cmake_VST_modules
-    PROPERTY 
+    PROPERTY
         ${SDK_IDE_LIBS_FOLDER}
 )
 
@@ -113,10 +113,10 @@ if(SMTG_ENABLE_VSTGUI_SUPPORT)
             vstgui
             vstgui_support
             vstgui_uidescription
-        PROPERTY 
+        PROPERTY
             ${SDK_IDE_LIBS_FOLDER}
     )
- 
+
     if(TARGET vstgui_standalone)
         set_target_properties(vstgui_standalone
             PROPERTIES
@@ -153,11 +153,28 @@ smtg_add_vst3plugin(pdvst3
     source/pdvst3cids.h
 )
 
+if(SMTG_ENABLE_VSTGUI_SUPPORT)
+    target_link_libraries(pdvst3
+        PRIVATE
+            vstgui_support
+    )
+    target_compile_definitions(pdvst3
+        PUBLIC
+          HASVSTGUI=1
+    )
+endif()
+
+if(NOT SMTG_ENABLE_VSTGUI_SUPPORT)
+    target_compile_definitions(pdvst3
+        PUBLIC
+          HASVSTGUI=0
+    )
+endif()
+
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_link_libraries(pdvst3
         PRIVATE
             sdk
-            vstgui_support
             -lpthread
             -lc
             -lrt
@@ -168,7 +185,6 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     target_link_libraries(pdvst3
         PRIVATE
             sdk
-            vstgui_support
             -lpthread
             -lc
     )
@@ -178,7 +194,6 @@ if(SMTG_WIN)
     target_link_libraries(pdvst3
         PRIVATE
             sdk
-            vstgui_support
     )
 endif()
 
